@@ -24,11 +24,11 @@
 
 namespace dualq_kinematics
 {
-    class dualQuaternionsKinematicsPlugin : public kinematics::KinematicsBase
+    class DualQuaternionsKinematicsPlugin : public kinematics::KinematicsBase
     {
         public:
 
-            dualQuaternionsKinematicsPlugin();
+            DualQuaternionsKinematicsPlugin();
 
             bool getPositionFK(
                 const std::vector<std::string>& link_names, const std::vector<double>& joint_angles,

@@ -7,9 +7,16 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+
+#ROS2
+find_package(rclcpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+
+#Eigen
+find_package(Eigen3 REQUIRED)
+
+#Add here executables
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
