@@ -3,12 +3,12 @@
 
 TEST(dualq_kinematics, ConstructionTest)
 {
-    using Quaternion = Eigen::Quaterniond;
+    
     using DualQuaternion = dualq_kinematics::DualQuaternion<double>;
-    Quaternion l_quaternionIdentity(1.0,0.0,0.0,0.0);
+    Eigen::Quaterniond l_quaternionIdentity(1.0,0.0,0.0,0.0);
 
     DualQuaternion l_dualqTest(l_quaternionIdentity, l_quaternionIdentity);
-    EXPECT_EQ(l_dualqTest.getDualPart(),l_dualqTest.getRealPart) << "Construction of dualq by two quaternions for real and dual part fails";
+    EXPECT_EQ(l_dualqTest.getDualPart(),l_dualqTest.getRealPart()) << "Construction of dualq by two quaternions for real and dual part fails";
 
 }
 

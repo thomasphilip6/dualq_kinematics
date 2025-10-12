@@ -12,11 +12,6 @@
 #include <array>
 #include <optional>
 
-using Quaternion = Eigen::Quaternion<Scalar>;
-using AngleAxis = Eigen::AngleAxis<Scalar>;
-using Translation = Eigen::Translation<Scalar, 3> ;
-using Transform = Eigen::Transform<Scalar,3, Eigen::Isometry>;
-
 namespace dualq_kinematics
 {
 
@@ -24,6 +19,11 @@ namespace dualq_kinematics
     class DualQuaternion 
     {
         public:
+
+            using Quaternion = Eigen::Quaternion<Scalar>;
+            using AngleAxis = Eigen::AngleAxis<Scalar>;
+            using Translation = Eigen::Translation<Scalar, 3> ;
+            using Transform = Eigen::Transform<Scalar,3, Eigen::Isometry>;
 
             /**
              * @brief Construction with two Quaternions, one real and one dual part
@@ -46,7 +46,7 @@ namespace dualq_kinematics
              */
             DualQuaternion(
                 Translation& p_rotationAxis,
-                Translation& p_position,
+                Translation& p_position
             );
 
             /**
@@ -69,12 +69,12 @@ namespace dualq_kinematics
             /**
              * @brief returns real part of dual quaternion
              */
-            const Quaternion getRealPart() const;
+            const Quaternion& getRealPart() const;
 
             /**
              * @brief returns dual part of dual quaternion
              */
-            const Quaternion getDualPart() const;
+            const Quaternion& getDualPart() const;
             
         private:
             Quaternion m_realPart;
