@@ -25,4 +25,16 @@ DualQuaternion<Scalar> DualQuaternion<Scalar>::operator*(const DualQuaternion<Sc
     return DualQuaternion<Scalar>(l_realPart, l_dualPart);
 }
 
+template<typename Scalar>
+const DualQuaternion<Scalar>::getRealPart() const
+{
+    return m_realPart;
+}
+
+template<typename Scalar>
+const DualQuaternion<Scalar>::getDualPart() const
+{
+    return m_dualPart;
+}
+
 }

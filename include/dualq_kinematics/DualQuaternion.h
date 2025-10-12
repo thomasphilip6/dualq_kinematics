@@ -1,10 +1,13 @@
 #pragma once
 
-#include <Eigen/src/Geometry/Quaternion.h>
-#include <Eigen/src/Geometry/AngleAxis.h>
-#include <Eigen/src/Geometry/Transform.h>
-#include <Eigen/src/Geometry/Translation.h>
-#include <Eigen/src/Geometry/Transform.h>
+// #include <Eigen/src/Geometry/Quaternion.h>
+// #include <Eigen/src/Geometry/AngleAxis.h>
+// #include <Eigen/src/Geometry/Transform.h>
+// #include <Eigen/src/Geometry/Translation.h>
+// #include <Eigen/src/Geometry/Transform.h>
+
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 #include <array>
 #include <optional>
@@ -62,6 +65,16 @@ namespace dualq_kinematics
             );
 
             DualQuaternion operator*(const DualQuaternion& p_other) const;
+
+            /**
+             * @brief returns real part of dual quaternion
+             */
+            const Quaternion getRealPart() const;
+
+            /**
+             * @brief returns dual part of dual quaternion
+             */
+            const Quaternion getDualPart() const;
             
         private:
             Quaternion m_realPart;
