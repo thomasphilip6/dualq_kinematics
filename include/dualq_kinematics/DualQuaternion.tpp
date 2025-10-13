@@ -1,4 +1,4 @@
-#include "DualQuaternion.h"
+//#include "dualq_kinematics/DualQuaternion.h"
 
 namespace dualq_kinematics
 {
@@ -17,22 +17,22 @@ DualQuaternion<Scalar> DualQuaternion<Scalar>::operator*(const DualQuaternion<Sc
     const Quaternion l_dualPartOne(m_realPart * p_other.m_dualPart);
     const Quaternion l_dualPartTwo(m_dualPart * p_other.m_realPart);
     const Quaternion l_dualPart(
-        m_dualPartOne.w()+m_dualPartTwo.w(),
-        m_dualPartOne.x()+m_dualPartTwo.x(),
-        m_dualPartOne.y()+m_dualPartTwo.y(),
-        m_dualPartOne.z()+m_dualPartTwo.z(),
+        l_dualPartOne.w()+l_dualPartTwo.w(),
+        l_dualPartOne.x()+l_dualPartTwo.x(),
+        l_dualPartOne.y()+l_dualPartTwo.y(),
+        l_dualPartOne.z()+l_dualPartTwo.z()
     );
     return DualQuaternion<Scalar>(l_realPart, l_dualPart);
 }
 
 template<typename Scalar>
-const Quaternion& DualQuaternion<Scalar>::getRealPart() const
+const typename DualQuaternion<Scalar>::Quaternion& DualQuaternion<Scalar>::getRealPart() const
 {
     return m_realPart;
 }
 
 template<typename Scalar>
-const Quaternion& DualQuaternion<Scalar>::getDualPart() const
+const typename DualQuaternion<Scalar>::Quaternion& DualQuaternion<Scalar>::getDualPart() const
 {
     return m_dualPart;
 }

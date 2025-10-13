@@ -1,11 +1,5 @@
 #pragma once
 
-// #include <Eigen/src/Geometry/Quaternion.h>
-// #include <Eigen/src/Geometry/AngleAxis.h>
-// #include <Eigen/src/Geometry/Transform.h>
-// #include <Eigen/src/Geometry/Translation.h>
-// #include <Eigen/src/Geometry/Transform.h>
-
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
@@ -81,3 +75,5 @@ namespace dualq_kinematics
             Quaternion m_dualPart;
     };
 }
+
+#include "dualq_kinematics/DualQuaternion.tpp"
