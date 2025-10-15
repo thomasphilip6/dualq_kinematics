@@ -3,8 +3,9 @@
 namespace dualq_kinematics
 {
 
+//Construction by real and dual part
 template<typename Scalar>
-DualQuaternion<Scalar>::DualQuaternion(Quaternion& p_realPart, Quaternion& p_dualPart)
+DualQuaternion<Scalar>::DualQuaternion(const Quaternion& p_realPart, const Quaternion& p_dualPart)
 {
     m_realPart = p_realPart;
     m_dualPart = p_dualPart;
@@ -23,6 +24,45 @@ DualQuaternion<Scalar> DualQuaternion<Scalar>::operator*(const DualQuaternion<Sc
         l_dualPartOne.z()+l_dualPartTwo.z()
     );
     return DualQuaternion<Scalar>(l_realPart, l_dualPart);
+}
+
+template<typename Scalar>
+DualQuaternion<Scalar> DualQuaternion<Scalar>::conjugate() const
+{
+    return DualQuaternion<Scalar>(m_realPart.conjugate(),m_dualPart.conjugate());
+}
+
+template<typename Scalar>
+bool DualQuaternion<Scalar>::isUnit(const Scalar p_tolerance) const
+{
+    DualQuaternion<Scalar> l_dualQuaternion = *this * this->conjugate();
+    Quaternion l_realExpected(1.0, 0.0, 0.0, 0.0);
+    Quaternion l_dualExpected(0.0, 0.0, 0.0, 0.0);
+
+    bool l_realOK = (l_dualQuaternion.m_realPart.coeffs() - l_realExpected.coeffs()).norm() < p_tolerance;
+    bool l_dualOK = (l_dualQuaternion.m_dualPart.coeffs() - l_dualExpected.coeffs()).norm() < p_tolerance;
+
+    return l_realOK && l_dualOK;
+}
+
+template<typename Scalar>
+void DualQuaternion<Scalar>::inverse()
+{
+    //todo deal with realPart = 0 then no inverse exist
+    if (m_isUnit==true)
+    {
+        m_realPart = this->conjugate().m_realPart;
+        m_dualPart = this->conjugate().m_dualPart;
+    }
+    else
+    { 
+        m_realPart = m_realPart.inverse();
+        m_dualPart = m_realPart*m_dualPart*m_realPart;
+        m_dualPart.w() = -m_dualPart.w();
+        m_dualPart.x() = -m_dualPart.x();
+        m_dualPart.y() = -m_dualPart.y();
+        m_dualPart.z() = -m_dualPart.z();
+    }
 }
 
 template<typename Scalar>

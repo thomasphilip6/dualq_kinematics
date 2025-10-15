@@ -23,8 +23,8 @@ namespace dualq_kinematics
              * @brief Construction with two Quaternions, one real and one dual part
              */
             DualQuaternion(
-                Quaternion& p_realPart,
-                Quaternion& p_dualPart
+                const Quaternion& p_realPart,
+                const Quaternion& p_dualPart
             );
 
             /**
@@ -36,7 +36,7 @@ namespace dualq_kinematics
             );
 
             /**
-             * @brief Construction with screw axis (roation Axis & position)
+             * @brief Construction with screw axis (rotation Axis & position)
              */
             DualQuaternion(
                 Translation& p_rotationAxis,
@@ -58,7 +58,25 @@ namespace dualq_kinematics
                 Transform& p_transform
             );
 
+            /**
+             * @brief Returns the dual quaternion multiplication of the object and another instance
+             */
             DualQuaternion operator*(const DualQuaternion& p_other) const;
+
+            /**
+             * @brief Returns the conjugate of the dual quaternion
+             */
+            DualQuaternion conjugate() const;
+
+            /**
+             * @brief  Returns true if dual quaternion is a unit one
+             */
+            bool isUnit(const Scalar p_tolerance) const;
+
+            /**
+             * @brief Inverses the dual quaternion
+             */
+            void inverse();
 
             /**
              * @brief returns real part of dual quaternion
@@ -73,6 +91,7 @@ namespace dualq_kinematics
         private:
             Quaternion m_realPart;
             Quaternion m_dualPart;
+            bool m_isUnit = false;
     };
 }
 
