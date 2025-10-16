@@ -64,6 +64,11 @@ namespace dualq_kinematics
             DualQuaternion operator*(const DualQuaternion& p_other) const;
 
             /**
+             * @brief Returns true if object and the other instance are the same
+             */
+            bool compare(const DualQuaternion& p_other, const Scalar p_tolerance) const;
+
+            /**
              * @brief Returns the conjugate of the dual quaternion
              */
             DualQuaternion conjugate() const;

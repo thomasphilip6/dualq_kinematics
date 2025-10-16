@@ -9,6 +9,7 @@ DualQuaternion<Scalar>::DualQuaternion(const Quaternion& p_realPart, const Quate
 {
     m_realPart = p_realPart;
     m_dualPart = p_dualPart;
+    m_isUnit = isUnit(1e-6);
 }
 
 template<typename Scalar>
@@ -27,6 +28,29 @@ DualQuaternion<Scalar> DualQuaternion<Scalar>::operator*(const DualQuaternion<Sc
 }
 
 template<typename Scalar>
+bool DualQuaternion<Scalar>::compare(const DualQuaternion& p_other, const Scalar p_tolerance) const
+{
+    bool l_result = true;
+    const std::array<Scalar, 8> l_allCoeff = {
+        m_realPart.w(),m_realPart.x(),m_realPart.y(),m_realPart.z(),
+        m_dualPart.w(),m_dualPart.x(),m_dualPart.y(),m_realPart.z()
+    };
+    const std::array<Scalar, 8> l_allCoeffOther ={
+        p_other.m_realPart.w(),p_other.m_realPart.x(),p_other.m_realPart.y(),p_other.m_realPart.z(),
+        p_other.m_dualPart.w(),p_other.m_dualPart.x(),p_other.m_dualPart.y(),p_other.m_realPart.z()
+    };
+    for (size_t i = 0; i < 3; i++)
+    {
+        l_result = std::abs(l_allCoeff.at(i) - l_allCoeffOther.at(i)) < p_tolerance;
+        if (l_result==true)
+        {
+            return false;
+        }
+    }
+    return l_result;
+}
+
+template<typename Scalar>
 DualQuaternion<Scalar> DualQuaternion<Scalar>::conjugate() const
 {
     return DualQuaternion<Scalar>(m_realPart.conjugate(),m_dualPart.conjugate());
@@ -35,14 +59,13 @@ DualQuaternion<Scalar> DualQuaternion<Scalar>::conjugate() const
 template<typename Scalar>
 bool DualQuaternion<Scalar>::isUnit(const Scalar p_tolerance) const
 {
-    DualQuaternion<Scalar> l_dualQuaternion = *this * this->conjugate();
-    Quaternion l_realExpected(1.0, 0.0, 0.0, 0.0);
-    Quaternion l_dualExpected(0.0, 0.0, 0.0, 0.0);
+    const Scalar l_firstCondition = m_realPart.w()*m_realPart.w() + m_realPart.x()*m_realPart.x() + m_realPart.y()*m_realPart.y() + m_realPart.z()*m_realPart.z();
+    const Scalar l_secondCondition = m_realPart.w()*m_dualPart.w() + m_realPart.x()*m_dualPart.x() + m_realPart.y()*m_dualPart.y() + m_realPart.z()*m_dualPart.z();
 
-    bool l_realOK = (l_dualQuaternion.m_realPart.coeffs() - l_realExpected.coeffs()).norm() < p_tolerance;
-    bool l_dualOK = (l_dualQuaternion.m_dualPart.coeffs() - l_dualExpected.coeffs()).norm() < p_tolerance;
+    bool l_firstOK = std::abs(1.0 - l_firstCondition) < p_tolerance;
+    bool l_secondOK = std::abs(0.0 - l_secondCondition) < p_tolerance;
 
-    return l_realOK && l_dualOK;
+    return l_firstOK && l_secondOK;
 }
 
 template<typename Scalar>
