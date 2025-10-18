@@ -81,9 +81,14 @@ namespace dualq_kinematics
             bool isUnit(const Scalar p_tolerance) const;
 
             /**
-             * @brief Inverses the dual quaternion
+             * @brief Inverses the dual quaternion and returns true if success
              */
-            void inverse();
+            bool invert();
+
+            /**
+             * @brief Returns the inverse of the dual quaternion if it exists, not optimized because of copies
+             */
+            std::optional<DualQuaternion> inverse() const;
 
             /**
              * @brief returns real part of dual quaternion

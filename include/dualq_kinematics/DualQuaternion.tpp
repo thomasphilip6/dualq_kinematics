@@ -85,13 +85,27 @@ bool DualQuaternion<Scalar>::isUnit(const Scalar p_tolerance) const
 }
 
 template<typename Scalar>
-void DualQuaternion<Scalar>::inverse()
+bool DualQuaternion<Scalar>::invert()
 {
-    //todo deal with realPart = 0 then no inverse exist
+    //check if real part is all zeroes
+    const std::array<Scalar, 4> l_realPartCoeff = {m_realPart.w(),m_realPart.x(),m_realPart.y(),m_realPart.z()};
+    uint8_t l_zeroCounter=0;
+    for (auto &&l_coeff : l_realPartCoeff)
+    {
+        if(l_coeff==0.0)
+        {
+            ++l_zeroCounter;
+        }
+    }
+    if(l_zeroCounter == 4){
+        return false;
+    }
+    
     if (m_isUnit==true)
     {
         m_realPart = this->conjugate().m_realPart;
         m_dualPart = this->conjugate().m_dualPart;
+        return true;
     }
     else
     { 
@@ -101,7 +115,21 @@ void DualQuaternion<Scalar>::inverse()
         m_dualPart.x() = -m_dualPart.x();
         m_dualPart.y() = -m_dualPart.y();
         m_dualPart.z() = -m_dualPart.z();
+        return true;
     }
+}
+
+template<typename Scalar>
+std::optional<DualQuaternion<Scalar>> DualQuaternion<Scalar>::inverse() const
+{
+    DualQuaternion<Scalar> l_dualQuaternionCopy = *this;
+    const bool l_result = l_dualQuaternionCopy.invert();
+    if (l_result)
+    {
+        return l_dualQuaternionCopy;
+    }
+    return std::nullopt;
+
 }
 
 template<typename Scalar>

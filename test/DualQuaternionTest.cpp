@@ -73,6 +73,50 @@ TEST(dualq_kinematics, conjugateTest)
     l_conjugate.print();
 }
 
+TEST(dualq_kinematics, invertTest)
+{
+    std::cout << "invertTest" << std::endl;
+    const Eigen::Quaterniond l_realPart(1.0,0.0,0.0,0.0);
+    const Eigen::Quaterniond l_dualPart(0.0,1.0,0.0,0.0);
+    const Eigen::Quaterniond l_realPartConjugate(1.0,0.0,0.0,0.0);
+    const Eigen::Quaterniond l_dualPartConjugate(0.0,-1.0,0.0,0.0);
+    const Eigen::Quaterniond l_realPartNull(0.0,0.0,0.0,0.0);
+
+    //todo test with non unit dual quaternion inverse
+    DualQuaternion l_dualq(l_realPart, l_dualPart);
+    DualQuaternion l_dualqNullRealPart(l_realPartNull, l_dualPart);
+    const DualQuaternion l_dualqExpectedConjugate(l_realPartConjugate,l_dualPartConjugate);
+
+    const bool l_result = l_dualq.invert();
+    const bool l_comparison = l_dualq.compare(l_dualqExpectedConjugate, l_tolerance);
+    EXPECT_TRUE(l_result);
+    EXPECT_TRUE(l_comparison);
+    EXPECT_FALSE(l_dualqNullRealPart.invert());
+
+    std::cout << "Expected inverse is ";
+    l_dualqExpectedConjugate.print();
+    std::cout << "Obtained inverse is";
+    l_dualq.print();
+}
+
+TEST(dualq_kinematics, inverseTest)
+{
+    std::cout << "inverseTest" << std::endl;
+    const Eigen::Quaterniond l_realPart(1.0,0.0,0.0,0.0);
+    const Eigen::Quaterniond l_dualPart(0.0,1.0,0.0,0.0);
+    const Eigen::Quaterniond l_realPartConjugate(1.0,0.0,0.0,0.0);
+    const Eigen::Quaterniond l_dualPartConjugate(0.0,-1.0,0.0,0.0);
+
+    const Eigen::Quaterniond l_realPartNull(0.0,0.0,0.0,0.0);
+    DualQuaternion l_dualq(l_realPart, l_dualPart);
+    DualQuaternion l_dualqNullRealPart(l_realPartNull, l_dualPart);
+    const DualQuaternion l_dualqExpectedConjugate(l_realPartConjugate,l_dualPartConjugate);
+
+    std::optional<DualQuaternion> l_inverse = l_dualq.inverse();
+    const bool l_comparison = l_inverse.value().compare(l_dualqExpectedConjugate, l_tolerance);
+    EXPECT_TRUE(l_comparison);
+}
+
 int main(int argc, char ** argv)
 {
     testing::InitGoogleTest(&argc, argv);
