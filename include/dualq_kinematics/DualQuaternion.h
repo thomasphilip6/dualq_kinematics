@@ -68,6 +68,8 @@ namespace dualq_kinematics
              */
             bool compare(const DualQuaternion& p_other, const Scalar p_tolerance) const;
 
+            void print() const;
+
             /**
              * @brief Returns the conjugate of the dual quaternion
              */

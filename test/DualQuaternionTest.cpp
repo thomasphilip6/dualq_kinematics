@@ -33,7 +33,21 @@ TEST(dualq_kinematics, isUnitTest)
     l_isUnit = l_dualqNotUnit.isUnit(l_tolerance);
     EXPECT_EQ(l_isUnit,false) << "isUnit() (to detect if a dq is a unit one) fails";
     std::cout << "isUnitTest, expect false : " << l_isUnit << std::endl;
+}
 
+TEST(dualq_kinematics, compareTest)
+{
+    std::cout << "compareTest" << std::endl;
+    const Eigen::Quaterniond l_realPart(0.960634,0.027054,0.100967,0257401);
+    const Eigen::Quaterniond l_dualPart(0.960900,-0.014874,0.112098,0.252752);
+    const Eigen::Quaterniond l_dualPartOther(0.965006,-0.042133,0.011290,0.258573);
+
+    DualQuaternion l_dualq(l_realPart, l_dualPart);
+    DualQuaternion l_dualqOther(l_realPart, l_dualPartOther);
+    EXPECT_TRUE(l_dualq.compare(l_dualq,l_tolerance)) << "compare two quaternions doesn't detect equality of two dq";
+    EXPECT_TRUE(l_dualqOther.compare(l_dualqOther,l_tolerance)) << "compare two quaternions doesn't detect equality of two dq";
+    EXPECT_FALSE(l_dualq.compare(l_dualqOther, l_tolerance)) << "compare two quaternions doesn't detect inequality of two dq";
+    EXPECT_FALSE(l_dualqOther.compare(l_dualq, l_tolerance)) << "compare two quaternions doesn't detect inequality of two dq";
 }
 
 TEST(dualq_kinematics, conjugateTest)
@@ -48,8 +62,15 @@ TEST(dualq_kinematics, conjugateTest)
     const DualQuaternion l_dualq(l_realPart, l_dualPart);
     const DualQuaternion l_dualqExpectedConjugate(l_realPartConjugate,l_dualPartConjugate);
     const DualQuaternion l_conjugate = l_dualq.conjugate();
-    const bool l_comparison = l_dualq.compare(l_conjugate,l_tolerance);
-    EXPECT_EQ(l_comparison, true) << "conjugate() fails";
+    const bool l_comparison = l_dualqExpectedConjugate.compare(l_conjugate,l_tolerance);
+    EXPECT_TRUE(l_comparison) << "conjugate() fails";
+
+    std::cout << "Initial dualq ";
+    l_dualq.print();
+    std::cout << "Expected conjugate is ";
+    l_dualqExpectedConjugate.print();
+    std::cout << "Obtained conjugate is";
+    l_conjugate.print();
 }
 
 int main(int argc, char ** argv)

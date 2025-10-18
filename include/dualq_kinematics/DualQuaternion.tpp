@@ -39,15 +39,31 @@ bool DualQuaternion<Scalar>::compare(const DualQuaternion& p_other, const Scalar
         p_other.m_realPart.w(),p_other.m_realPart.x(),p_other.m_realPart.y(),p_other.m_realPart.z(),
         p_other.m_dualPart.w(),p_other.m_dualPart.x(),p_other.m_dualPart.y(),p_other.m_realPart.z()
     };
-    for (size_t i = 0; i < 3; i++)
+    for (size_t i = 0; i < 8; i++)
     {
         l_result = std::abs(l_allCoeff.at(i) - l_allCoeffOther.at(i)) < p_tolerance;
-        if (l_result==true)
+        if (l_result==false)
         {
             return false;
         }
     }
     return l_result;
+}
+
+template<typename Scalar>
+void DualQuaternion<Scalar>::print() const
+{
+    const std::array<Scalar, 8> l_allCoeff = {
+        m_realPart.w(),m_realPart.x(),m_realPart.y(),m_realPart.z(),
+        m_dualPart.w(),m_dualPart.x(),m_dualPart.y(),m_realPart.z()
+    };
+    std::cout << "Dual Quaternion is ";
+    for (size_t i = 0; i < 8; i++)
+    {
+        std::cout << l_allCoeff.at(i) << ", ";
+    }
+    std::cout << " " << std::endl;
+    
 }
 
 template<typename Scalar>
