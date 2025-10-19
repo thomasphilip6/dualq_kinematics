@@ -18,6 +18,7 @@ namespace dualq_kinematics
             using AngleAxis = Eigen::AngleAxis<Scalar>;
             using Translation = Eigen::Translation<Scalar, 3> ;
             using Transform = Eigen::Transform<Scalar,3, Eigen::Isometry>;
+            static constexpr Scalar c_tolerance = 1e-6;
 
             /**
              * @brief Construction with two Quaternions, one real and one dual part
@@ -28,19 +29,27 @@ namespace dualq_kinematics
             );
 
             /**
-             * @brief Construction with AxisAngle for orientation and vector for position
+             * @brief Construction with AxisAngle for orientation and vector for position (first rotation then translation)
              */
             DualQuaternion(
-                AngleAxis& p_angleAxis,
-                Translation& p_translation
+                const AngleAxis& p_angleAxis,
+                const Translation& p_translation
+            );
+
+            /**
+             * @brief Construction with AxisAngle for orientation and vector for position (first translation then rotation)
+             */
+            DualQuaternion(
+                const Translation& p_translation,
+                const AngleAxis& p_angleAxis      
             );
 
             /**
              * @brief Construction with screw axis (rotation Axis & position)
              */
             DualQuaternion(
-                Translation& p_rotationAxis,
-                Translation& p_position
+                const Translation& p_rotationAxis,
+                const Translation& p_position
             );
 
             /**
@@ -62,6 +71,11 @@ namespace dualq_kinematics
              * @brief Returns the dual quaternion multiplication of the object and another instance
              */
             DualQuaternion operator*(const DualQuaternion& p_other) const;
+
+            /**
+             * @brief Returns the multiplication of the dual Quaternion with a scalar value
+             */
+            DualQuaternion operator*(const Scalar p_scalar) const;
 
             /**
              * @brief Returns true if object and the other instance are the same
