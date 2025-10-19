@@ -66,7 +66,7 @@ namespace dualq_kinematics
             /**
              * @brief Returns true if object and the other instance are the same
              */
-            bool compare(const DualQuaternion& p_other, const Scalar p_tolerance) const;
+            bool isApprox(const DualQuaternion& p_other, const Scalar p_tolerance) const;
 
             void print() const;
 
@@ -83,12 +83,12 @@ namespace dualq_kinematics
             /**
              * @brief Inverses the dual quaternion and returns true if success
              */
-            bool invert();
+            bool invert(const Scalar p_tolerance);
 
             /**
              * @brief Returns the inverse of the dual quaternion if it exists, not optimized because of copies
              */
-            std::optional<DualQuaternion> inverse() const;
+            std::optional<DualQuaternion> inverse(const Scalar p_tolerance) const;
 
             /**
              * @brief returns real part of dual quaternion

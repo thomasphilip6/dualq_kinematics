@@ -28,26 +28,9 @@ DualQuaternion<Scalar> DualQuaternion<Scalar>::operator*(const DualQuaternion<Sc
 }
 
 template<typename Scalar>
-bool DualQuaternion<Scalar>::compare(const DualQuaternion& p_other, const Scalar p_tolerance) const
+bool DualQuaternion<Scalar>::isApprox(const DualQuaternion& p_other, const Scalar p_tolerance) const
 {
-    bool l_result = true;
-    const std::array<Scalar, 8> l_allCoeff = {
-        m_realPart.w(),m_realPart.x(),m_realPart.y(),m_realPart.z(),
-        m_dualPart.w(),m_dualPart.x(),m_dualPart.y(),m_realPart.z()
-    };
-    const std::array<Scalar, 8> l_allCoeffOther ={
-        p_other.m_realPart.w(),p_other.m_realPart.x(),p_other.m_realPart.y(),p_other.m_realPart.z(),
-        p_other.m_dualPart.w(),p_other.m_dualPart.x(),p_other.m_dualPart.y(),p_other.m_realPart.z()
-    };
-    for (size_t i = 0; i < 8; i++)
-    {
-        l_result = std::abs(l_allCoeff.at(i) - l_allCoeffOther.at(i)) < p_tolerance;
-        if (l_result==false)
-        {
-            return false;
-        }
-    }
-    return l_result;
+    return m_realPart.isApprox(p_other.m_realPart, p_tolerance) && m_dualPart.isApprox(p_other.m_dualPart, p_tolerance) ;
 }
 
 template<typename Scalar>
@@ -85,21 +68,25 @@ bool DualQuaternion<Scalar>::isUnit(const Scalar p_tolerance) const
 }
 
 template<typename Scalar>
-bool DualQuaternion<Scalar>::invert()
+bool DualQuaternion<Scalar>::invert(const Scalar p_tolerance)
 {
     //check if real part is all zeroes
-    const std::array<Scalar, 4> l_realPartCoeff = {m_realPart.w(),m_realPart.x(),m_realPart.y(),m_realPart.z()};
-    uint8_t l_zeroCounter=0;
-    for (auto &&l_coeff : l_realPartCoeff)
+    if(m_realPart.isApprox(Quaternion(0.0,0.0,0.0,0.0),p_tolerance))
     {
-        if(l_coeff==0.0)
-        {
-            ++l_zeroCounter;
-        }
-    }
-    if(l_zeroCounter == 4){
         return false;
     }
+    // const std::array<Scalar, 4> l_realPartCoeff = {m_realPart.w(),m_realPart.x(),m_realPart.y(),m_realPart.z()};
+    // uint8_t l_zeroCounter=0;
+    // for (auto &&l_coeff : l_realPartCoeff)
+    // {
+    //     if(l_coeff==0.0)
+    //     {
+    //         ++l_zeroCounter;
+    //     }
+    // }
+    // if(l_zeroCounter == 4){
+    //     return false;
+    // }
     
     if (m_isUnit==true)
     {
@@ -120,10 +107,10 @@ bool DualQuaternion<Scalar>::invert()
 }
 
 template<typename Scalar>
-std::optional<DualQuaternion<Scalar>> DualQuaternion<Scalar>::inverse() const
+std::optional<DualQuaternion<Scalar>> DualQuaternion<Scalar>::inverse(const Scalar p_tolerance) const
 {
     DualQuaternion<Scalar> l_dualQuaternionCopy = *this;
-    const bool l_result = l_dualQuaternionCopy.invert();
+    const bool l_result = l_dualQuaternionCopy.invert(p_tolerance);
     if (l_result)
     {
         return l_dualQuaternionCopy;

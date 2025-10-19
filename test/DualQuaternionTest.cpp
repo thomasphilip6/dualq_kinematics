@@ -35,19 +35,19 @@ TEST(dualq_kinematics, isUnitTest)
     std::cout << "isUnitTest, expect false : " << l_isUnit << std::endl;
 }
 
-TEST(dualq_kinematics, compareTest)
+TEST(dualq_kinematics, isApproxTest)
 {
-    std::cout << "compareTest" << std::endl;
+    std::cout << "isApproxTest" << std::endl;
     const Eigen::Quaterniond l_realPart(0.960634,0.027054,0.100967,0257401);
     const Eigen::Quaterniond l_dualPart(0.960900,-0.014874,0.112098,0.252752);
     const Eigen::Quaterniond l_dualPartOther(0.965006,-0.042133,0.011290,0.258573);
 
     DualQuaternion l_dualq(l_realPart, l_dualPart);
     DualQuaternion l_dualqOther(l_realPart, l_dualPartOther);
-    EXPECT_TRUE(l_dualq.compare(l_dualq,l_tolerance)) << "compare two quaternions doesn't detect equality of two dq";
-    EXPECT_TRUE(l_dualqOther.compare(l_dualqOther,l_tolerance)) << "compare two quaternions doesn't detect equality of two dq";
-    EXPECT_FALSE(l_dualq.compare(l_dualqOther, l_tolerance)) << "compare two quaternions doesn't detect inequality of two dq";
-    EXPECT_FALSE(l_dualqOther.compare(l_dualq, l_tolerance)) << "compare two quaternions doesn't detect inequality of two dq";
+    EXPECT_TRUE(l_dualq.isApprox(l_dualq,l_tolerance)) << "compare two quaternions doesn't detect equality of two dq";
+    EXPECT_TRUE(l_dualqOther.isApprox(l_dualqOther,l_tolerance)) << "compare two quaternions doesn't detect equality of two dq";
+    EXPECT_FALSE(l_dualq.isApprox(l_dualqOther, l_tolerance)) << "compare two quaternions doesn't detect inequality of two dq";
+    EXPECT_FALSE(l_dualqOther.isApprox(l_dualq, l_tolerance)) << "compare two quaternions doesn't detect inequality of two dq";
 }
 
 TEST(dualq_kinematics, conjugateTest)
@@ -62,7 +62,7 @@ TEST(dualq_kinematics, conjugateTest)
     const DualQuaternion l_dualq(l_realPart, l_dualPart);
     const DualQuaternion l_dualqExpectedConjugate(l_realPartConjugate,l_dualPartConjugate);
     const DualQuaternion l_conjugate = l_dualq.conjugate();
-    const bool l_comparison = l_dualqExpectedConjugate.compare(l_conjugate,l_tolerance);
+    const bool l_comparison = l_dualqExpectedConjugate.isApprox(l_conjugate,l_tolerance);
     EXPECT_TRUE(l_comparison) << "conjugate() fails";
 
     std::cout << "Initial dualq ";
@@ -87,11 +87,11 @@ TEST(dualq_kinematics, invertTest)
     DualQuaternion l_dualqNullRealPart(l_realPartNull, l_dualPart);
     const DualQuaternion l_dualqExpectedConjugate(l_realPartConjugate,l_dualPartConjugate);
 
-    const bool l_result = l_dualq.invert();
-    const bool l_comparison = l_dualq.compare(l_dualqExpectedConjugate, l_tolerance);
+    const bool l_result = l_dualq.invert(l_tolerance);
+    const bool l_comparison = l_dualq.isApprox(l_dualqExpectedConjugate, l_tolerance);
     EXPECT_TRUE(l_result);
     EXPECT_TRUE(l_comparison);
-    EXPECT_FALSE(l_dualqNullRealPart.invert());
+    EXPECT_FALSE(l_dualqNullRealPart.invert(l_tolerance));
 
     std::cout << "Expected inverse is ";
     l_dualqExpectedConjugate.print();
@@ -112,9 +112,11 @@ TEST(dualq_kinematics, inverseTest)
     DualQuaternion l_dualqNullRealPart(l_realPartNull, l_dualPart);
     const DualQuaternion l_dualqExpectedConjugate(l_realPartConjugate,l_dualPartConjugate);
 
-    std::optional<DualQuaternion> l_inverse = l_dualq.inverse();
-    const bool l_comparison = l_inverse.value().compare(l_dualqExpectedConjugate, l_tolerance);
+    std::optional<DualQuaternion> l_inverse = l_dualq.inverse(l_tolerance);
+    bool l_comparison = l_inverse.value().isApprox(l_dualqExpectedConjugate, l_tolerance);
     EXPECT_TRUE(l_comparison);
+    EXPECT_TRUE(l_inverse.has_value());
+    EXPECT_FALSE(l_dualqNullRealPart.inverse(l_tolerance).has_value());
 }
 
 int main(int argc, char ** argv)
