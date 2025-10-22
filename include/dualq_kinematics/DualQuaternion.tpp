@@ -73,7 +73,7 @@ template<typename Scalar>
 DualQuaternion<Scalar>::DualQuaternion(const Transform& p_transform)
 {
     m_realPart = Quaternion(p_transform.rotation());
-    m_dualPart = m_realPart * Quaternion(0.0, p_transform.translation().x(), p_transform.translation().y(), p_transform.translation().z());
+    m_dualPart = Quaternion(0.0, p_transform.translation().x(), p_transform.translation().y(), p_transform.translation().z()) * m_realPart;
     m_dualPart.coeffs() = m_dualPart.coeffs() * 0.5;
     m_isUnit = isUnit(c_tolerance);//todo throw an error if m_isUnit is false
 }

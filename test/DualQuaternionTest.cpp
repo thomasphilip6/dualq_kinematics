@@ -28,10 +28,20 @@ TEST(dualq_kinematics, ConstructionTest)
     const Eigen::Quaterniond l_expectedDual(0.0, 0.5*0.964261, 0.0, -0.5*0.101351);
     const DualQuaternion l_screwAxisDQ(l_screwAxis, l_position);
     const DualQuaternion l_screwAxisDQExpected( l_expectedReal, l_expectedDual);
-    l_screwAxisDQ.print();
-    l_screwAxisDQExpected.print();
     EXPECT_TRUE(l_screwAxisDQ.isApprox(l_screwAxisDQExpected, 0.0001));
 
+    //Construction with quat and translation for rotation then translation
+    const DualQuaternion l_quatTrans(Eigen::Quaterniond(0.923880, 0.0, 0.0, 0.382683), Eigen::Translation<double, 3>(10,12,45));
+    EXPECT_TRUE(l_quatTrans.isApprox(l_angleAxisDQ, l_tolerance));
+
+    //Construction with quat and translation for translation then rotation
+    const DualQuaternion l_transQuat(Eigen::Translation<double, 3>(10,12,45), Eigen::Quaterniond(0.923880, 0.0, 0.0, 0.382683));
+    EXPECT_TRUE(l_transQuat.isApprox(l_angleAxisDQTransFirst, l_tolerance));
+
+    //using transformation matrix
+    Eigen::Isometry3d l_transform = Eigen::Translation3d(10, 12, 45) * Eigen::AngleAxisd(M_PI/4, Eigen::Vector3d::UnitZ());
+    const DualQuaternion l_transformDQ(l_transform);
+    EXPECT_TRUE(l_quatTrans.isApprox(l_transformDQ, l_tolerance));
 }
 
 TEST(dualq_kinematics, isUnitTest)
@@ -88,6 +98,12 @@ TEST(dualq_kinematics, multiplicationTest)
     EXPECT_TRUE(l_dualqMultiplied.isApprox(DualQuaternion(l_realPartExpected, l_dualPartExpected), l_tolerance));
     l_dualqMultiplied = l_dualq*1.7;
     EXPECT_FALSE(l_dualqMultiplied.isApprox(DualQuaternion(l_realPartExpected, l_dualPartExpected), l_tolerance));
+
+    const DualQuaternion l_sigma1(Eigen::Quaterniond(2.0, 0.0, 0.0, 1.0),Eigen::Quaterniond(1.0, 1.0, 0.0, 1.0));
+    const DualQuaternion l_sigma2(Eigen::Quaterniond( 1.0, 0.0, 0.0, 1.0),Eigen::Quaterniond(1.0, 1.0, 0.0, 0.0));
+    const DualQuaternion l_productExpected(Eigen::Quaterniond(1.0, 0.0, 0.0, 3.0), Eigen::Quaterniond(2.0, 3.0, 0.0, 3.0));
+    const DualQuaternion l_product = l_sigma1*l_sigma2;
+    EXPECT_TRUE(l_product.isApprox(l_productExpected,l_tolerance));
 }
 
 TEST(dualq_kinematics, conjugateTest)
