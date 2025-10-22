@@ -6,11 +6,31 @@ const double l_tolerance = 1e-6;
 
 TEST(dualq_kinematics, ConstructionTest)
 {
+    //Construction with two Quaternions, one real and one dual part
     const Eigen::Quaterniond l_quaternionIdentity(1.0,0.0,0.0,0.0);
-    //Eigen::Quaterniond l_quaternion(0.965926, 0.258819, 0.0, 0.0); to test if gtest is properly used
-
     DualQuaternion l_dualqTest(l_quaternionIdentity, l_quaternionIdentity);
     EXPECT_EQ(l_dualqTest.getDualPart(),l_dualqTest.getRealPart()) << "Construction of dualq by two quaternions for real and dual part fails";
+
+    //Construction with AxisAngle for orientation and vector for position (first rotation then translation)
+    const Eigen::AngleAxis<double> l_angleAxis(M_PI / 4, Eigen::Vector3d::UnitZ());
+    DualQuaternion l_angleAxisDQ(l_angleAxis, Eigen::Translation<double, 3>(10,12,45));
+    EXPECT_TRUE(l_angleAxisDQ.getRealPart().isApprox(Eigen::Quaterniond(0.923880, 0.0, 0.0, 0.382683), l_tolerance));
+
+    //Construction with AxisAngle for translation first then orientation
+    DualQuaternion l_angleAxisDQTransFirst(Eigen::Translation<double, 3>(10,12,45), l_angleAxis);
+    EXPECT_TRUE(l_angleAxisDQTransFirst.getRealPart().isApprox(Eigen::Quaterniond(0.923880, 0.0, 0.0, 0.382683), l_tolerance));
+    EXPECT_FALSE(l_angleAxisDQTransFirst.getDualPart().isApprox(l_angleAxisDQ.getDualPart(), l_tolerance));
+
+    //Construction with ScrewAxis
+    const Eigen::Translation<double, 3> l_screwAxis(0.101351, 0.244683, 0.964291);
+    const Eigen::Translation<double, 3> l_position(0.0,0.5, 0.0);
+    const Eigen::Quaterniond l_expectedReal(0.0, 0.101351, 0.244683, 0.964291);
+    const Eigen::Quaterniond l_expectedDual(0.0, 0.5*0.964261, 0.0, -0.5*0.101351);
+    const DualQuaternion l_screwAxisDQ(l_screwAxis, l_position);
+    const DualQuaternion l_screwAxisDQExpected( l_expectedReal, l_expectedDual);
+    l_screwAxisDQ.print();
+    l_screwAxisDQExpected.print();
+    EXPECT_TRUE(l_screwAxisDQ.isApprox(l_screwAxisDQExpected, 0.0001));
 
 }
 

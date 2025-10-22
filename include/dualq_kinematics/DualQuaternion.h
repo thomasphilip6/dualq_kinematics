@@ -53,18 +53,26 @@ namespace dualq_kinematics
             );
 
             /**
-             * @brief Construction with Quaternion for orientation and vector for position
+             * @brief Construction with Quaternion for orientation and vector for position, rotation then translation
              */
             DualQuaternion(
-                Quaternion& p_orientation,
-                Translation& p_position
+                const Quaternion& p_orientation,
+                const Translation& p_translation
+            );
+
+            /**
+             * @brief Construction with Quaternion for orientation and vector for position, translation then rotation
+             */
+            DualQuaternion(
+                const Translation& p_translation,
+                const Quaternion& p_orientation
             );
 
             /**
              * @brief Construction with Transformation Matrix
              */
             DualQuaternion(
-                Transform& p_transform
+                const Transform& p_transform
             );
 
             /**

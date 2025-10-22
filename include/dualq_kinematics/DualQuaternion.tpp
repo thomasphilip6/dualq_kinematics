@@ -36,6 +36,7 @@ DualQuaternion<Scalar>::DualQuaternion(const Translation& p_translation, const A
 template<typename Scalar>
 DualQuaternion<Scalar>::DualQuaternion(const Translation& p_rotationAxis, const Translation& p_position)
 {
+    //todo make sure screw axis is a unit vector
     m_realPart = Quaternion(0.0, p_rotationAxis.x(), p_rotationAxis.y(), p_rotationAxis.z());
     m_dualPart = Quaternion(
         0.0,
@@ -45,6 +46,39 @@ DualQuaternion<Scalar>::DualQuaternion(const Translation& p_rotationAxis, const 
     );
     m_isUnit = isUnit(c_tolerance);//todo throw an error if m_isUnit is false
 }
+
+//Construction by quaternion and vector for translation, rotation then translation
+template<typename Scalar>
+DualQuaternion<Scalar>::DualQuaternion(const Quaternion& p_orientation, const Translation& p_translation)
+{
+    m_realPart = p_orientation;
+    m_dualPart = Quaternion(0.0, p_translation.x(), p_translation.y(), p_translation.z()) * m_realPart;
+    m_dualPart.coeffs() = m_dualPart.coeffs() * 0.5;
+    m_isUnit = isUnit(c_tolerance);//todo throw an error if m_isUnit is false
+}
+
+//Construction by quaternion and vector for translation, translation then rotation
+template<typename Scalar>
+DualQuaternion<Scalar>::DualQuaternion(const Translation& p_translation, const Quaternion& p_orientation)
+{
+    m_realPart = p_orientation;
+    m_dualPart = m_realPart * Quaternion(0.0, p_translation.x(), p_translation.y(), p_translation.z());
+    m_dualPart.coeffs() = m_dualPart.coeffs() * 0.5;
+    m_isUnit = isUnit(c_tolerance);//todo throw an error if m_isUnit is false
+}
+
+
+//Construction by transformation matrix, assuming SRT, RT in this case: first rotation then translation
+template<typename Scalar>
+DualQuaternion<Scalar>::DualQuaternion(const Transform& p_transform)
+{
+    m_realPart = Quaternion(p_transform.rotation());
+    m_dualPart = m_realPart * Quaternion(0.0, p_transform.translation().x(), p_transform.translation().y(), p_transform.translation().z());
+    m_dualPart.coeffs() = m_dualPart.coeffs() * 0.5;
+    m_isUnit = isUnit(c_tolerance);//todo throw an error if m_isUnit is false
+}
+
+
 
 template<typename Scalar>
 DualQuaternion<Scalar> DualQuaternion<Scalar>::operator*(const DualQuaternion<Scalar>& p_other) const
