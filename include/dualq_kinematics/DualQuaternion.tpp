@@ -198,4 +198,34 @@ const typename DualQuaternion<Scalar>::Quaternion& DualQuaternion<Scalar>::getDu
     return m_dualPart;
 }
 
+template<typename Scalar>
+typename DualQuaternion<Scalar>::Translation DualQuaternion<Scalar>::getTranslation(bool p_rotationFirst) const
+{
+    if(p_rotationFirst)
+    {
+        const Quaternion l_trans = m_dualPart*(m_realPart.conjugate());
+        return Translation(l_trans.x()*2,l_trans.y()*2,l_trans.z()*2);
+    }
+    const Quaternion l_translation = m_dualPart.conjugate() * m_realPart;
+    return Translation(-l_translation.x()*2, -l_translation.y()*2, -l_translation.z()*2);
+}
+
+template<typename Scalar>
+typename DualQuaternion<Scalar>::Quaternion DualQuaternion<Scalar>::getRotation() const
+{
+    return m_realPart;
+}
+
+template<typename Scalar>
+typename DualQuaternion<Scalar>::RotationMatrix DualQuaternion<Scalar>::getRotationMatrix() const
+{
+    return m_realPart.toRotationMatrix();
+}
+
+template<typename Scalar>
+typename DualQuaternion<Scalar>::Transform DualQuaternion<Scalar>::getTransform(bool p_rotationFirst) const
+{
+    return getTranslation(p_rotationFirst) * Transform(getRotationMatrix());
+}
+
 }

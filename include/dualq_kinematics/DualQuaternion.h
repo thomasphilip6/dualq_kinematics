@@ -18,6 +18,7 @@ namespace dualq_kinematics
             using AngleAxis = Eigen::AngleAxis<Scalar>;
             using Translation = Eigen::Translation<Scalar, 3> ;
             using Transform = Eigen::Transform<Scalar,3, Eigen::Isometry>;
+            using RotationMatrix = Eigen::Matrix<Scalar, 3, 3>;
             static constexpr Scalar c_tolerance = 1e-6;
 
             /**
@@ -121,6 +122,14 @@ namespace dualq_kinematics
              * @brief returns dual part of dual quaternion
              */
             const Quaternion& getDualPart() const;
+
+            Translation getTranslation(bool p_rotationFirst) const;
+
+            Quaternion getRotation() const;
+
+            RotationMatrix getRotationMatrix() const;
+
+            Transform getTransform(bool p_rotationFirst=true) const;
             
         private:
             Quaternion m_realPart;
