@@ -228,4 +228,51 @@ typename DualQuaternion<Scalar>::Transform DualQuaternion<Scalar>::getTransform(
     return getTranslation(p_rotationFirst) * Transform(getRotationMatrix());
 }
 
+template<typename Scalar>
+typename DualQuaternion<Scalar>::Quaternion quaternionExp(const Eigen::Quaternion<Scalar>& p_quaternion)
+{
+    const Scalar l_alpha = p_quaternion.vec().norm();
+    Scalar l_factor = 0;
+    if (l_alpha > 0.001)
+    {
+        l_factor = sin(l_alpha) / l_alpha;
+    }
+    else 
+    {
+        //Avoiding division by zero by using Taylor Serie of (sin a) / a
+        l_factor = 1.0 - pow(l_alpha, 2.0)/6.0 + pow(l_alpha, 4.0)/120.0;
+    }
+    return Eigen::Quaternion<Scalar>(exp(p_quaternion.w())*cos(l_alpha), p_quaternion.x()*l_factor, p_quaternion.y()*l_factor, p_quaternion.z()*l_factor);
+}
+
+template<typename Scalar>
+typename DualQuaternion<Scalar>::DualQuaternion DualQuaternion<Scalar>::exp() const
+{
+    const Scalar l_psi = m_realPart.vec().norm();
+    const Quaternion l_realPartExp = quaternionExp(m_realPart);
+    const Scalar l_gamma = m_realPart.x()*m_dualPart.x() + m_realPart.y()*m_dualPart.y() + m_realPart.z()*m_dualPart.z();
+
+    Scalar l_A = 0;
+    Scalar l_B = 0;
+    if (l_psi > 0.001)
+    {
+        l_A = sin(l_psi) / l_psi;
+        l_B = (cos(l_psi) - l_A) / pow(l_psi, 2.0); 
+    }
+    else 
+    {
+        //Avoiding division by zero using Taylor Series
+        l_A = 1.0 - pow(l_psi, 2.0)/6.0 + pow(l_psi, 4.0)/120.0;
+        l_B =  -1.0/3.0 + pow(l_psi, 2.0)/30.0 - pow(l_psi, 4.0)/840.0; 
+    }
+
+    const Quaternion l_dualPartExp(
+        exp(m_realPart.w())*(-l_A)*l_gamma + exp(m_dualPart.w())*l_realPartExp.w(),
+        exp(m_realPart.w())*(l_A*m_dualPart.x() + l_B*m_realPart.x()*l_gamma) + exp(m_dualPart.w())*l_realPartExp.x(),
+        exp(m_realPart.w())*(l_A*m_dualPart.y() + l_B*m_realPart.y()*l_gamma) + exp(m_dualPart.w())*l_realPartExp.y(),
+        exp(m_realPart.w())*(l_A*m_dualPart.z() + l_B*m_realPart.z()*l_gamma) + exp(m_dualPart.w())*l_realPartExp.z()
+    );
+    return DualQuaternion(l_realPartExp, l_dualPartExp);
+}
+
 }

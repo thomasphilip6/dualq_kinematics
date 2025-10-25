@@ -114,27 +114,51 @@ namespace dualq_kinematics
             std::optional<DualQuaternion> inverse(const Scalar p_tolerance) const;
 
             /**
-             * @brief returns real part of dual quaternion
+             * @brief Returns real part of dual quaternion
              */
             const Quaternion& getRealPart() const;
 
             /**
-             * @brief returns dual part of dual quaternion
+             * @brief Returns dual part of dual quaternion
              */
             const Quaternion& getDualPart() const;
 
+            /**
+             * @brief Returns transation part of dual quaternion
+             */
             Translation getTranslation(bool p_rotationFirst) const;
 
+            /**
+             * @brief Returns rotation part of dual quaternion as a quaternion
+             */
             Quaternion getRotation() const;
 
+            /**
+             * @brief Returnsrotation part of dual quaternion as a rotation matrix
+             */
             RotationMatrix getRotationMatrix() const;
 
+            /**
+             * @brief Returns the transformation matrix represented by the dual quaternion (only works with rotation first)
+             */
             Transform getTransform(bool p_rotationFirst=true) const;
+
+            /**
+             * @brief Returns the exponential of a quaternion
+             */
+            static Quaternion quaternionExp(const Eigen::Quaternion<Scalar>& p_quaternion);
+
+            /**
+             * @brief Returns the exponential of a dual quaternion
+             */
+            DualQuaternion exp() const;
             
         private:
             Quaternion m_realPart;
             Quaternion m_dualPart;
             bool m_isUnit = false;
+            
+            
     };
 }
 
