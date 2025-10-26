@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "dualq_kinematics/DualQuaternion.h"
+#include <chrono>
 
 using DualQuaternion = dualq_kinematics::DualQuaternion<double>;
 const double l_tolerance = 1e-6;
@@ -169,11 +170,51 @@ TEST(dualq_kinematics, getterTest)
     EXPECT_TRUE(l_transform.linear().isApprox(l_angleAxisDQ.getRotationMatrix(), l_tolerance)) << "getRotationMatrix() out of dualq fails";
 }
 
-TEST(dualq_kinematics, quaternionExpTest){
+TEST(dualq_kinematics, quaternionExpTest)
+{
     const Eigen::Quaterniond l_quat(1.0, 1.0, 0.0, 0.0);
     const Eigen::Quaterniond l_test = dualq_kinematics::quaternionExp(l_quat);
     const Eigen::Quaterniond l_expected(exp(1)*cos(1), 1.0*sin(1), 0, 0);
     EXPECT_TRUE(l_expected.isApprox(l_test, l_tolerance)) << "Quaternion exponential fails";
+}
+
+TEST(dualq_kinematics, exponentialTest)
+{
+    using Translation = Eigen::Translation<double, 3>;
+    const double l_1 = 0.4;
+    const double l_2 = 1.12;
+    const double l_3 = 1.76;
+    const double l_4 = 2.1;
+    std::array<DualQuaternion, 7> l_joints = {
+        DualQuaternion(Translation(0.0, 0.0, 1.0), Translation(0.0, 0.0, 0.0)),
+        DualQuaternion(Translation(0.0, 1.0, 0.0), Translation(0.0, 0.0, l_1)),
+        DualQuaternion(Translation(0.0, 0.0, 1.0), Translation(0.0, 0.0, l_1)),
+        DualQuaternion(Translation(0.0, 1.0, 0.0), Translation(0.0, 0.0, l_2)),
+        DualQuaternion(Translation(0.0, 0.0, 1.0), Translation(0.0, 0.0, l_2)),
+        DualQuaternion(Translation(0.0, 1.0, 0.0), Translation(0.0, 0.0, l_3)),
+        DualQuaternion(Translation(0.0, 0.0, 1.0), Translation(0.0, 0.0, l_3))
+    };
+    DualQuaternion l_ee(Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0), Translation(0.0, 0.0, l_4));
+
+    std::array<double, 7> l_jointValues = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+    auto l_start = std::chrono::high_resolution_clock::now();
+    for (size_t i = 0; i < l_joints.size(); i++)
+    {
+        l_joints.at(i) = l_joints.at(i) * l_jointValues.at(i) * 0.5;
+    }
+    const DualQuaternion l_forwardKinematics = l_joints.at(0).dqExp() * l_joints.at(1).dqExp() * l_joints.at(2).dqExp() * l_joints.at(3).dqExp() * l_joints.at(4).dqExp() * l_joints.at(5).dqExp() * l_joints.at(6).dqExp() * l_ee;
+    auto l_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> l_ms = l_stop - l_start;
+    std::cout << "Forward Kinematics with dual Quaternions took : " << l_ms.count() << " ms" << std::endl;
+    DualQuaternion l_expected(Eigen::Quaterniond(-0.701, -0.000, 0.658, 0.275), Eigen::Quaterniond(-0.519693, -0.0389178, -0.422547, -0.313443));
+    l_forwardKinematics.print();
+    std::cout << " ------ " << std::endl;
+    std::cout << l_forwardKinematics.getTransform().matrix() << std::endl;
+    std::cout << " ------ " << std::endl;
+    std::cout << l_forwardKinematics.getTranslation(true).x() << std::endl;
+    std::cout << l_forwardKinematics.getTranslation(true).y() << std::endl;
+    std::cout << l_forwardKinematics.getTranslation(true).z() << std::endl;
+    EXPECT_TRUE(l_forwardKinematics.isApprox(l_expected, 0.001));
 }
 
 int main(int argc, char ** argv)

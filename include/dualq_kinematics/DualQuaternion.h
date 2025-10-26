@@ -6,6 +6,8 @@
 #include <array>
 #include <optional>
 
+#include <cmath>
+
 namespace dualq_kinematics
 {
 
@@ -151,7 +153,7 @@ namespace dualq_kinematics
             /**
              * @brief Returns the exponential of a dual quaternion
              */
-            DualQuaternion exp() const;
+            DualQuaternion dqExp() const;
             
         private:
             Quaternion m_realPart;

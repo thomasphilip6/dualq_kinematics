@@ -246,10 +246,10 @@ typename DualQuaternion<Scalar>::Quaternion quaternionExp(const Eigen::Quaternio
 }
 
 template<typename Scalar>
-typename DualQuaternion<Scalar>::DualQuaternion DualQuaternion<Scalar>::exp() const
+typename DualQuaternion<Scalar>::DualQuaternion DualQuaternion<Scalar>::dqExp() const
 {
     const Scalar l_psi = m_realPart.vec().norm();
-    const Quaternion l_realPartExp = quaternionExp(m_realPart);
+    const Quaternion l_realPartExp = dualq_kinematics::quaternionExp(m_realPart);
     const Scalar l_gamma = m_realPart.x()*m_dualPart.x() + m_realPart.y()*m_dualPart.y() + m_realPart.z()*m_dualPart.z();
 
     Scalar l_A = 0;
@@ -267,10 +267,10 @@ typename DualQuaternion<Scalar>::DualQuaternion DualQuaternion<Scalar>::exp() co
     }
 
     const Quaternion l_dualPartExp(
-        exp(m_realPart.w())*(-l_A)*l_gamma + exp(m_dualPart.w())*l_realPartExp.w(),
-        exp(m_realPart.w())*(l_A*m_dualPart.x() + l_B*m_realPart.x()*l_gamma) + exp(m_dualPart.w())*l_realPartExp.x(),
-        exp(m_realPart.w())*(l_A*m_dualPart.y() + l_B*m_realPart.y()*l_gamma) + exp(m_dualPart.w())*l_realPartExp.y(),
-        exp(m_realPart.w())*(l_A*m_dualPart.z() + l_B*m_realPart.z()*l_gamma) + exp(m_dualPart.w())*l_realPartExp.z()
+        exp(m_realPart.w())*(-l_A)*l_gamma + m_dualPart.w()*l_realPartExp.w(),
+        exp(m_realPart.w())*(l_A*m_dualPart.x() + l_B*m_realPart.x()*l_gamma) + m_dualPart.w()*l_realPartExp.x(),
+        exp(m_realPart.w())*(l_A*m_dualPart.y() + l_B*m_realPart.y()*l_gamma) + m_dualPart.w()*l_realPartExp.y(),
+        exp(m_realPart.w())*(l_A*m_dualPart.z() + l_B*m_realPart.z()*l_gamma) + m_dualPart.w()*l_realPartExp.z()
     );
     return DualQuaternion(l_realPartExp, l_dualPartExp);
 }
