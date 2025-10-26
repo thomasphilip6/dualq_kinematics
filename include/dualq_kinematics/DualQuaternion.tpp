@@ -1,5 +1,3 @@
-//#include "dualq_kinematics/DualQuaternion.h"
-
 namespace dualq_kinematics
 {
 

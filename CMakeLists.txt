@@ -17,6 +17,10 @@ find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 
+#MoveIt
+find_package(moveit_core REQUIRED)
+find_package(moveit_msgs REQUIRED)
+
 #Eigen
 find_package(Eigen3 REQUIRED)
 
@@ -28,7 +32,12 @@ target_include_directories(${PROJECT_NAME} INTERFACE
   $<INSTALL_INTERFACE:include>
 )
 #target_compile_features(${PROJECT_NAME} PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
-target_link_libraries(${PROJECT_NAME} INTERFACE Eigen3::Eigen)
+target_link_libraries(${PROJECT_NAME} INTERFACE 
+  Eigen3::Eigen
+  rclcpp::rclcpp
+  moveit_core
+  moveit_msgs
+)
 
 install(TARGETS ${PROJECT_NAME}
   EXPORT export_${PROJECT_NAME}
@@ -40,7 +49,12 @@ install(DIRECTORY include/
 )
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
-ament_export_dependencies(Eigen3)
+ament_export_dependencies(
+  rclcpp
+  Eigen3
+  moveit_core
+  moveit_msgs
+)
 
 
 if(BUILD_TESTING)
@@ -59,7 +73,9 @@ if(BUILD_TESTING)
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
   )
-  target_link_libraries(${PROJECT_NAME}_DualQuaternionTest Eigen3::Eigen)
+  target_link_libraries(${PROJECT_NAME}_DualQuaternionTest 
+    ${PROJECT_NAME} 
+  )
 endif()
 
 ament_package()

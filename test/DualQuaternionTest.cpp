@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "dualq_kinematics/DualQuaternion.h"
+#include "dualq_kinematics/ScrewCoordinates.h"
 #include <chrono>
 
 using DualQuaternion = dualq_kinematics::DualQuaternion<double>;
