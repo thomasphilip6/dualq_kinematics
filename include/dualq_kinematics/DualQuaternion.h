@@ -5,6 +5,7 @@
 
 #include <array>
 #include <optional>
+#include <iostream>
 
 #include <cmath>
 

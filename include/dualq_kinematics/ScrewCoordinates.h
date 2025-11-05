@@ -34,7 +34,7 @@ namespace dualq_kinematics
             std::vector<std::string> l_joint;
             Transform l_ee;
             
-    }
-};
+    };
+}
 
 #include "dualq_kinematics/ScrewCoordinates.tpp"

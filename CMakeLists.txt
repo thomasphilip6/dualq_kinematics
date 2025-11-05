@@ -24,24 +24,30 @@ find_package(moveit_msgs REQUIRED)
 #Eigen
 find_package(Eigen3 REQUIRED)
 
-#Add here executables for non-test builds,dependencies linking and includes
-#For now, project is a library with no executables
-add_library(${PROJECT_NAME} INTERFACE)
-target_include_directories(${PROJECT_NAME} INTERFACE
+
+add_library(${PROJECT_NAME} SHARED
+  src/dualq_kinematics_demo.cpp
+)
+target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
-#target_compile_features(${PROJECT_NAME} PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
-target_link_libraries(${PROJECT_NAME} INTERFACE 
-  Eigen3::Eigen
-  rclcpp::rclcpp
-  moveit_core
-  moveit_msgs
+
+ament_target_dependencies(${PROJECT_NAME}
+  PUBLIC
+    rclcpp
+    moveit_core
+    moveit_msgs
+    pluginlib
+    Eigen3
 )
 
 install(TARGETS ${PROJECT_NAME}
   EXPORT export_${PROJECT_NAME}
-  DESTINATION lib/${PROJECT_NAME}
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include
 )
 
 install(DIRECTORY include/
