@@ -12,6 +12,8 @@
 #include <array>
 #include <string>
 #include <optional>
+#include <vector>
+#include <map>
 
 #include <cmath>
 
@@ -29,9 +31,9 @@ namespace dualq_kinematics
             ScrewCoordinates(const moveit::core::RobotModel& robot_model);
         
         private:
-            std::vector<Translation> l_screwAxis;
-            std::vector<Translation> l_positions;
-            std::vector<std::string> l_joint;
+            std::vector<Translation> m_screwAxis;
+            std::vector<Translation> m_positions;
+            std::vector<std::string> m_joints;
             Transform l_ee;
             
     };
