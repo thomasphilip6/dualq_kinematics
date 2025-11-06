@@ -20,6 +20,29 @@ ScrewCoordinates<Scalar>::ScrewCoordinates(const moveit::core::RobotModel& robot
         l_joints2Parent.at(i) = l_urdf->getJoint(m_joints.at(i))->parent_to_joint_origin_transform;
     }
     
+}
+
+template<typename Scalar>
+void ScrewCoordinates<Scalar>::transformToScrewCoordinates(std::vector<urdf::Pose>& p_jnt2ParentPoses)
+{
+    std::vector<Transform> l_jnt2ParentTransforms;
+    l_jnt2ParentTransforms.reserve(p_jnt2ParentPoses.size());
+    for (size_t i = 0; i < p_jnt2ParentPoses.size(); i++)
+    {
+        auto const l_jnt2ParentQuat = [](std::vector<urdf::Pose>& p_jnt2ParentPoses, size_t i){
+            Quaternion l_quaternion;
+            p_jnt2ParentPoses.at(i).rotation.getQuaternion(l_quaternion.x(), l_quaternion.y(), l_quaternion.z(), l_quaternion.w());
+            return l_quaternion;
+        };
+        const Translation l_jnt2ParentTrans(p_jnt2ParentPoses.at(i).position.x(), p_jnt2ParentPoses.at(i).position.y(), p_jnt2ParentPoses.at(i).position.z());
+        
+        l_jnt2ParentTransforms.at(i) = [](const Quaternion l_jnt2ParentQuat, const Translation l_jnt2ParentTrans){
+            Transform l_transform = Transform::Identity();
+            l_transform.linear() = l_jnt2ParentQuat.toRotationMatrix();
+            l_transform.translation() = l_jnt2ParentTrans;
+            return l_transform;
+        };
+    }
     
 }
 

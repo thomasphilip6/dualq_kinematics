@@ -27,6 +27,7 @@ namespace dualq_kinematics
 
             using Translation = Eigen::Translation<Scalar, 3>;
             using Transform = Eigen::Transform<Scalar,3, Eigen::Isometry>;
+            using Quaternion = Eigen::Quaternion<Scalar>;
 
             ScrewCoordinates(const moveit::core::RobotModel& robot_model);
         
@@ -35,6 +36,8 @@ namespace dualq_kinematics
             std::vector<Translation> m_positions;
             std::vector<std::string> m_joints;
             Transform l_ee;
+
+            void transformToScrewCoordinates(std::vector<urdf::Pose>& p_jnt2ParentPoses);
             
     };
 }
