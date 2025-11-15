@@ -1,0 +1,43 @@
+#include <gtest/gtest.h>
+#include "dualq_kinematics/DualQuaternion.h"
+#include "dualq_kinematics/ScrewCoordinates.h"
+
+//ROS2
+#include <pluginlib/class_loader.hpp>
+#include <rclcpp/rclcpp.hpp>
+
+// MoveIt
+#include <moveit/kinematics_base/kinematics_base.h>
+#include <moveit/rdf_loader/rdf_loader.h>
+#include <moveit/robot_model_loader/robot_model_loader.h>
+
+const std::string ROBOT_DESCRIPTION_PARAM = "robot_description";
+static const rclcpp::Logger LOGGER = rclcpp::get_logger("ScrewCoordinatesTest");
+
+using ScrewCoordinates = dualq_kinematics::ScrewCoordinates<double>;
+
+TEST(dualq_kinematics, ScrewCoordinatesConstructionTest)
+{
+    rclcpp::init(0, nullptr);
+    auto const node = std::make_shared<rclcpp::Node>(
+        "ScrewCoordinates_test",
+        rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)
+    );
+
+    RCLCPP_INFO_STREAM(LOGGER, "Loading robot model from " << node->get_name() << "." << ROBOT_DESCRIPTION_PARAM);
+    rdf_loader::RDFLoader rdf_loader(node, ROBOT_DESCRIPTION_PARAM);
+    moveit::core::RobotModelPtr l_robotModel = std::make_shared<moveit::core::RobotModel>(rdf_loader.getURDF(), rdf_loader.getSRDF());
+    const moveit::core::RobotModel l_model = *l_robotModel.get();
+    ASSERT_TRUE(bool(l_robotModel)) << "Failed to load robot model";
+
+    //Test construction 
+    ScrewCoordinates l_screwCoord(l_model);
+
+    rclcpp::shutdown();
+} 
+
+int main(int argc, char ** argv)
+{
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}

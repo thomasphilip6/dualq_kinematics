@@ -30,12 +30,17 @@ namespace dualq_kinematics
             using Quaternion = Eigen::Quaternion<Scalar>;
 
             ScrewCoordinates(const moveit::core::RobotModel& robot_model);
-        
+
+            const std::vector<Translation>& getScrewAxes() const;
+            const std::vector<Translation>& getPositions() const;
+            const std::vector<std::string>& getJointsNames() const;
+            const Transform& getLastJnt2EE() const;
+
         private:
-            std::vector<Translation> m_screwAxis;
+            std::vector<Translation> m_screwAxes;
             std::vector<Translation> m_positions;
             std::vector<std::string> m_joints;
-            Transform l_ee;
+            Transform m_ee;
 
             void transformToScrewCoordinates(std::vector<urdf::Pose>& p_jnt2ParentPoses);
             

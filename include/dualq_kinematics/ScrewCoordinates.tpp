@@ -23,6 +23,30 @@ ScrewCoordinates<Scalar>::ScrewCoordinates(const moveit::core::RobotModel& robot
 }
 
 template<typename Scalar>
+const typename std::vector< typename ScrewCoordinates<Scalar>::Translation >& ScrewCoordinates<Scalar>::getScrewAxes() const
+{
+    return m_screwAxes;
+}
+
+template<typename Scalar>
+const  std::vector< typename ScrewCoordinates<Scalar>::Translation >& ScrewCoordinates<Scalar>::getPositions() const
+{
+    return m_positions;
+}
+
+template<typename Scalar>
+const std::vector<std::string>& ScrewCoordinates<Scalar>::getJointsNames() const
+{
+    return m_joints;
+}
+
+template<typename Scalar>
+const typename ScrewCoordinates<Scalar>::Transform& ScrewCoordinates<Scalar>::getLastJnt2EE() const
+{
+    return m_ee;
+}
+
+template<typename Scalar>
 void ScrewCoordinates<Scalar>::transformToScrewCoordinates(std::vector<urdf::Pose>& p_jnt2ParentPoses)
 {
     std::vector<Transform> l_jnt2ParentTransforms;
@@ -44,6 +68,8 @@ void ScrewCoordinates<Scalar>::transformToScrewCoordinates(std::vector<urdf::Pos
         };
     }
     
+    std::vector<Transform> l_jnt2Base;
+    l_jnt2ParentTransforms.reserve(p_jnt2ParentPoses.size());
 }
 
 };
