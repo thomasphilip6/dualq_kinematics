@@ -20,6 +20,7 @@ find_package(std_msgs REQUIRED)
 #MoveIt
 find_package(moveit_core REQUIRED)
 find_package(moveit_msgs REQUIRED)
+find_package(moveit_ros_planning REQUIRED)
 
 #Eigen
 find_package(Eigen3 REQUIRED)
@@ -38,6 +39,7 @@ ament_target_dependencies(${PROJECT_NAME}
     rclcpp
     moveit_core
     moveit_msgs
+    moveit_ros_planning
     pluginlib
     Eigen3
 )
@@ -60,6 +62,7 @@ ament_export_dependencies(
   Eigen3
   moveit_core
   moveit_msgs
+  moveit_ros_planning
 )
 
 
@@ -74,6 +77,8 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
   find_package(ament_cmake_gtest REQUIRED)
+
+  #First DualQuaternionTest
   ament_add_gtest(${PROJECT_NAME}_DualQuaternionTest test/DualQuaternionTest.cpp)
   target_include_directories(${PROJECT_NAME}_DualQuaternionTest PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -82,6 +87,30 @@ if(BUILD_TESTING)
   target_link_libraries(${PROJECT_NAME}_DualQuaternionTest 
     ${PROJECT_NAME} 
   )
+
+  #Second ScrewCoordinatesTest
+  ament_add_gtest(${PROJECT_NAME}_ScrewCoordinatesTest test/ScrewCoordinatesTest.cpp)
+  target_include_directories(${PROJECT_NAME}_ScrewCoordinatesTest PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+  )
+  target_link_libraries(${PROJECT_NAME}_ScrewCoordinatesTest 
+    ${PROJECT_NAME} 
+  )
+
+  #Integration Tests
+  find_package(moveit_resources_panda_description REQUIRED)
+  find_package(moveit_resources_panda_moveit_config REQUIRED)
+  find_package(ament_cmake_ros REQUIRED)
+  find_package(launch_testing_ament_cmake REQUIRED)
+  function(add_ros_isolated_launch_test path)
+    set(RUNNER "${ament_cmake_ros_DIR}/run_test_isolated.py")
+    add_launch_test("${path}" RUNNER "${RUNNER}" ${ARGN})
+  endfunction()
+  add_ros_isolated_launch_test(test/launch/ScrewCoordinates.test.py)
+
+  install(TARGETS ${PROJECT_NAME}_ScrewCoordinatesTest DESTINATION lib/${PROJECT_NAME})
+
 endif()
 
 ament_package()
