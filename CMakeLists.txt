@@ -88,8 +88,8 @@ if(BUILD_TESTING)
     ${PROJECT_NAME} 
   )
 
-  #Second ScrewCoordinatesTest
-  ament_add_gtest(${PROJECT_NAME}_ScrewCoordinatesTest test/ScrewCoordinatesTest.cpp)
+  #Second ScrewCoordinatesTest, only used in an integration test context only
+  ament_add_gtest_executable(${PROJECT_NAME}_ScrewCoordinatesTest  test/ScrewCoordinatesTest.cpp)
   target_include_directories(${PROJECT_NAME}_ScrewCoordinatesTest PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
