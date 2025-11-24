@@ -33,6 +33,15 @@ TEST(dualq_kinematics, ScrewCoordinatesConstructionTest)
     //Test construction 
     ScrewCoordinates l_screwCoord(l_model);
 
+    //Test if vector sizes matches number of DOF
+    auto l_positions = l_screwCoord.getPositions();
+    auto l_screwAxes = l_screwCoord.getScrewAxes();
+    auto l_jointNames = l_screwCoord.getJointsNames();
+    EXPECT_EQ(l_positions.size(), 7) << "DOF number and position vector size differ";
+    EXPECT_EQ(l_screwAxes.size(), 7) << "DOF number and screwAxes vector size differ";
+    EXPECT_EQ(l_jointNames.size(), 7) << "DOF number and jointNames vector size differ";
+    RCLCPP_INFO_STREAM(LOGGER, "Screw Coordinates Constructed, number of Joints :  " << l_positions.size());
+
     rclcpp::shutdown();
 } 
 

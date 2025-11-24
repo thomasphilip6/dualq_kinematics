@@ -22,6 +22,7 @@ ScrewCoordinates<Scalar>::ScrewCoordinates(const moveit::core::RobotModel& robot
     m_screwAxes.reserve(l_jointsNumber);
     m_positions.reserve(l_jointsNumber);
     m_joints.reserve(l_jointsNumber);
+    transformToScrewCoordinates(l_joints2Parent);
     
 }
 
@@ -56,19 +57,17 @@ void ScrewCoordinates<Scalar>::transformToScrewCoordinates(std::vector<urdf::Pos
     l_jnt2ParentTransforms.reserve(p_jnt2ParentPoses.size());
     for (size_t i = 0; i < p_jnt2ParentPoses.size(); i++)
     {
-        auto const l_jnt2ParentQuat = [](std::vector<urdf::Pose>& p_jnt2ParentPoses, size_t i){
+        auto const l_jnt2ParentQuat = [&]{
             Quaternion l_quaternion;
             p_jnt2ParentPoses.at(i).rotation.getQuaternion(l_quaternion.x(), l_quaternion.y(), l_quaternion.z(), l_quaternion.w());
             return l_quaternion;
-        };
-        const Translation l_jnt2ParentTrans(p_jnt2ParentPoses.at(i).position.x(), p_jnt2ParentPoses.at(i).position.y(), p_jnt2ParentPoses.at(i).position.z());
-        
-        l_jnt2ParentTransforms.at(i) = [](const Quaternion l_jnt2ParentQuat, const Translation l_jnt2ParentTrans){
-            Transform l_transform = Transform::Identity();
-            l_transform.linear() = l_jnt2ParentQuat.toRotationMatrix();
-            l_transform.translation() = l_jnt2ParentTrans;
-            return l_transform;
-        };
+        }();
+
+        Translation l_jnt2ParentTrans(p_jnt2ParentPoses.at(i).position.x, p_jnt2ParentPoses.at(i).position.y, p_jnt2ParentPoses.at(i).position.z);
+        Transform l_transform = Transform::Identity();
+        l_transform.linear() = l_jnt2ParentQuat.toRotationMatrix();
+        l_transform.translation() = l_jnt2ParentTrans.vector();
+        l_jnt2ParentTransforms.at(i) = l_transform;
     }
     
     std::vector<Transform> l_jnt2Base;
@@ -78,11 +77,15 @@ void ScrewCoordinates<Scalar>::transformToScrewCoordinates(std::vector<urdf::Pos
         Transform l_transform = Transform::Identity();
         for (size_t j = 0; j < i; j++)
         {
-            l_transform = l_transform = l_jnt2ParentTransforms.at(j);
+            l_transform = l_transform * l_jnt2ParentTransforms.at(j);
         }
         l_jnt2Base.at(i) = l_transform;  
-        //screx Axis is z vector in Base frame
 
+        //Screw Axis is z vector in Base frame
+        m_screwAxes.at(i) = Eigen::Translation<Scalar,3>( l_transform.rotation().col(2) );
+
+        //Position on the screw axis is for example the translation from Base to Joint i
+        m_positions.at(i) = Eigen::Translation<Scalar,3>( l_transform.translation().col(3) );
     }
     
 }
