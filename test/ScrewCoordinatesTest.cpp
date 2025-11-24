@@ -11,6 +11,8 @@
 #include <moveit/rdf_loader/rdf_loader.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
 
+#include <moveit/utils/robot_model_test_utils.h>
+
 const std::string ROBOT_DESCRIPTION_PARAM = "robot_description";
 static const rclcpp::Logger LOGGER = rclcpp::get_logger("ScrewCoordinatesTest");
 
@@ -25,12 +27,14 @@ TEST(dualq_kinematics, ScrewCoordinatesConstructionTest)
     );
 
     RCLCPP_INFO_STREAM(LOGGER, "Loading robot model from " << node->get_name() << "." << ROBOT_DESCRIPTION_PARAM);
+    std::cout << "Retrieving Robot Model" << std::endl;
     rdf_loader::RDFLoader rdf_loader(node, ROBOT_DESCRIPTION_PARAM);
     moveit::core::RobotModelPtr l_robotModel = std::make_shared<moveit::core::RobotModel>(rdf_loader.getURDF(), rdf_loader.getSRDF());
     const moveit::core::RobotModel l_model = *l_robotModel.get();
     ASSERT_TRUE(bool(l_robotModel)) << "Failed to load robot model";
 
     //Test construction 
+    std::cout << "Trying Screw Coordinates Construction" << std::endl;
     ScrewCoordinates l_screwCoord(l_model);
 
     //Test if vector sizes matches number of DOF
@@ -48,5 +52,7 @@ TEST(dualq_kinematics, ScrewCoordinatesConstructionTest)
 int main(int argc, char ** argv)
 {
     testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+    rclcpp::init(argc, argv);
+    int result = RUN_ALL_TESTS();
+    return result;
 }
