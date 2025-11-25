@@ -38,9 +38,10 @@ def generate_test_description():
 
             #Launch tests 0.5s later
             # launch.actions.TimerAction(
-            #     period=0.5, actions=[launch_testing.actions.ReadyToTest()]),
+            #      period=0.5, actions=[launch_testing.actions.ReadyToTest()]),
             
-        ]),{"ScrewCoordinates" : screw_coordinates_node}
+        ]),
+        {"screw_coordinates_node": screw_coordinates_node},
     )
 
 

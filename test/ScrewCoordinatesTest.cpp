@@ -20,7 +20,6 @@ using ScrewCoordinates = dualq_kinematics::ScrewCoordinates<double>;
 
 TEST(dualq_kinematics, ScrewCoordinatesConstructionTest)
 {
-    rclcpp::init(0, nullptr);
     auto const node = std::make_shared<rclcpp::Node>(
         "ScrewCoordinates_test",
         rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)
@@ -31,6 +30,7 @@ TEST(dualq_kinematics, ScrewCoordinatesConstructionTest)
     rdf_loader::RDFLoader rdf_loader(node, ROBOT_DESCRIPTION_PARAM);
     moveit::core::RobotModelPtr l_robotModel = std::make_shared<moveit::core::RobotModel>(rdf_loader.getURDF(), rdf_loader.getSRDF());
     const moveit::core::RobotModel l_model = *l_robotModel.get();
+    RCLCPP_INFO_STREAM(LOGGER, "Robot Model ready to by passed to ScrewCoordinates ");
     ASSERT_TRUE(bool(l_robotModel)) << "Failed to load robot model";
 
     //Test construction 
@@ -45,8 +45,6 @@ TEST(dualq_kinematics, ScrewCoordinatesConstructionTest)
     EXPECT_EQ(l_screwAxes.size(), 7) << "DOF number and screwAxes vector size differ";
     EXPECT_EQ(l_jointNames.size(), 7) << "DOF number and jointNames vector size differ";
     RCLCPP_INFO_STREAM(LOGGER, "Screw Coordinates Constructed, number of Joints :  " << l_positions.size());
-
-    rclcpp::shutdown();
 } 
 
 int main(int argc, char ** argv)
