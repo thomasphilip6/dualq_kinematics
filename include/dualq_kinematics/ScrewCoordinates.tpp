@@ -5,7 +5,7 @@ template<typename Scalar>
 ScrewCoordinates<Scalar>::ScrewCoordinates(const moveit::core::RobotModel& robot_model)
 {
     const urdf::ModelInterfaceSharedPtr l_urdf = robot_model.getURDF();
-    const size_t l_jointsNumber = l_urdf->getRoot()->child_links.size();
+    const size_t l_jointsNumber = l_urdf.get()->getRoot().get()->child_links.size();
     //todo compare size of child_links and joints
     std::map<std::string, urdf::JointSharedPtr> l_jointMap = l_urdf->joints_;
     for (auto it = l_jointMap.begin(); it != l_jointMap.end(); ++it)
@@ -14,14 +14,14 @@ ScrewCoordinates<Scalar>::ScrewCoordinates(const moveit::core::RobotModel& robot
     }
 
     std::vector<urdf::Pose> l_joints2Parent;
-    l_joints2Parent.reserve(l_jointsNumber);
+    l_joints2Parent.resize(l_jointsNumber);
     for (size_t i = 0; i < l_jointsNumber; i++)
     {
         l_joints2Parent.at(i) = l_urdf->getJoint(m_joints.at(i))->parent_to_joint_origin_transform;
     }
-    m_screwAxes.reserve(l_jointsNumber);
-    m_positions.reserve(l_jointsNumber);
-    m_joints.reserve(l_jointsNumber);
+    m_screwAxes.resize(l_jointsNumber);
+    m_positions.resize(l_jointsNumber);
+    m_joints.resize(l_jointsNumber);
     transformToScrewCoordinates(l_joints2Parent);
     
 }
@@ -54,7 +54,7 @@ template<typename Scalar>
 void ScrewCoordinates<Scalar>::transformToScrewCoordinates(std::vector<urdf::Pose>& p_jnt2ParentPoses)
 {
     std::vector<Transform> l_jnt2ParentTransforms;
-    l_jnt2ParentTransforms.reserve(p_jnt2ParentPoses.size());
+    l_jnt2ParentTransforms.resize(p_jnt2ParentPoses.size());
     for (size_t i = 0; i < p_jnt2ParentPoses.size(); i++)
     {
         auto const l_jnt2ParentQuat = [&]{
@@ -71,11 +71,11 @@ void ScrewCoordinates<Scalar>::transformToScrewCoordinates(std::vector<urdf::Pos
     }
     
     std::vector<Transform> l_jnt2Base;
-    l_jnt2Base.reserve(p_jnt2ParentPoses.size());
+    l_jnt2Base.resize(p_jnt2ParentPoses.size());
     for (size_t i = 0; i < p_jnt2ParentPoses.size(); i++)
     {
         Transform l_transform = Transform::Identity();
-        for (size_t j = 0; j < i; j++)
+        for (size_t j = 0; j <= i; j++)
         {
             l_transform = l_transform * l_jnt2ParentTransforms.at(j);
         }
@@ -85,9 +85,9 @@ void ScrewCoordinates<Scalar>::transformToScrewCoordinates(std::vector<urdf::Pos
         m_screwAxes.at(i) = Eigen::Translation<Scalar,3>( l_transform.rotation().col(2) );
 
         //Position on the screw axis is for example the translation from Base to Joint i
-        m_positions.at(i) = Eigen::Translation<Scalar,3>( l_transform.translation().col(3) );
+        m_positions.at(i) = Eigen::Translation<Scalar,3>( l_transform.translation() );
     }
     
 }
 
-};
+}

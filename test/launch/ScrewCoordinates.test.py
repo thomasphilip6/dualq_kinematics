@@ -17,6 +17,7 @@ def generate_test_description():
         MoveItConfigsBuilder("moveit_resources_panda")
         .robot_description(file_path="config/panda.urdf.xacro")
         .to_moveit_configs()
+        #Todo add kinematic config
     )
 
     screw_coordinates_node =  launch_ros.actions.Node(

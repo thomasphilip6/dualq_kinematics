@@ -33,6 +33,16 @@ TEST(dualq_kinematics, ScrewCoordinatesConstructionTest)
     RCLCPP_INFO_STREAM(LOGGER, "Robot Model ready to by passed to ScrewCoordinates ");
     ASSERT_TRUE(bool(l_robotModel)) << "Failed to load robot model";
 
+    //Simple debug try-outs
+    const urdf::ModelInterfaceSharedPtr l_urdf = l_model.getURDF();
+    const size_t l_jointsNumber = l_urdf.get()->getRoot().get()->child_links.size();
+    RCLCPP_INFO_STREAM(LOGGER, "RobotModel has  :  " << l_model.getActiveJointModels().size() << " active joints");
+    RCLCPP_INFO_STREAM(LOGGER, "URDF has  :  " << l_robotModel->getURDF()->getRoot()->child_links.size() << " child links");
+
+    //This highlights that kinematic config is missing
+    robot_model_loader::RobotModelLoader loader(node);
+    RCLCPP_INFO_STREAM(LOGGER, "URDF has  :  " << loader.getModel()->getURDF()->getRoot()->child_links.size() << " child links");
+
     //Test construction 
     std::cout << "Trying Screw Coordinates Construction" << std::endl;
     ScrewCoordinates l_screwCoord(l_model);
