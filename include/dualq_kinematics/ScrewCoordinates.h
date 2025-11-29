@@ -42,6 +42,7 @@ namespace dualq_kinematics
             std::vector<std::string> m_joints;
             Transform m_ee;
 
+            std::map<std::string, urdf::JointSharedPtr> retrieveKinChainJoints(const moveit::core::RobotModel& p_robotModel);
             void transformToScrewCoordinates(std::vector<urdf::Pose>& p_jnt2ParentPoses);
             
     };

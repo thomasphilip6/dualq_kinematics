@@ -5,9 +5,8 @@ template<typename Scalar>
 ScrewCoordinates<Scalar>::ScrewCoordinates(const moveit::core::RobotModel& robot_model)
 {
     const urdf::ModelInterfaceSharedPtr l_urdf = robot_model.getURDF();
-    const size_t l_jointsNumber = l_urdf.get()->getRoot().get()->child_links.size();
-    //todo compare size of child_links and joints
-    std::map<std::string, urdf::JointSharedPtr> l_jointMap = l_urdf->joints_;
+    std::map<std::string, urdf::JointSharedPtr> l_jointMap = retrieveKinChainJoints(robot_model);
+    const size_t l_jointsNumber = l_jointMap.size();
     for (auto it = l_jointMap.begin(); it != l_jointMap.end(); ++it)
     {
         m_joints.push_back(it->first);
@@ -21,8 +20,7 @@ ScrewCoordinates<Scalar>::ScrewCoordinates(const moveit::core::RobotModel& robot
     }
     m_screwAxes.resize(l_jointsNumber);
     m_positions.resize(l_jointsNumber);
-    m_joints.resize(l_jointsNumber);
-    transformToScrewCoordinates(l_joints2Parent);
+    //transformToScrewCoordinates(l_joints2Parent);
     
 }
 
@@ -48,6 +46,50 @@ template<typename Scalar>
 const typename ScrewCoordinates<Scalar>::Transform& ScrewCoordinates<Scalar>::getLastJnt2EE() const
 {
     return m_ee;
+}
+
+
+template<typename Scalar>
+std::map<std::string, urdf::JointSharedPtr> ScrewCoordinates<Scalar>::retrieveKinChainJoints(const moveit::core::RobotModel& p_robotModel){
+    const auto& l_initialJoints = p_robotModel.getURDF()->joints_;
+    std::map<std::string, urdf::JointSharedPtr> l_finalJoints;
+
+    std::vector<std::string> l_eeJoints;
+    for (size_t j=0; j < p_robotModel.getEndEffectors().size(); j++)
+    {
+        for (size_t i = 0; i < p_robotModel.getEndEffectors().at(j)->getJointModels().size(); i++)
+        {
+            l_eeJoints.push_back(p_robotModel.getEndEffectors().at(j)->getJointModels().at(i)->getName());
+        }
+    }
+    std::unordered_set<std::string> l_eeSet(l_eeJoints.begin(), l_eeJoints.end());
+
+    for (auto it = l_initialJoints.begin(); it != l_initialJoints.end(); ++it)
+    {
+        bool l_isValid = true;
+        switch (it->second->type)
+        {
+        case urdf::Joint::FIXED:
+            l_isValid = false;
+            break;
+        case urdf::Joint::FLOATING:
+            l_isValid = false;
+            break;
+        case urdf::Joint::UNKNOWN:
+            l_isValid = false;
+            break;
+        default:
+            l_isValid = true;
+            break;
+        }
+
+        if(l_isValid && (l_eeSet.count(it->first) == 0))
+        {
+            l_finalJoints.emplace(it->first, it->second);
+        }
+    }
+
+    return l_finalJoints;
 }
 
 template<typename Scalar>

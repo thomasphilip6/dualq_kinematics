@@ -9,23 +9,26 @@ from launch_testing.util import KeepAliveProc
 import rclpy
 
 from moveit_configs_utils import MoveItConfigsBuilder
+from launch_param_builder import ParameterBuilder
 
 @pytest.mark.rostest
 def generate_test_description():
     #todo change panda to a launch argument
     moveit_config = (
-        MoveItConfigsBuilder("moveit_resources_panda")
-        .robot_description(file_path="config/panda.urdf.xacro")
-        .to_moveit_configs()
-        #Todo add kinematic config
+        MoveItConfigsBuilder("moveit_resources_panda").to_dict()
+    )
+    test_param = (
+        ParameterBuilder("dualq_kinematics")
+        .yaml("config/panda-dualq-test.yaml")
+        .to_dict()
     )
 
     screw_coordinates_node =  launch_ros.actions.Node(
                 package="dualq_kinematics",
                 executable="dualq_kinematics_ScrewCoordinatesTest",
                 parameters=[
-                    moveit_config.robot_description,
-                    moveit_config.robot_description_semantic
+                    moveit_config,
+                    test_param,
                 ],
     )
 

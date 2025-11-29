@@ -110,6 +110,7 @@ if(BUILD_TESTING)
   add_ros_isolated_launch_test(test/launch/ScrewCoordinates.test.py)
 
   install(TARGETS ${PROJECT_NAME}_ScrewCoordinatesTest DESTINATION lib/${PROJECT_NAME})
+  install(DIRECTORY test/config DESTINATION share/${PROJECT_NAME})
 
 endif()
 
