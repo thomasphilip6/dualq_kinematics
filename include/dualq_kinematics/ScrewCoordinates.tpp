@@ -2,30 +2,31 @@ namespace dualq_kinematics
 {
 
 template<typename Scalar>
-ScrewCoordinates<Scalar>::ScrewCoordinates(const moveit::core::RobotModel& robot_model)
+ScrewCoordinates<Scalar>::ScrewCoordinates(const moveit::core::RobotModel& p_robotModel, std::string p_tipLinkName)
 {
-    const urdf::ModelInterfaceSharedPtr l_urdf = robot_model.getURDF();
-    std::map<std::string, urdf::JointSharedPtr> l_jointMap = retrieveKinChainJoints(robot_model);
+    m_tipLinkName = p_tipLinkName;
+    const urdf::ModelInterfaceSharedPtr l_urdf = p_robotModel.getURDF();
+    std::map<std::string, urdf::JointSharedPtr> l_jointMap = retrieveKinChainJoints(p_robotModel);
     const size_t l_jointsNumber = l_jointMap.size();
     for (auto it = l_jointMap.begin(); it != l_jointMap.end(); ++it)
     {
-        m_joints.push_back(it->first);
+        m_jointNames.push_back(it->first);
     }
 
     std::vector<urdf::Pose> l_joints2Parent;
     l_joints2Parent.resize(l_jointsNumber);
     for (size_t i = 0; i < l_jointsNumber; i++)
     {
-        l_joints2Parent.at(i) = l_urdf->getJoint(m_joints.at(i))->parent_to_joint_origin_transform;
+        l_joints2Parent.at(i) = l_urdf->getJoint(m_jointNames.at(i))->parent_to_joint_origin_transform;
     }
     m_screwAxes.resize(l_jointsNumber);
     m_positions.resize(l_jointsNumber);
-    //transformToScrewCoordinates(l_joints2Parent);
+    transformToScrewCoordinates(l_joints2Parent, p_robotModel);
     
 }
 
 template<typename Scalar>
-const typename std::vector< typename ScrewCoordinates<Scalar>::Translation >& ScrewCoordinates<Scalar>::getScrewAxes() const
+const std::vector< typename ScrewCoordinates<Scalar>::Translation >& ScrewCoordinates<Scalar>::getScrewAxes() const
 {
     return m_screwAxes;
 }
@@ -39,14 +40,23 @@ const  std::vector< typename ScrewCoordinates<Scalar>::Translation >& ScrewCoord
 template<typename Scalar>
 const std::vector<std::string>& ScrewCoordinates<Scalar>::getJointsNames() const
 {
-    return m_joints;
+    return m_jointNames;
 }
 
 template<typename Scalar>
-const typename ScrewCoordinates<Scalar>::Transform& ScrewCoordinates<Scalar>::getLastJnt2EE() const
+const typename ScrewCoordinates<Scalar>::Transform& ScrewCoordinates<Scalar>::getTip2BaseInit() const
 {
-    return m_ee;
+    return m_tip2BaseInit;
 }
+
+// template<typename Scalar>
+// const std::pair<typename ScrewCoordinates<Scalar>::Quaternion, typename ScrewCoordinates<Scalar>::Translation> ScrewCoordinates<Scalar>::getTip2BaseInit(
+//     const moveit::core::RobotModel& p_robotModel, 
+//     std::string p_tipLinkName) const
+// {
+//     urdf::Pose l_associatedJnt2Parent = p_robotModel.getURDF()->getLink(p_tipLinkName)->parent_joint->parent_to_joint_origin_transform;
+//     //todo change this function to work with any link, to compute FK until joint i
+// }
 
 
 template<typename Scalar>
@@ -93,12 +103,13 @@ std::map<std::string, urdf::JointSharedPtr> ScrewCoordinates<Scalar>::retrieveKi
 }
 
 template<typename Scalar>
-void ScrewCoordinates<Scalar>::transformToScrewCoordinates(std::vector<urdf::Pose>& p_jnt2ParentPoses)
+void ScrewCoordinates<Scalar>::transformToScrewCoordinates(std::vector<urdf::Pose>& p_jnt2ParentPoses, const moveit::core::RobotModel& p_robotModel)
 {
     std::vector<Transform> l_jnt2ParentTransforms;
     l_jnt2ParentTransforms.resize(p_jnt2ParentPoses.size());
     for (size_t i = 0; i < p_jnt2ParentPoses.size(); i++)
     {
+        //todo make a method to transform urdf::Pose to Transform
         auto const l_jnt2ParentQuat = [&]{
             Quaternion l_quaternion;
             p_jnt2ParentPoses.at(i).rotation.getQuaternion(l_quaternion.x(), l_quaternion.y(), l_quaternion.z(), l_quaternion.w());
@@ -129,6 +140,20 @@ void ScrewCoordinates<Scalar>::transformToScrewCoordinates(std::vector<urdf::Pos
         //Position on the screw axis is for example the translation from Base to Joint i
         m_positions.at(i) = Eigen::Translation<Scalar,3>( l_transform.translation() );
     }
+
+    //Deal with tip2BaseInit
+    urdf::Pose l_tip2Parent = p_robotModel.getURDF()->getLink(m_tipLinkName)->parent_joint->parent_to_joint_origin_transform;
+    auto const l_tip2ParentQuat = [l_tip2Parent]{
+        Quaternion l_quaternion;
+        l_tip2Parent.rotation.getQuaternion(l_quaternion.x(), l_quaternion.y(), l_quaternion.z(), l_quaternion.w());
+        return l_quaternion;
+    }();
+    Translation l_tip2ParentTrans(l_tip2Parent.position.x, l_tip2Parent.position.y, l_tip2Parent.position.z);
+    Transform l_tip2ParentTransform = Transform::Identity();
+    l_tip2ParentTransform.linear() = l_tip2ParentQuat.toRotationMatrix();
+    l_tip2ParentTransform.translation() = l_tip2ParentTrans.vector();
+    // only works if parent joint of tip links has the last joint as parent
+    m_tip2BaseInit = l_jnt2Base.back() * l_tip2ParentTransform;
     
 }
 

@@ -29,21 +29,23 @@ namespace dualq_kinematics
             using Transform = Eigen::Transform<Scalar,3, Eigen::Isometry>;
             using Quaternion = Eigen::Quaternion<Scalar>;
 
-            ScrewCoordinates(const moveit::core::RobotModel& robot_model);
+            ScrewCoordinates(const moveit::core::RobotModel& p_robotModel, std::string p_tipLinkName);
 
             const std::vector<Translation>& getScrewAxes() const;
             const std::vector<Translation>& getPositions() const;
             const std::vector<std::string>& getJointsNames() const;
-            const Transform& getLastJnt2EE() const;
+            const Transform& getTip2BaseInit() const;
+            // const std::pair<Quaternion, Translation> getTip2BaseInit(const moveit::core::RobotModel& p_robotModel, std::string p_tipLinkName) const;
 
         private:
             std::vector<Translation> m_screwAxes;
             std::vector<Translation> m_positions;
-            std::vector<std::string> m_joints;
-            Transform m_ee;
-
+            std::vector<std::string> m_jointNames;
+            Transform m_tip2BaseInit;
+            std::string m_tipLinkName;
+            
             std::map<std::string, urdf::JointSharedPtr> retrieveKinChainJoints(const moveit::core::RobotModel& p_robotModel);
-            void transformToScrewCoordinates(std::vector<urdf::Pose>& p_jnt2ParentPoses);
+            void transformToScrewCoordinates(std::vector<urdf::Pose>& p_jnt2ParentPoses, const moveit::core::RobotModel& p_robotModel);
             
     };
 }

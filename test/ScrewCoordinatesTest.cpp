@@ -40,6 +40,20 @@ void printJntNames(std::vector<std::string> p_jntNames)
       
 }
 
+void printScrewInfo(ScrewCoordinates& p_screwCoord)
+{
+    for (auto &&l_axis : p_screwCoord.getScrewAxes())
+    {
+        RCLCPP_INFO_STREAM(LOGGER, "Screw Axis :  [" << l_axis.x() << ", " << l_axis.y() << ", " << l_axis.z() << " ]");
+    }
+
+    for (auto &&l_pos : p_screwCoord.getPositions())
+    {
+        RCLCPP_INFO_STREAM(LOGGER, "Position :  [" << l_pos.x() << ", " << l_pos.y() << ", " << l_pos.z() << " ]");
+    }
+    RCLCPP_INFO_STREAM(LOGGER, "Tip2BaseInit :  [" << p_screwCoord.getTip2BaseInit().matrix() << " ]");
+}
+
 TEST(dualq_kinematics, ScrewCoordinatesConstructionTest)
 {
     auto const node = std::make_shared<rclcpp::Node>(
@@ -60,7 +74,7 @@ TEST(dualq_kinematics, ScrewCoordinatesConstructionTest)
     //robot_model_loader::RobotModelLoader loader(node);
 
     //Test construction 
-    ScrewCoordinates l_screwCoord(*l_robotModel);
+    ScrewCoordinates l_screwCoord(*l_robotModel, "panda_link8");
 
     //Test if vector sizes matches number of DOF
     auto l_positions = l_screwCoord.getPositions();
@@ -71,6 +85,7 @@ TEST(dualq_kinematics, ScrewCoordinatesConstructionTest)
     EXPECT_EQ(l_jointNames.size(), 7) << "DOF number and jointNames vector size differ";
     RCLCPP_INFO_STREAM(LOGGER, "Screw Coordinates Constructed, number of Joints :  " << l_positions.size());
     printJntNames(l_jointNames);
+    printScrewInfo(l_screwCoord);
 } 
 
 int main(int argc, char ** argv)
