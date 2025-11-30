@@ -26,10 +26,13 @@ def generate_test_description():
     screw_coordinates_node =  launch_ros.actions.Node(
                 package="dualq_kinematics",
                 executable="dualq_kinematics_ScrewCoordinatesTest",
+                #Uncomment following line to debug with gdb
+                #prefix=['gdb -ex run --args'],
                 parameters=[
                     moveit_config,
                     test_param,
                 ],
+                output="screen",
     )
 
     return (

@@ -16,6 +16,7 @@
 //C++
 #include <map>
 #include <string>
+#include <memory>
 
 const std::string ROBOT_DESCRIPTION_PARAM = "robot_description";
 static const rclcpp::Logger LOGGER = rclcpp::get_logger("ScrewCoordinatesTest");
@@ -50,7 +51,7 @@ TEST(dualq_kinematics, ScrewCoordinatesConstructionTest)
     std::cout << "Retrieving Robot Model" << std::endl;
     rdf_loader::RDFLoader rdf_loader(node, ROBOT_DESCRIPTION_PARAM);
     moveit::core::RobotModelPtr l_robotModel = std::make_shared<moveit::core::RobotModel>(rdf_loader.getURDF(), rdf_loader.getSRDF());
-    const moveit::core::RobotModel l_model = *l_robotModel.get();
+    //const moveit::core::RobotModel l_model = *l_robotModel.get();
     RCLCPP_INFO_STREAM(LOGGER, "Robot Model ready to by passed to ScrewCoordinates ");
     ASSERT_TRUE(bool(l_robotModel)) << "Failed to load robot model";
     //printJointsInfo(l_robotModel);
@@ -59,7 +60,7 @@ TEST(dualq_kinematics, ScrewCoordinatesConstructionTest)
     //robot_model_loader::RobotModelLoader loader(node);
 
     //Test construction 
-    ScrewCoordinates l_screwCoord(l_model);
+    ScrewCoordinates l_screwCoord(*l_robotModel);
 
     //Test if vector sizes matches number of DOF
     auto l_positions = l_screwCoord.getPositions();
