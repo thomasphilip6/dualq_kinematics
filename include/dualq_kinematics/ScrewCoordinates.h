@@ -19,7 +19,7 @@
 
 namespace dualq_kinematics
 {
-    
+    //todo add Doxygen comments
     template<typename Scalar>
     class ScrewCoordinates 
     {
