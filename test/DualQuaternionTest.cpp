@@ -4,7 +4,7 @@
 #include <chrono>
 
 using DualQuaternion = dualq_kinematics::DualQuaternion<double>;
-const double l_tolerance = 1e-6;
+constexpr double l_tolerance = 1e-6;
 
 TEST(dualq_kinematics, ConstructionTest)
 {

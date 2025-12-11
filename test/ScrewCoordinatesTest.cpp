@@ -18,6 +18,9 @@
 #include <string>
 #include <memory>
 
+constexpr uint8_t c_dofNumberPanda = 7;
+constexpr double c_tolerance = 1e-3;
+
 const std::string ROBOT_DESCRIPTION_PARAM = "robot_description";
 static const rclcpp::Logger LOGGER = rclcpp::get_logger("ScrewCoordinatesTest");
 
@@ -80,12 +83,62 @@ TEST(dualq_kinematics, ScrewCoordinatesConstructionTest)
     auto l_positions = l_screwCoord.getPositions();
     auto l_screwAxes = l_screwCoord.getScrewAxes();
     auto l_jointNames = l_screwCoord.getJointsNames();
-    EXPECT_EQ(l_positions.size(), 7) << "DOF number and position vector size differ";
-    EXPECT_EQ(l_screwAxes.size(), 7) << "DOF number and screwAxes vector size differ";
-    EXPECT_EQ(l_jointNames.size(), 7) << "DOF number and jointNames vector size differ";
+    EXPECT_EQ(l_positions.size(), c_dofNumberPanda) << "DOF number and position vector size differ";
+    EXPECT_EQ(l_screwAxes.size(), c_dofNumberPanda) << "DOF number and screwAxes vector size differ";
+    EXPECT_EQ(l_jointNames.size(), c_dofNumberPanda) << "DOF number and jointNames vector size differ";
     RCLCPP_INFO_STREAM(LOGGER, "Screw Coordinates Constructed, number of Joints :  " << l_positions.size());
     printJntNames(l_jointNames);
     printScrewInfo(l_screwCoord);
+
+    //The following are the references 
+    const std::array<Eigen::Translation<double, 3>, c_dofNumberPanda> l_screwAxesRef = {
+        Eigen::Translation<double, 3>(0.0, 0.0, 1.0),
+        Eigen::Translation<double, 3>(0.0, 1.0, 0.0),
+        Eigen::Translation<double, 3>(0.0, 0.0, 1.0),
+        Eigen::Translation<double, 3>(0.0, -1.0, 0.0),
+        Eigen::Translation<double, 3>(0.0, 0.0, 1.0),
+        Eigen::Translation<double, 3>(0.0, -1.0, 0.0),
+        Eigen::Translation<double, 3>(0.0, 0.0, -1.0),
+    };
+
+    const double l_d1 = 0.333;
+    const double l_d3 = 0.316;
+    const double l_d5 = 0.384;
+    const double l_a5 = 0.0825;
+    const double l_df = 0.107;
+    const double l_a7 = 0.088;
+
+    const std::array<Eigen::Translation<double, 3>, c_dofNumberPanda> l_positionsRef = {
+        Eigen::Translation<double, 3>(0.0, 0.0, l_d1),
+        Eigen::Translation<double, 3>(0.0, 0.0, l_d1),
+        Eigen::Translation<double, 3>(0.0, 0.0, l_d1+l_d3),
+        Eigen::Translation<double, 3>(l_a5, 0.0, l_d1+l_d3),
+        Eigen::Translation<double, 3>(0.0, 0.0, l_d1+l_d3+l_d5),
+        Eigen::Translation<double, 3>(0.0, 0.0, l_d1+l_d3+l_d5),
+        Eigen::Translation<double, 3>(l_a7, 0.0, l_d1+l_d3+l_d5),
+    };
+
+    const std::array<std::string, c_dofNumberPanda> l_jointNamesRef = {
+        "panda_joint1",
+        "panda_joint2",
+        "panda_joint3",
+        "panda_joint4",
+        "panda_joint5",
+        "panda_joint6",
+        "panda_joint7",
+    };
+
+    Eigen::Isometry3d l_tip2BaseAtRestRef = Eigen::Translation3d(l_a7, 0.0, l_d1+l_d3+l_d5-l_df) * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX());
+
+    for (size_t i = 0; i < c_dofNumberPanda; i++)
+    {
+        EXPECT_TRUE(l_screwAxesRef.at(i).isApprox(l_screwAxes.at(i), c_tolerance)) << "Computed Screw axis must match reference";
+        EXPECT_TRUE(l_positionsRef.at(i).isApprox(l_positions.at(i), c_tolerance)) << "Computed Position on screw axis must match reference";
+        
+    }
+    EXPECT_TRUE(std::equal(l_jointNames.begin(), l_jointNames.end(), l_jointNamesRef.begin())) << "Active joint names must match reference";
+    EXPECT_TRUE(l_tip2BaseAtRestRef.isApprox(l_screwCoord.getTip2BaseInit(), c_tolerance)) << "Computed TF tip2Base initial must match reference";
+
 } 
 
 int main(int argc, char ** argv)
