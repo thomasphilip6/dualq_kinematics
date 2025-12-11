@@ -19,6 +19,8 @@
   <depend>moveit_msgs</depend>
   <depend>robot_model_loader</depend> <!-- RobotModelLoader -->
 
+  <exec_depend>ros2launch</exec_depend>
+
   <depend>eigen</depend>
   
   <test_depend>ament_lint_auto</test_depend>
