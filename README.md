@@ -4,7 +4,7 @@ This repository is a ROS2 C++ package aiming to become a MoveIt2 kinematics plug
 
 This second approach requires fewer arithemetic approaches and is therefore faster. For example, this is particularly usefull when forward kinematics is used in an optimization problem needing a huge number of forward kinematics computations to converge.
 
-The package is based on ROS2 Humble. In this repository, the dual quaternions is built using Eigen library, to ensure compatbility with MoveIt and others.
+The package is based on ROS2 Humble. In this repository, the dual quaternions is built using Eigen library, to ensure compatbility with MoveIt and others. The DualQuaternion and ScrewCoordinates are templates to follow Eigen's logic
 
 ---
 
@@ -12,19 +12,25 @@ The package is based on ROS2 Humble. In this repository, the dual quaternions is
 
 A dual quaternion is composed of two quaternions, one is called the real part and the other the dual. The dual quaternion is the extension of quaternions to dual numbers.
 
-todo: complete this part
+**Forward Kinematics** is defined in this context by: 
+
+//todo complete the math here
+
+$\underline{s}_{Tip}^0  = {\Pi} \  e^{(\underline{\xi_n} * {\theta}_{n} * 0.5)}$
+
+**Inverse Kinematics** can be computed by dividing the forward kinematics equation into so-called Paden-Kahan sub-problems, [Wikipedia](https://en.wikipedia.org/wiki/Paden%E2%80%93Kahan_subproblems)
 
 ---
 
 ## Status of the project
 
 This repository has:
-- A library enabling construction and operations on dual quaternions
-- The capability of getting screw coordinates out of a MoveIt robot (defined by an URDF)
-- Compute forward kinematics (through the use of dual quaternion exponential and multiplication)
+✅ A library enabling construction and operations on dual quaternions
+✅ The capability of getting screw coordinates out of a MoveIt robot (defined by an URDF)
+✅ Compute forward kinematics (through the use of dual quaternion exponential and multiplication)
 
 The following is currently under development:
-- Writing a demo to showcase the combination of previously mentionned capabilities
+- Enhance Performance
 - Adding Paden-Kahan subproblems handling with dual quaternions (for inverse kinematics)
 - Adding Inverse Kinematics solution for 6DOF
 - Adding redundancy resolution to handle 7DOF
@@ -48,6 +54,39 @@ cd dualq_kinematics
 colcon build 
 source install/setup.bash
 ``` 
+
+The demo can then be launched:
+
+```bash
+ros2 launch dualq_kinematics dualq_kinematics_demo.launch.py
+``` 
+
+And in the output, you can see the forward kinematics being computed correctly:
+```bash
+[dualq_kinematics_demo-1] [INFO] [1765644724.015255894] [dualq_kinematics_demo]: MoveIt FK Returned : 
+[dualq_kinematics_demo-1] [INFO] [1765644724.015273387] [dualq_kinematics_demo]: Translation: 
+[dualq_kinematics_demo-1]  0.358409
+[dualq_kinematics_demo-1] -0.773386
+[dualq_kinematics_demo-1]  0.407073
+[dualq_kinematics_demo-1] 
+[dualq_kinematics_demo-1] [INFO] [1765644724.015294978] [dualq_kinematics_demo]: Rotation: 
+[dualq_kinematics_demo-1] -0.582924 -0.554271  0.594124
+[dualq_kinematics_demo-1] -0.782642  0.186534 -0.593866
+[dualq_kinematics_demo-1]  0.218338 -0.811165 -0.542531
+[dualq_kinematics_demo-1] 
+[dualq_kinematics_demo-1] [INFO] [1765644724.015379736] [dualq_kinematics_demo]: Translation: 
+[dualq_kinematics_demo-1]  0.358409
+[dualq_kinematics_demo-1] -0.773386
+[dualq_kinematics_demo-1]  0.407073
+[dualq_kinematics_demo-1] 
+[dualq_kinematics_demo-1] [INFO] [1765644724.015400816] [dualq_kinematics_demo]: Rotation: 
+[dualq_kinematics_demo-1] -0.582924 -0.554271  0.594124
+[dualq_kinematics_demo-1] -0.782642  0.186534 -0.593866
+[dualq_kinematics_demo-1]  0.218338 -0.811165 -0.542531
+[dualq_kinematics_demo-1] 
+[dualq_kinematics_demo-1] [INFO] [1765644724.015412398] [dualq_kinematics_demo]: Dual Quaternions FK and MoveIt FK match: 1
+```
+
 ---
 
 ## Testing 
