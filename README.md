@@ -16,7 +16,7 @@ A dual quaternion is composed of two quaternions, one is called the real part an
 
 //todo complete the math here
 
-$\underline{s}_{Tip}^0  = {\Pi} \  e^{(\underline{\xi_n} * {\theta}_{n} * 0.5)}$
+$`\underline{s}_{Tip}^0  = {\Pi} \  e^{(\underline{\xi_n} * {\theta}_{n} * 0.5)}`$
 
 **Inverse Kinematics** can be computed by dividing the forward kinematics equation into so-called Paden-Kahan sub-problems, [Wikipedia](https://en.wikipedia.org/wiki/Paden%E2%80%93Kahan_subproblems)
 
@@ -25,9 +25,9 @@ $\underline{s}_{Tip}^0  = {\Pi} \  e^{(\underline{\xi_n} * {\theta}_{n} * 0.5)}$
 ## Status of the project
 
 This repository has:
-✅ A library enabling construction and operations on dual quaternions
-✅ The capability of getting screw coordinates out of a MoveIt robot (defined by an URDF)
-✅ Compute forward kinematics (through the use of dual quaternion exponential and multiplication)
+- ✅ A library enabling construction and operations on dual quaternions
+- ✅ The capability of getting screw coordinates out of a MoveIt robot (defined by an URDF)
+- ✅ Compute forward kinematics (through the use of dual quaternion exponential and multiplication)
 
 The following is currently under development:
 - Enhance Performance
