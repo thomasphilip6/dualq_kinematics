@@ -26,9 +26,8 @@ find_package(moveit_ros_planning REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 
-add_library(${PROJECT_NAME} SHARED
-  src/dualq_kinematics_demo.cpp
-)
+add_library(${PROJECT_NAME} SHARED src/dualq_kinematics.cpp)
+
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
@@ -44,11 +43,26 @@ ament_target_dependencies(${PROJECT_NAME}
     Eigen3
 )
 
-install(TARGETS ${PROJECT_NAME}
+add_executable(dualq_kinematics_demo 
+  src/dualq_kinematics_demo.cpp
+)
+
+ament_target_dependencies(dualq_kinematics_demo
+  rclcpp
+  moveit_core
+)
+
+target_link_libraries(dualq_kinematics_demo
+  ${PROJECT_NAME}
+)
+
+install(TARGETS 
+  ${PROJECT_NAME}
+  dualq_kinematics_demo
   EXPORT export_${PROJECT_NAME}
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION bin
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
   INCLUDES DESTINATION include
 )
 
