@@ -1,24 +1,41 @@
 # dualq_kinematics
 
-This repository is a ROS2 C++ package aiming to become a MoveIt2 kinematics plugin using "dual quaternions". In Robotics, the Denavit-Hartenberg convention and homogeneous transformation matrices are commonly used to solve forward and inverse kinematics. However, modern approaches use the product of exponential and dual quaternions can be used in this context as they can represent homogeneous transformation and screw displacements. 
+This repository is a ROS2 C++ package aiming to become a MoveIt2 kinematics plugin using "**dual quaternions**". In Robotics, the Denavit-Hartenberg convention and homogeneous transformation matrices are commonly used to solve forward and inverse kinematics. 
 
-This second approach requires fewer arithemetic approaches and is therefore faster. For example, this is particularly usefull when forward kinematics is used in an optimization problem needing a huge number of forward kinematics computations to converge.
+However, modern approaches use the **product of exponential** and dual quaternions can be used in this context as they can represent homogeneous transformation and screw displacements. [Wikipedia link on Screw Axis](https://en.wikipedia.org/wiki/Screw_axis)
 
-The package is based on ROS2 Humble. In this repository, the dual quaternions is built using Eigen library, to ensure compatbility with MoveIt and others. The DualQuaternion and ScrewCoordinates are templates to follow Eigen's logic
+This second approach requires fewer arithmetic operations and is therefore faster. For example, this is particularly usefull when forward kinematics is used in an optimization problem needing a huge number of forward kinematics computations to converge. Also dual quaternions are more compact than a transformation matrix
+
+The package is based on ROS2 Humble. In this repository, the dual quaternions is built using Eigen library, to ensure compatbility with MoveIt and others. It means that the dual quaternion class has 2 `Eigen::Quaternion` as members and that the constructors take Eigen types as inputs. The `DualQuaternion` and `ScrewCoordinates` classes are templates to follow Eigen's logic.
 
 ---
 
 ## Dual quaternions
 
-A dual quaternion is composed of two quaternions, one is called the real part and the other the dual. The dual quaternion is the extension of quaternions to dual numbers.
+A dual quaternion is composed of two quaternions, one is called the real part and the other the dual part. The dual quaternion is the extension of quaternions to dual numbers.
 
-**Forward Kinematics** is defined in this context by: 
+### **Forward Kinematics**
 
-//todo complete the math here
+Generally, the product of exponential states that
 
-$`\underline{s}_{Tip}^0  = {\Pi} \  e^{(\underline{\xi_n} * {\theta}_{n} * 0.5)}`$
+$`T_{Tip}^0  = ({\Pi}_{0}^n \  e^{(\^{\xi_n} * {\theta}_{n})}) * T_{Tip}^0 (0)`$
 
-**Inverse Kinematics** can be computed by dividing the forward kinematics equation into so-called Paden-Kahan sub-problems, [Wikipedia](https://en.wikipedia.org/wiki/Paden%E2%80%93Kahan_subproblems)
+where $`\^{\xi_n}`$ is a **twist** and $`\underline{\theta}`$ is a vector of joint angles and  $`T_{Tip}^0(0)`$ is **tip2Base** transform when the manipulator is at rest
+
+**Twist**: *"A twist can be represented as a normalized screw axis, a representation of the direction of the motion, multiplied by a scalar speed along the screw axis"* (Northwestern University)
+
+**Screw axis** are characterized by the axis expressed in a frame and a position of a point on it, they can represent the joints of a robot. In this method, the screw axes information are used rather than the Denavit-Hartenberg parameters
+
+When using dual quaternions in this context, it is needed to:
+- Define screw axes [1]
+- Apply motion to them using the **dual angle** [1]
+- Use the product of exponentials
+
+Let's keep in mind that dual quaternions multiplication and exponential are defined in [1] and [2]
+
+### **Inverse Kinematics** 
+
+Inverse kinematics can be computed by dividing the forward kinematics equation into so-called Paden-Kahan sub-problems: [Wikipedia](https://en.wikipedia.org/wiki/Paden%E2%80%93Kahan_subproblems)
 
 ---
 
@@ -116,26 +133,26 @@ colcon build --packages-up-to <package_name> --cmake-args -DCMAKE_BUILD_TYPE=Deb
 To debug ScrewCoordinates, uncomment the commented line in `ScrewCoordinates.test.py`:
 
 ```python
-    screw_coordinates_node =  launch_ros.actions.Node(
-                package="dualq_kinematics",
-                executable="dualq_kinematics_ScrewCoordinatesTest",
-                #Uncomment following line to debug with gdb
-                #prefix=['gdb -ex run --args'],
-                parameters=[
-                    moveit_config,
-                    test_param,
-                ],
-                output="screen",
-    )
+screw_coordinates_node =  launch_ros.actions.Node(
+            package="dualq_kinematics",
+            executable="dualq_kinematics_ScrewCoordinatesTest",
+            #Uncomment following line to debug with gdb
+            #prefix=['gdb -ex run --args'],
+            parameters=[
+                moveit_config,
+                test_param,
+            ],
+            output="screen",
+)
 ``` 
 ---
 
 ### References
 
-- Dual Quaternions by Yan-Bin Jia
-- Practical Exponential Coordinates using Implicit Dual Quaternions by Neil T. Dantam
-- Robust and efﬁcient forward, differential, and inverse kinematics using dual quaternions by Neil T. Dantam
-- Analytical Solution for Inverse Kinematics Using Dual Quaternions by Ping-Feng Lin, Ming-Bao Huang, and Han-Pang Huang, Member, IEEE
+- [1] Dual Quaternions by Yan-Bin Jia
+- [2] Practical Exponential Coordinates using Implicit Dual Quaternions by Neil T. Dantam
+- [3] Robust and efﬁcient forward, differential, and inverse kinematics using dual quaternions by Neil T. Dantam
+- [4] Analytical Solution for Inverse Kinematics Using Dual Quaternions by Ping-Feng Lin, Ming-Bao Huang, and Han-Pang Huang, Member, IEEE
 
 todo: complete this part
 
