@@ -5,6 +5,7 @@
 
 using DualQuaternion = dualq_kinematics::DualQuaternion<double>;
 constexpr double l_tolerance = 1e-6;
+constexpr int c_repetitions = 1000;
 
 TEST(dualq_kinematics, ConstructionTest)
 {
@@ -86,6 +87,14 @@ TEST(dualq_kinematics, multiplicationTest)
 
     DualQuaternion l_dualq(l_realPart, l_dualPart);
     DualQuaternion l_dualqMultiplied = l_dualq*2.3;
+    auto l_start = std::chrono::high_resolution_clock::now();
+    for (size_t i = 0; i < c_repetitions; i++)
+    {
+        l_dualqMultiplied = l_dualq*2.3;
+    }
+    auto l_stop = std::chrono::high_resolution_clock::now();
+    double l_ns = std::chrono::duration<double, std::nano>(l_stop - l_start).count();
+    std::cout << "Scalar multiplication took : " << l_ns/c_repetitions << " nano_seconds" << std::endl;
 
     //DualQuaternion(l_realPartExpected, l_dualPartExpected).print();
     //l_dualqMultiplied.print();
@@ -97,7 +106,11 @@ TEST(dualq_kinematics, multiplicationTest)
     const DualQuaternion l_sigma1(Eigen::Quaterniond(2.0, 0.0, 0.0, 1.0),Eigen::Quaterniond(1.0, 1.0, 0.0, 1.0));
     const DualQuaternion l_sigma2(Eigen::Quaterniond( 1.0, 0.0, 0.0, 1.0),Eigen::Quaterniond(1.0, 1.0, 0.0, 0.0));
     const DualQuaternion l_productExpected(Eigen::Quaterniond(1.0, 0.0, 0.0, 3.0), Eigen::Quaterniond(2.0, 3.0, 0.0, 3.0));
+    l_start = std::chrono::high_resolution_clock::now();
     const DualQuaternion l_product = l_sigma1*l_sigma2;
+    l_stop = std::chrono::high_resolution_clock::now();
+    l_ns = std::chrono::duration<double, std::nano>(l_stop - l_start).count();
+    std::cout << "DQ multiplication took : " << l_ns << " nano_seconds" << std::endl;
     EXPECT_TRUE(l_product.isApprox(l_productExpected,l_tolerance)) << "Dual Quaternion multiplication fails";
 }
 
