@@ -66,10 +66,10 @@ void printEigenIsometry(const Eigen::Isometry3d& p_transformationMatrix)
  */
 void dualQuaternionForwardKinematics(const std::vector<DualQuaternion>& p_screwDQ, const DualQuaternion& p_tip2BaseInit, std::vector<double>& p_jointValues_rad, Eigen::Isometry3d& p_tip2BaseComputed)
 {
-    DualQuaternion l_tip2BaseDQComputed = (p_screwDQ.at(0) * p_jointValues_rad.at(0) * 0.5).dqExp();
+    DualQuaternion l_tip2BaseDQComputed = (p_screwDQ.at(0) * (p_jointValues_rad.at(0) * 0.5)).dqExp();
     for (size_t i = 1; i < p_jointValues_rad.size(); i++)
     {
-        l_tip2BaseDQComputed = l_tip2BaseDQComputed * (p_screwDQ.at(i)*p_jointValues_rad.at(i) * 0.5).dqExp();
+        l_tip2BaseDQComputed = l_tip2BaseDQComputed * (p_screwDQ.at(i)* (p_jointValues_rad.at(i) * 0.5)).dqExp();
     }
     l_tip2BaseDQComputed = l_tip2BaseDQComputed * p_tip2BaseInit;
     p_tip2BaseComputed = l_tip2BaseDQComputed.getTransform();    
@@ -103,6 +103,26 @@ int main(int argc, char** argv)
     {
         l_screwDQ.push_back(DualQuaternion( l_screwCoord.getScrewAxes().at(i), l_screwCoord.getPositions().at(i) ));
     }
+
+    //Check that all dual quaternions are unit dual quaternions
+    for (auto &&l_dq : l_screwDQ)
+    {
+        try
+        {
+            const bool l_isUnit = l_dq.isUnit(c_tolerance);
+            if(!l_isUnit)
+            {
+                throw(l_isUnit);
+            }
+        }
+        //todo change to a parameter to an error for better error handling
+        catch(const bool& e)
+        {
+            RCLCPP_INFO_STREAM(LOGGER, "DQ is unit: " << e);
+        }
+        
+    }
+    
     DualQuaternion l_tip2BaseInit(l_screwCoord.getTip2BaseInit());
     l_stop = std::chrono::high_resolution_clock::now();
     l_ms = l_stop - l_start;
@@ -113,7 +133,7 @@ int main(int argc, char** argv)
     l_robotState->enforceBounds();
     l_robotState->setToDefaultValues();
     const moveit::core::JointModelGroup* l_jointModelGroup = l_robotModel->getJointModelGroup("panda_arm");
-    const std::vector<std::string>& l_jointNames = l_jointModelGroup->getVariableNames();
+    //const std::vector<std::string>& l_jointNames = l_jointModelGroup->getVariableNames();
 
     //First Try, apply joint values, compute and compare FK
     std::vector<double> l_jointValuesReady_rad ={0, -0.785, 0, -2.356, 0, 1.571, 0.785};

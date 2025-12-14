@@ -7,7 +7,6 @@ DualQuaternion<Scalar>::DualQuaternion(const Quaternion& p_realPart, const Quate
 {
     m_realPart = p_realPart;
     m_dualPart = p_dualPart;
-    m_isUnit = isUnit(c_tolerance);
 }
 
 //Construction by rotation (angle axis) and then translation
@@ -17,7 +16,6 @@ DualQuaternion<Scalar>::DualQuaternion(const AngleAxis& p_angleAxis, const Trans
     m_realPart = Quaternion(p_angleAxis);
     m_dualPart = Quaternion(0.0, p_translation.x(), p_translation.y(), p_translation.z()) * m_realPart;
     m_dualPart.coeffs() = m_dualPart.coeffs() * 0.5;
-    m_isUnit = isUnit(c_tolerance);//todo throw an error if m_isUnit is false
 }
 
 //Construction by translation then rotation (angle axis) 
@@ -27,7 +25,6 @@ DualQuaternion<Scalar>::DualQuaternion(const Translation& p_translation, const A
     m_realPart = Quaternion(p_angleAxis);
     m_dualPart = m_realPart * Quaternion(0.0, p_translation.x(), p_translation.y(), p_translation.z());
     m_dualPart.coeffs() = m_dualPart.coeffs() * 0.5;
-    m_isUnit = isUnit(c_tolerance);//todo throw an error if m_isUnit is false
 }
 
 //Construction for screw axis
@@ -42,7 +39,6 @@ DualQuaternion<Scalar>::DualQuaternion(const Translation& p_rotationAxis, const 
         p_position.z()*p_rotationAxis.x() - p_position.x()*p_rotationAxis.z(),
         p_position.x()*p_rotationAxis.y() - p_position.y()*p_rotationAxis.x()
     );
-    m_isUnit = isUnit(c_tolerance);//todo throw an error if m_isUnit is false
 }
 
 //Construction by quaternion and vector for translation, rotation then translation
@@ -52,7 +48,6 @@ DualQuaternion<Scalar>::DualQuaternion(const Quaternion& p_orientation, const Tr
     m_realPart = p_orientation;
     m_dualPart = Quaternion(0.0, p_translation.x(), p_translation.y(), p_translation.z()) * m_realPart;
     m_dualPart.coeffs() = m_dualPart.coeffs() * 0.5;
-    m_isUnit = isUnit(c_tolerance);//todo throw an error if m_isUnit is false
 }
 
 //Construction by quaternion and vector for translation, translation then rotation
@@ -62,7 +57,6 @@ DualQuaternion<Scalar>::DualQuaternion(const Translation& p_translation, const Q
     m_realPart = p_orientation;
     m_dualPart = m_realPart * Quaternion(0.0, p_translation.x(), p_translation.y(), p_translation.z());
     m_dualPart.coeffs() = m_dualPart.coeffs() * 0.5;
-    m_isUnit = isUnit(c_tolerance);//todo throw an error if m_isUnit is false
 }
 
 
@@ -73,7 +67,6 @@ DualQuaternion<Scalar>::DualQuaternion(const Transform& p_transform)
     m_realPart = Quaternion(p_transform.rotation());
     m_dualPart = Quaternion(0.0, p_transform.translation().x(), p_transform.translation().y(), p_transform.translation().z()) * m_realPart;
     m_dualPart.coeffs() = m_dualPart.coeffs() * 0.5;
-    m_isUnit = isUnit(c_tolerance);//todo throw an error if m_isUnit is false
 }
 
 
@@ -94,12 +87,15 @@ DualQuaternion<Scalar> DualQuaternion<Scalar>::operator*(const DualQuaternion<Sc
 }
 
 template<typename Scalar>
-DualQuaternion<Scalar> DualQuaternion<Scalar>::operator*(const Scalar p_scalar) const
+DualQuaternion<Scalar> DualQuaternion<Scalar>::operator*(const Scalar p_scalar) const noexcept
 {
-    DualQuaternion l_dualqCopy = *this;
-    l_dualqCopy.m_realPart.coeffs() = l_dualqCopy.m_realPart.coeffs() * p_scalar;
-    l_dualqCopy.m_dualPart.coeffs() = l_dualqCopy.m_dualPart.coeffs() * p_scalar;
-    return l_dualqCopy;
+    Eigen::Matrix<Scalar,4,1> l_real = m_realPart.coeffs() * p_scalar;
+    Eigen::Matrix<Scalar,4,1> l_dual = m_dualPart.coeffs() * p_scalar;
+
+    return DualQuaternion<Scalar>(
+        Eigen::Quaternion<Scalar>(l_real),
+        Eigen::Quaternion<Scalar>(l_dual)
+    );
 }
 
 template<typename Scalar>
@@ -153,7 +149,7 @@ bool DualQuaternion<Scalar>::invert(const Scalar p_tolerance)
     {
         return false;
     }    
-    if (m_isUnit==true)
+    if (isUnit(p_tolerance)==true)
     {
         m_realPart = this->conjugate().m_realPart;
         m_dualPart = this->conjugate().m_dualPart;

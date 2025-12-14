@@ -108,7 +108,7 @@ namespace dualq_kinematics
              * @param p_scalar the scalar that multiplies the instance
              * @return the result of the multiplication
              */
-            DualQuaternion operator*(const Scalar p_scalar) const;
+            DualQuaternion operator*(const Scalar p_scalar) const noexcept;
 
             /**
              * @brief Returns true if object and the other instance are the same
@@ -195,7 +195,6 @@ namespace dualq_kinematics
 
             // Dual Part of the dual quaternion
             Quaternion m_dualPart;
-            bool m_isUnit = false;// todo remove this attribute
             
             
     };
