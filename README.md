@@ -4,9 +4,9 @@ This repository is a ROS2 C++ package aiming to become a MoveIt2 kinematics plug
 
 However, modern approaches use the **product of exponential** and dual quaternions can be used in this context as they can represent homogeneous transformation and screw displacements. [Wikipedia link on Screw Axis](https://en.wikipedia.org/wiki/Screw_axis)
 
-This second approach requires fewer arithmetic operations and is therefore faster. For example, this is particularly usefull when forward kinematics is used in an optimization problem needing a huge number of forward kinematics computations to converge. Also dual quaternions are more compact than a transformation matrix
+This second approach requires fewer arithmetic operations and is therefore faster. For example, this is particularly usefull when forward kinematics is used in an optimization problem needing a huge number of forward kinematics computations to converge. Also dual quaternions are more compact than a transformation matrix. Computations of the forward kinematics of the Franka Emika robot (7DOF) are **under the microsecond**.
 
-The package is based on ROS2 Humble. In this repository, the dual quaternions is built using Eigen library, to ensure compatbility with MoveIt and others. It means that the dual quaternion class has 2 `Eigen::Quaternion` as members and that the constructors take Eigen types as inputs. The `DualQuaternion` and `ScrewCoordinates` classes are templates to follow Eigen's logic.
+The package is based on ROS2 Humble. In this repository, the dual quaternions is built using Eigen library, to ensure compatbility with MoveIt and others. It means that the dual quaternion class has 2 `Eigen::Quaternion` as members and that the constructors take Eigen types as inputs. The `DualQuaternion` and `ScrewCoordinates` classes are templates to follow Eigen's logic. 
 
 ---
 
@@ -18,9 +18,9 @@ A dual quaternion is composed of two quaternions, one is called the real part an
 
 Generally, the product of exponential states that
 
-$`T_{Tip}^0  = ({\Pi}_{0}^n \  e^{(\^{\xi_n} * {\theta}_{n})}) * T_{Tip}^0 (0)`$
+$`T_{Tip}^0  = ({\Pi}_{0}^n \  e^{({\^{\xi_n}} * {\theta}_{n})}) * T_{Tip}^0 (0)`$
 
-where $`\^{\xi_n}`$ is a **twist** and $`\underline{\theta}`$ is a vector of joint angles and  $`T_{Tip}^0(0)`$ is **tip2Base** transform when the manipulator is at rest
+where $`{\^{\xi_n}}`$ is a **twist** and $`\underline{\theta}`$ is a vector of joint angles and  $`T_{Tip}^0(0)`$ is **tip2Base** transform when the manipulator is at rest
 
 **Twist**: *"A twist can be represented as a normalized screw axis, a representation of the direction of the motion, multiplied by a scalar speed along the screw axis"* (Northwestern University)
 
@@ -47,7 +47,6 @@ This repository has:
 - ✅ Compute forward kinematics (through the use of dual quaternion exponential and multiplication)
 
 The following is currently under development:
-- Enhance Performance
 - Adding Paden-Kahan subproblems handling with dual quaternions (for inverse kinematics)
 - Adding Inverse Kinematics solution for 6DOF
 - Adding redundancy resolution to handle 7DOF
@@ -102,6 +101,11 @@ And in the output, you can see the forward kinematics being computed correctly:
 [dualq_kinematics_demo-1]  0.218338 -0.811165 -0.542531
 [dualq_kinematics_demo-1] 
 [dualq_kinematics_demo-1] [INFO] [1765644724.015412398] [dualq_kinematics_demo]: Dual Quaternions FK and MoveIt FK match: 1
+```
+
+Make sure to compile in release mode to get the fastest computation times `--cmake-args -DCMAKE_BUILD_TYPE=Release` 
+```bash
+[dualq_kinematics_demo]: Dual Quaternions FK took (over 1000 tries) 0.607738 us.
 ```
 
 ---

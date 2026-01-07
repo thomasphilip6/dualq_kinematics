@@ -26,6 +26,7 @@ using DualQuaternion = dualq_kinematics::DualQuaternion<double>;
 using ScrewCoordinates = dualq_kinematics::ScrewCoordinates<double>;
 const std::string ROBOT_DESCRIPTION_PARAM = "robot_description";
 static const rclcpp::Logger LOGGER = rclcpp::get_logger("dualq_kinematics_demo");
+constexpr int c_repetitions = 1000;
 
 //Demo showing forward kinematics with dual quaternions and screw theory on a MoveIt configured robot
 
@@ -162,10 +163,13 @@ int main(int argc, char** argv)
     printEigenIsometry(l_eeStateMoveIt2);
 
     l_start = std::chrono::high_resolution_clock::now();
-    dualQuaternionForwardKinematics(l_screwDQ, l_tip2BaseInit, l_jointValues_rad, l_eeStateDQ);
+    for (size_t i = 0; i < c_repetitions; i++)
+    {
+        dualQuaternionForwardKinematics(l_screwDQ, l_tip2BaseInit, l_jointValues_rad, l_eeStateDQ);
+    }
     l_stop = std::chrono::high_resolution_clock::now();
-    l_ms = l_stop - l_start;
-    RCLCPP_INFO_STREAM(LOGGER, "Dual Quaternions FK took " << l_ms.count() << " ms. And result is: ");
+    double l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
+    RCLCPP_INFO_STREAM(LOGGER, "Dual Quaternions FK took (over 1000 tries) " << l_micros/c_repetitions << " us. And result is: ");
     printEigenIsometry(l_eeStateDQ);
     RCLCPP_INFO_STREAM(LOGGER, "Dual Quaternions FK and MoveIt FK match: " << l_eeStateDQ.isApprox(l_eeStateMoveIt2, c_tolerance));
 
