@@ -107,14 +107,14 @@ TEST(dualq_kinematics, multiplicationTest)
     const DualQuaternion l_sigma2(Eigen::Quaterniond( 1.0, 0.0, 0.0, 1.0),Eigen::Quaterniond(1.0, 1.0, 0.0, 0.0));
     const DualQuaternion l_productExpected(Eigen::Quaterniond(1.0, 0.0, 0.0, 3.0), Eigen::Quaterniond(2.0, 3.0, 0.0, 3.0));
     l_start = std::chrono::high_resolution_clock::now();
+    DualQuaternion l_product = l_sigma1*l_sigma2;
     for (size_t i = 0; i < c_repetitions; i++)
     {
-        const DualQuaternion l_product = l_sigma1*l_sigma2;
+        l_product = l_sigma1*l_sigma2;
     }
-    const DualQuaternion l_product = l_sigma1*l_sigma2;
     l_stop = std::chrono::high_resolution_clock::now();
     l_ns = std::chrono::duration<double, std::nano>(l_stop - l_start).count();
-    std::cout << "DQ multiplication took : " << l_ns/c_repetitions << " nano_seconds" << std::endl;
+    std::cout << "DQ multiplication took : " << l_ns/(c_repetitions+1) << " nano_seconds" << std::endl;
     EXPECT_TRUE(l_product.isApprox(l_productExpected,l_tolerance)) << "Dual Quaternion multiplication fails";
 }
 
