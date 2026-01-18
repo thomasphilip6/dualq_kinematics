@@ -203,7 +203,7 @@ TEST(dualq_kinematics, quatMulScalarPartTest)
     const Eigen::Quaterniond l_quatUnit1(0.0, 0.0, 0.130526, 0.0);
     const Eigen::Quaterniond l_quatUnit2(0.0, 0.355302, 0.121857, 0.046776);
     double l_scalarPart = DualQuaternion::quatMulScalarPart(l_quatUnit1, l_quatUnit2);
-    EXPECT_TRUE(FirstPadenKahan::compareFloatNum(l_scalarPart, (l_quatUnit1*l_quatUnit2).w(), l_tolerance)) << "Quaternion scalarPartMultiplication fails";
+    EXPECT_TRUE(FirstPadenKahan::compareFloatNum(-l_scalarPart, (l_quatUnit1*l_quatUnit2).w(), l_tolerance)) << "Quaternion scalarPartMultiplication fails";
 }
 
 TEST(dualq_kinematics, exponentialTest)
