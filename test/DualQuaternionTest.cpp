@@ -191,7 +191,7 @@ TEST(dualq_kinematics, getterTest)
 TEST(dualq_kinematics, quaternionExpTest)
 {
     const Eigen::Quaterniond l_quat(1.0, 1.0, 0.0, 0.0);
-    const Eigen::Quaterniond l_test = dualq_kinematics::quaternionExp(l_quat);
+    const Eigen::Quaterniond l_test = DualQuaternion::quaternionExp(l_quat);
     const Eigen::Quaterniond l_expected(exp(1)*cos(1), 1.0*sin(1), 0, 0);
     EXPECT_TRUE(l_expected.isApprox(l_test, l_tolerance)) << "Quaternion exponential fails";
 }

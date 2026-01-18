@@ -98,13 +98,22 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
   find_package(ament_cmake_gtest REQUIRED)
 
-  #First DualQuaternionTest
+  #First DualQuaternionTest and PadenKahan Test
   ament_add_gtest(${PROJECT_NAME}_DualQuaternionTest test/DualQuaternionTest.cpp)
   target_include_directories(${PROJECT_NAME}_DualQuaternionTest PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
   )
   target_link_libraries(${PROJECT_NAME}_DualQuaternionTest 
+    ${PROJECT_NAME} 
+  )
+
+  ament_add_gtest(${PROJECT_NAME}_PadenKahanTest test/PadenKahanTest.cpp)
+  target_include_directories(${PROJECT_NAME}_PadenKahanTest PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+  )
+  target_link_libraries(${PROJECT_NAME}_PadenKahanTest
     ${PROJECT_NAME} 
   )
 
