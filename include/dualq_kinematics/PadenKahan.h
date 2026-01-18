@@ -3,11 +3,17 @@
 #include "dualq_kinematics/DualQuaternion.h"
 #include "dualq_kinematics/ScrewCoordinates.h"
 
+#include <cmath>
+
 namespace dualq_kinematics
 {
 
     //todo add Doxygen comments
     template<typename Scalar>
+    /**
+     * @class FirstPadenKahanProblem
+     * @brief Solves the first Paden-Kahan subproblem with quaternions
+     */
     class FirstPadenKahanProblem
     {
         public:
@@ -18,16 +24,17 @@ namespace dualq_kinematics
             using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
             using DualQuaternion = dualq_kinematics::DualQuaternion<Scalar>;
             using ScrewCoordinates = dualq_kinematics::ScrewCoordinates<Scalar>;
+            static constexpr Scalar c_tolerance = 1e-6;
 
-            FirstPadenKahanProblem(Vector3& p_pointOnLine, Vector3& p_axis, Vector3& p_startPoint, Vector3& p_endPoint);
+            FirstPadenKahanProblem(Vector3& p_pointOnLine, Quaternion& p_axis, Vector3& p_startPoint, Vector3& p_endPoint);
 
-            bool solveProblem();
+            const std::optional<Scalar>& getResult() const;
 
-            const Scalar& getResult() const;
+            static bool compareFloatNum(Scalar p_a, Scalar p_b, Scalar p_tolerance);
         
         private:
-            Scalar m_resultAngle;
 
+            std::optional<Scalar> m_resultAngle_rad;
     };
 
 }

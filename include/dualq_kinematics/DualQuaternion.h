@@ -180,8 +180,18 @@ namespace dualq_kinematics
 
             /**
              * @brief Returns the exponential of a quaternion
+             * @param p_quaternion Quaternion which exponential is needed
+             * @return Exponential of Quaternion
              */
             static Quaternion quaternionExp(const Eigen::Quaternion<Scalar>& p_quaternion);
+
+            /**
+             * @brief Returns the scalar part of quaternion multiplication, when two unit quaternions are multiplied, the scalar part is -scalar product of vector parts
+             * @param p_quaternion1
+             * @param p_quaternion2
+             * @return -scalar product of vector parts of the two quaternions
+             */
+            static Scalar quatMulScalarPart(const Eigen::Quaternion<Scalar>& p_quaternion1, const Eigen::Quaternion<Scalar>& p_quaternion2);
 
             /**
              * @brief Returns the exponential of a dual quaternion

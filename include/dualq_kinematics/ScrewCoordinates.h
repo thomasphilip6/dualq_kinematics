@@ -21,6 +21,10 @@ namespace dualq_kinematics
 {
     //todo add Doxygen comments
     template<typename Scalar>
+    /**
+     * @class ScrewCoordinates
+     * @brief Provides the ScrewCoordinates for a given moveit::core::RobotModel
+     */
     class ScrewCoordinates 
     {
         public:
