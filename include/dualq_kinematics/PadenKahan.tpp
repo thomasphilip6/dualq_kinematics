@@ -50,4 +50,85 @@ bool FirstPadenKahanProblem<Scalar>::compareFloatNum(Scalar p_a, Scalar p_b, Sca
     }
 }
 
+template<typename Scalar>
+SecondPadenKahanProblem<Scalar>::SecondPadenKahanProblem(Vector3& p_pointOnLines, Quaternion& p_axis1, Quaternion& p_axis2, Vector3& p_startPoint, Vector3& p_endPoint)
+{
+    const Quaternion l_x(0.0, p_startPoint(0)-p_pointOnLines(0), p_startPoint(1)-p_pointOnLines(1), p_startPoint(2)-p_pointOnLines(2));
+    const Quaternion l_y(0.0, p_endPoint(0)-p_pointOnLines(0), p_endPoint(1)-p_pointOnLines(1), p_endPoint(2)-p_pointOnLines(2));
+
+    std::vector<Quaternion> l_intersections = computeIntersection(p_axis1, p_axis2, l_x, l_y);
+    if (l_intersections.size() != 0)
+    {
+        for (size_t i=0; i < l_intersections.size(); i++)
+        {
+            m_firstRotations.at(i) = FirstPadenKahanProblem(p_pointOnLines, p_axis1, p_startPoint, l_intersections.at(i));
+            m_secondRotations.at(i) = FirstPadenKahanProblem(p_pointOnLines, p_axis2, l_intersections.at(i), p_endPoint);
+            m_resultsAngle1_rad.at(i) = m_firstRotations.at(i).getResult();
+            m_resultsAngle2_rad.at(i) = m_secondRotations.at(i).getResult();
+        }
+        
+    }
+    
+
+}
+
+template<typename Scalar>
+typename std::vector<Eigen::Quaternion<Scalar>> SecondPadenKahanProblem<Scalar>::computeIntersection(Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_x, Quaternion& p_y)
+{
+    std::vector<Quaternion> l_results;
+    const Scalar l_l2XScalar = DualQuaternion::quatMulScalarPart(p_axis2, p_x);
+    const Scalar l_l1XScalar = DualQuaternion::quatMulScalarPart(p_axis1, p_x);
+    const Scalar l_l2YScalar = DualQuaternion::quatMulScalarPart(p_axis2, p_y);
+    const Scalar l_l1YScalar = DualQuaternion::quatMulScalarPart(p_axis1, p_y);
+
+    const Quaternion l_linesProduct = p_axis1 * p_axis2;
+    const Scalar l_twoLinesScalar = l_linesProduct.x();
+
+    const Scalar l_alpha = 
+        (l_twoLinesScalar * l_l2XScalar - l_l1XScalar) / ( std::pow(l_twoLinesScalar, 2) - 1);
+    
+    const Scalar l_beta = 
+        (l_twoLinesScalar * l_l1YScalar - l_l2YScalar) / ( std::pow(l_twoLinesScalar, 2) - 1);
+    
+    const Scalar l_gammaSquared = 
+        (p_x.squaredNorm() - std::pow(l_alpha, 2) - std::pow(l_beta, 2) -2*l_alpha*l_beta*l_twoLinesScalar) / (l_linesProduct);
+
+    Scalar l_gamma = std::sqrt(l_gammaSquared);
+    if(l_gamma < 0)
+    {
+        return l_results;
+    }
+
+    const Quaternion l_z(
+        0.0,
+        l_alpha*p_axis1.x() + l_beta*p_axis2.x() + l_gamma*l_linesProduct.x(),
+        l_alpha*p_axis1.y() + l_beta*p_axis2.y() + l_gamma*l_linesProduct.y(),
+        l_alpha*p_axis1.z() + l_beta*p_axis2.z() + l_gamma*l_linesProduct.z()
+
+    );
+    l_results.push_back(l_z);
+
+    if (l_gamma != 0)
+    {
+        l_gamma = - l_gamma;
+        const Quaternion l_z2(
+            0.0,
+            l_alpha*p_axis1.x() + l_beta*p_axis2.x() + l_gamma*l_linesProduct.x(),
+            l_alpha*p_axis1.y() + l_beta*p_axis2.y() + l_gamma*l_linesProduct.y(),
+            l_alpha*p_axis1.z() + l_beta*p_axis2.z() + l_gamma*l_linesProduct.z()
+    
+        );
+        l_results.push_back(l_z2);
+
+    }
+
+    return l_results;
+}
+
+template<typename Scalar>
+Scalar SecondPadenKahanProblem<Scalar>::squaredNormOfQuatVectPart(Quaternion& p_quat)
+{
+    return std::pow(p_quat.x(), 2) + std::pow(p_quat.y(), 2) + std::pow(p_quat.z(), 2);
+}
+
 }

@@ -37,6 +37,39 @@ namespace dualq_kinematics
             std::optional<Scalar> m_resultAngle_rad;
     };
 
+    template<typename Scalar>
+    /**
+     * @class SecondPadenKahanProblem
+     * @brief Solves the second Paden-Kahan subproblem with quaternions
+     */
+    class SecondPadenKahanProblem
+    {
+        public:
+
+            using Quaternion = Eigen::Quaternion<Scalar>;
+            using Vector3 = Eigen::Matrix<Scalar, 3, 1>; 
+            using FirstPadenKahanProblem = dualq_kinematics::FirstPadenKahanProblem<Scalar>;
+            using DualQuaternion = dualq_kinematics::DualQuaternion<Scalar>;
+
+            SecondPadenKahanProblem(Vector3& p_pointOnLines, Quaternion& p_axis1, Quaternion& p_axis2, Vector3& p_startPoint, Vector3& p_endPoint);
+
+            const std::optional< std::vector<Scalar> >& getAngle1Result() const;
+
+            const std::optional< std::vector<Scalar> >& getAngle2Result() const;
+        
+        private:
+
+            std::optional< std::vector<Scalar> > m_resultsAngle1_rad;
+            std::optional< std::vector<Scalar> > m_resultsAngle2_rad;
+
+            std::optional< std::vector<FirstPadenKahanProblem> > m_firstRotations;
+            std::optional< std::vector<FirstPadenKahanProblem> > m_secondRotations;
+
+            std::vector<Quaternion> computeIntersection(Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_x, Quaternion& p_y);
+            Scalar squaredNormOfQuatVectPart(Quaternion& p_quat);
+
+    };
+
 }
 
 #include "dualq_kinematics/PadenKahan.tpp"
