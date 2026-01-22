@@ -6,11 +6,6 @@
 constexpr double c_tolerance = 1e-3;
 using FirstPadenKahan = dualq_kinematics::FirstPadenKahanProblem<double>;
 
-// first joint rotated from 0 to 0.786
-//result
-//0.0621879
-//[dualq_kinematics_demo-1] 0.0622628
-//[dualq_kinematics_demo-1]     0.926
 TEST(dualq_kinematics, FirstPadenKahanProblemTest)
 {
     //panda robot dimentions
@@ -30,10 +25,17 @@ TEST(dualq_kinematics, FirstPadenKahanProblemTest)
     l_endPoint << 0.0621879, 0.0622628, 0.926;
 
     FirstPadenKahan l_testResultFinite(l_positionOnLine,  l_jointScrewAxis, l_startPoint, l_endPoint);
-    EXPECT_TRUE(l_testResultFinite.getResult().has_value()) << "Input on 1 Paden Kahan Problem should return a finite number";
+    EXPECT_TRUE(l_testResultFinite.getResult().has_value()) << "Input on Paden Kahan 1st Problem should return a finite number";
     EXPECT_TRUE(FirstPadenKahan::compareFloatNum(0.786, l_testResultFinite.getResult().value(), c_tolerance)) << "Result of Paden Kahan Problem is Wrong";
-    std::cout << "Result compi " << l_testResultFinite.getResult().value() << " rad" << std::endl;
+    std::cout << "Result computed " << l_testResultFinite.getResult().value() << " rad" << std::endl;
 
+    Eigen::Vector3d l_startPointOnLine;
+    l_startPointOnLine << 0.0, 0.0, l_d1+l_d3+l_d5-l_df;
+    FirstPadenKahan l_testResultInfinite1(l_positionOnLine, l_jointScrewAxis, l_startPointOnLine, l_endPoint);
+    EXPECT_FALSE(l_testResultInfinite1.getResult().has_value()) << "Input with start on axis with Paden Kahan 1st Problem shouldn't return a finite number";
+
+    FirstPadenKahan l_testResultInfinite2(l_positionOnLine, l_jointScrewAxis, l_endPoint, l_endPoint);
+    EXPECT_FALSE(l_testResultInfinite2.getResult().has_value()) << "Input with start=end with Paden Kahan 1st Problem shouldn't return a finite number";
 }
 
 int main(int argc, char ** argv)
