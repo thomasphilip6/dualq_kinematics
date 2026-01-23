@@ -53,23 +53,45 @@ bool FirstPadenKahanProblem<Scalar>::compareFloatNum(Scalar p_a, Scalar p_b, Sca
 template<typename Scalar>
 SecondPadenKahanProblem<Scalar>::SecondPadenKahanProblem(Vector3& p_pointOnLines, Quaternion& p_axis1, Quaternion& p_axis2, Vector3& p_startPoint, Vector3& p_endPoint)
 {
-    const Quaternion l_x(0.0, p_startPoint(0)-p_pointOnLines(0), p_startPoint(1)-p_pointOnLines(1), p_startPoint(2)-p_pointOnLines(2));
-    const Quaternion l_y(0.0, p_endPoint(0)-p_pointOnLines(0), p_endPoint(1)-p_pointOnLines(1), p_endPoint(2)-p_pointOnLines(2));
+    m_firstRotations.emplace();
+    m_secondRotations.emplace();
+
+    Quaternion l_x(0.0, p_startPoint(0)-p_pointOnLines(0), p_startPoint(1)-p_pointOnLines(1), p_startPoint(2)-p_pointOnLines(2));
+    Quaternion l_y(0.0, p_endPoint(0)-p_pointOnLines(0), p_endPoint(1)-p_pointOnLines(1), p_endPoint(2)-p_pointOnLines(2));
 
     std::vector<Quaternion> l_intersections = computeIntersection(p_axis1, p_axis2, l_x, l_y);
     if (l_intersections.size() != 0)
     {
+
         for (size_t i=0; i < l_intersections.size(); i++)
         {
-            m_firstRotations.at(i) = FirstPadenKahanProblem(p_pointOnLines, p_axis1, p_startPoint, l_intersections.at(i));
-            m_secondRotations.at(i) = FirstPadenKahanProblem(p_pointOnLines, p_axis2, l_intersections.at(i), p_endPoint);
-            m_resultsAngle1_rad.at(i) = m_firstRotations.at(i).getResult();
-            m_resultsAngle2_rad.at(i) = m_secondRotations.at(i).getResult();
+            //todo think about keepind l_intersection as a Quaternion
+            Vector3 l_intersectionVector;
+            l_intersectionVector << l_intersections.at(i).x() , l_intersections.at(i).y(), l_intersections.at(i).z();
+            Quaternion l_axis1Minus(0.0, -p_axis1.x(), -p_axis1.y(), -p_axis1.z());
+            m_firstRotations.value().push_back(dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, p_axis2, p_startPoint, l_intersectionVector));
+            m_secondRotations.value().push_back(dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, l_axis1Minus, p_endPoint, l_intersectionVector));
+
+            if(m_firstRotations.value().at(i).getResult().has_value() && m_secondRotations.value().at(i).getResult().has_value())
+            {
+                m_resultsAngle1_rad.push_back(m_firstRotations.value().at(i).getResult().value());
+                m_resultsAngle2_rad.push_back(m_secondRotations.value().at(i).getResult().value());
+            }
         }
         
     }
-    
+}
 
+template<typename Scalar>
+const typename std::vector<Scalar>&  SecondPadenKahanProblem<Scalar>::getAngle1Result() const
+{
+    return m_resultsAngle1_rad;
+}
+
+template<typename Scalar>
+const typename std::vector<Scalar>&  SecondPadenKahanProblem<Scalar>::getAngle2Result() const
+{
+    return m_resultsAngle2_rad;
 }
 
 template<typename Scalar>
@@ -91,7 +113,7 @@ typename std::vector<Eigen::Quaternion<Scalar>> SecondPadenKahanProblem<Scalar>:
         (l_twoLinesScalar * l_l1YScalar - l_l2YScalar) / ( std::pow(l_twoLinesScalar, 2) - 1);
     
     const Scalar l_gammaSquared = 
-        (p_x.squaredNorm() - std::pow(l_alpha, 2) - std::pow(l_beta, 2) -2*l_alpha*l_beta*l_twoLinesScalar) / (l_linesProduct);
+        (p_x.squaredNorm() - std::pow(l_alpha, 2) - std::pow(l_beta, 2) -2*l_alpha*l_beta*l_twoLinesScalar) / (l_linesProduct.squaredNorm());
 
     Scalar l_gamma = std::sqrt(l_gammaSquared);
     if(l_gamma < 0)

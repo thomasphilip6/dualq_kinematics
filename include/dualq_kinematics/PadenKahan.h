@@ -53,14 +53,14 @@ namespace dualq_kinematics
 
             SecondPadenKahanProblem(Vector3& p_pointOnLines, Quaternion& p_axis1, Quaternion& p_axis2, Vector3& p_startPoint, Vector3& p_endPoint);
 
-            const std::optional< std::vector<Scalar> >& getAngle1Result() const;
+            const std::vector<Scalar>& getAngle1Result() const;
 
-            const std::optional< std::vector<Scalar> >& getAngle2Result() const;
+            const std::vector<Scalar>& getAngle2Result() const;
         
         private:
 
-            std::optional< std::vector<Scalar> > m_resultsAngle1_rad;
-            std::optional< std::vector<Scalar> > m_resultsAngle2_rad;
+            std::vector<Scalar> m_resultsAngle1_rad;
+            std::vector<Scalar> m_resultsAngle2_rad;
 
             std::optional< std::vector<FirstPadenKahanProblem> > m_firstRotations;
             std::optional< std::vector<FirstPadenKahanProblem> > m_secondRotations;
