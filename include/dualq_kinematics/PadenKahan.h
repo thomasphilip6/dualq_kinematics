@@ -24,9 +24,9 @@ namespace dualq_kinematics
             using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
             using DualQuaternion = dualq_kinematics::DualQuaternion<Scalar>;
             using ScrewCoordinates = dualq_kinematics::ScrewCoordinates<Scalar>;
-            static constexpr Scalar c_tolerance = 1e-6;
+            static constexpr Scalar c_tolerance = 1e-4;
 
-            FirstPadenKahanProblem(Vector3& p_pointOnLine, Quaternion& p_axis, Vector3& p_startPoint, Vector3& p_endPoint);
+            FirstPadenKahanProblem(Quaternion& p_pointOnLine, Quaternion& p_axis, Quaternion& p_startPoint, Quaternion& p_endPoint);
 
             const std::optional<Scalar>& getResult() const;
 
@@ -51,7 +51,7 @@ namespace dualq_kinematics
             using FirstPadenKahanProblem = dualq_kinematics::FirstPadenKahanProblem<Scalar>;
             using DualQuaternion = dualq_kinematics::DualQuaternion<Scalar>;
 
-            SecondPadenKahanProblem(Vector3& p_pointOnLines, Quaternion& p_axis1, Quaternion& p_axis2, Vector3& p_startPoint, Vector3& p_endPoint);
+            SecondPadenKahanProblem(Quaternion& p_pointOnLines, Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_startPoint, Quaternion& p_endPoint);
 
             const std::vector<Scalar>& getAngle1Result() const;
 

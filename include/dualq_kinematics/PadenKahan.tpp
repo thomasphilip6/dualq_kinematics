@@ -2,10 +2,10 @@ namespace dualq_kinematics
 {
 
 template<typename Scalar>
-FirstPadenKahanProblem<Scalar>::FirstPadenKahanProblem(Vector3& p_pointOnLine, Quaternion& p_axis, Vector3& p_startPoint, Vector3& p_endPoint)
+FirstPadenKahanProblem<Scalar>::FirstPadenKahanProblem(Quaternion& p_pointOnLine, Quaternion& p_axis, Quaternion& p_startPoint, Quaternion& p_endPoint)
 {
-    const Quaternion l_x(0.0, p_startPoint(0)-p_pointOnLine(0), p_startPoint(1)-p_pointOnLine(1), p_startPoint(2)-p_pointOnLine(2));
-    const Quaternion l_y(0.0, p_endPoint(0)-p_pointOnLine(0), p_endPoint(1)-p_pointOnLine(1), p_endPoint(2)-p_pointOnLine(2));
+    const Quaternion l_x(0.0, p_startPoint.x()-p_pointOnLine.x(), p_startPoint.y()-p_pointOnLine.y(), p_startPoint.z()-p_pointOnLine.z());
+    const Quaternion l_y(0.0, p_endPoint.x()-p_pointOnLine.x(), p_endPoint.y()-p_pointOnLine.y(), p_endPoint.z()-p_pointOnLine.z());
 
     const Quaternion l_xProjected(
         0.0,
@@ -22,7 +22,12 @@ FirstPadenKahanProblem<Scalar>::FirstPadenKahanProblem(Vector3& p_pointOnLine, Q
     );
 
     //Checking the conditions for finite solution
-    if(compareFloatNum(l_yProjected.norm(),l_xProjected.norm(), c_tolerance) && !compareFloatNum(0.0, l_xProjected.norm(), c_tolerance) && !(l_yProjected.isApprox(l_xProjected, c_tolerance)))
+    if(
+        compareFloatNum(l_yProjected.norm(),l_xProjected.norm(), c_tolerance) && 
+        !compareFloatNum(0.0, l_xProjected.norm(), c_tolerance) && 
+        !(l_yProjected.isApprox(l_xProjected, c_tolerance) && 
+        compareFloatNum(DualQuaternion::quatMulScalarPart(p_axis, l_y), DualQuaternion::quatMulScalarPart(p_axis, l_x), c_tolerance))
+    )
     {
         m_resultAngle_rad = std::atan2(
             DualQuaternion::quatMulScalarPart(p_axis, l_xProjected*l_yProjected),
@@ -51,13 +56,13 @@ bool FirstPadenKahanProblem<Scalar>::compareFloatNum(Scalar p_a, Scalar p_b, Sca
 }
 
 template<typename Scalar>
-SecondPadenKahanProblem<Scalar>::SecondPadenKahanProblem(Vector3& p_pointOnLines, Quaternion& p_axis1, Quaternion& p_axis2, Vector3& p_startPoint, Vector3& p_endPoint)
+SecondPadenKahanProblem<Scalar>::SecondPadenKahanProblem(Quaternion& p_pointOnLines, Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_startPoint, Quaternion& p_endPoint)
 {
     m_firstRotations.emplace();
     m_secondRotations.emplace();
 
-    Quaternion l_x(0.0, p_startPoint(0)-p_pointOnLines(0), p_startPoint(1)-p_pointOnLines(1), p_startPoint(2)-p_pointOnLines(2));
-    Quaternion l_y(0.0, p_endPoint(0)-p_pointOnLines(0), p_endPoint(1)-p_pointOnLines(1), p_endPoint(2)-p_pointOnLines(2));
+    Quaternion l_x(0.0, p_startPoint.x()-p_pointOnLines.x(), p_startPoint.y()-p_pointOnLines.y(), p_startPoint.z()-p_pointOnLines.z());
+    Quaternion l_y(0.0, p_endPoint.x()-p_pointOnLines.x(), p_endPoint.y()-p_pointOnLines.y(), p_endPoint.z()-p_pointOnLines.z());
 
     std::vector<Quaternion> l_intersections = computeIntersection(p_axis1, p_axis2, l_x, l_y);
     if (l_intersections.size() != 0)
@@ -65,12 +70,11 @@ SecondPadenKahanProblem<Scalar>::SecondPadenKahanProblem(Vector3& p_pointOnLines
 
         for (size_t i=0; i < l_intersections.size(); i++)
         {
-            //todo think about keepind l_intersection as a Quaternion
-            Vector3 l_intersectionVector;
-            l_intersectionVector << l_intersections.at(i).x() , l_intersections.at(i).y(), l_intersections.at(i).z();
+            Quaternion l_c(0.0, l_intersections.at(i).x() + p_pointOnLines.x(), l_intersections.at(i).y() + p_pointOnLines.y(), l_intersections.at(i).z() + p_pointOnLines.z());
             Quaternion l_axis1Minus(0.0, -p_axis1.x(), -p_axis1.y(), -p_axis1.z());
-            m_firstRotations.value().push_back(dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, p_axis2, p_startPoint, l_intersectionVector));
-            m_secondRotations.value().push_back(dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, l_axis1Minus, p_endPoint, l_intersectionVector));
+
+            m_secondRotations.value().push_back(dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, p_axis2, p_startPoint, l_c));//sigma 2
+            m_firstRotations.value().push_back(dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, p_axis1, l_c, p_endPoint));//sigma 1
 
             if(m_firstRotations.value().at(i).getResult().has_value() && m_secondRotations.value().at(i).getResult().has_value())
             {
@@ -99,18 +103,16 @@ typename std::vector<Eigen::Quaternion<Scalar>> SecondPadenKahanProblem<Scalar>:
 {
     std::vector<Quaternion> l_results;
     const Scalar l_l2XScalar = DualQuaternion::quatMulScalarPart(p_axis2, p_x);
-    const Scalar l_l1XScalar = DualQuaternion::quatMulScalarPart(p_axis1, p_x);
-    const Scalar l_l2YScalar = DualQuaternion::quatMulScalarPart(p_axis2, p_y);
     const Scalar l_l1YScalar = DualQuaternion::quatMulScalarPart(p_axis1, p_y);
 
     const Quaternion l_linesProduct = p_axis1 * p_axis2;
-    const Scalar l_twoLinesScalar = l_linesProduct.x();
+    const Scalar l_twoLinesScalar = -l_linesProduct.w();
 
     const Scalar l_alpha = 
-        (l_twoLinesScalar * l_l2XScalar - l_l1XScalar) / ( std::pow(l_twoLinesScalar, 2) - 1);
+        (l_twoLinesScalar * l_l2XScalar - l_l1YScalar) / ( std::pow(l_twoLinesScalar, 2) - 1);
     
     const Scalar l_beta = 
-        (l_twoLinesScalar * l_l1YScalar - l_l2YScalar) / ( std::pow(l_twoLinesScalar, 2) - 1);
+        (l_twoLinesScalar * l_l1YScalar - l_l2XScalar) / ( std::pow(l_twoLinesScalar, 2) - 1);
     
     const Scalar l_gammaSquared = 
         (p_x.squaredNorm() - std::pow(l_alpha, 2) - std::pow(l_beta, 2) -2*l_alpha*l_beta*l_twoLinesScalar) / (l_linesProduct.squaredNorm());
