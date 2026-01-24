@@ -1,0 +1,5 @@
+# === Editor / IDE files / Debug setup ===
+/.vscode
+
+# == Python build artefact ===
+/test/launch/__pycache__
