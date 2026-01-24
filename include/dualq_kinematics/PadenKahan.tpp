@@ -2,7 +2,19 @@ namespace dualq_kinematics
 {
 
 template<typename Scalar>
+FirstPadenKahanProblem<Scalar>::FirstPadenKahanProblem()
+{
+
+}
+
+template<typename Scalar>
 FirstPadenKahanProblem<Scalar>::FirstPadenKahanProblem(Quaternion& p_pointOnLine, Quaternion& p_axis, Quaternion& p_startPoint, Quaternion& p_endPoint)
+{
+    compute(p_pointOnLine, p_axis, p_startPoint, p_endPoint);
+}
+
+template<typename Scalar>
+void FirstPadenKahanProblem<Scalar>::compute(Quaternion& p_pointOnLine, Quaternion& p_axis, Quaternion& p_startPoint, Quaternion& p_endPoint)
 {
     const Quaternion l_x(0.0, p_startPoint.x()-p_pointOnLine.x(), p_startPoint.y()-p_pointOnLine.y(), p_startPoint.z()-p_pointOnLine.z());
     const Quaternion l_y(0.0, p_endPoint.x()-p_pointOnLine.x(), p_endPoint.y()-p_pointOnLine.y(), p_endPoint.z()-p_pointOnLine.z());
@@ -33,7 +45,7 @@ FirstPadenKahanProblem<Scalar>::FirstPadenKahanProblem(Quaternion& p_pointOnLine
             DualQuaternion::quatMulScalarPart(p_axis, l_xProjected*l_yProjected),
             DualQuaternion::quatMulScalarPart(l_xProjected, l_yProjected)
         );
-    }   
+    }  
 }
 
 template<typename Scalar>
@@ -55,12 +67,23 @@ bool FirstPadenKahanProblem<Scalar>::compareFloatNum(Scalar p_a, Scalar p_b, Sca
     }
 }
 
+// ------------------ Second Paden Kahan Subproblem --------------------------- //
+
+template<typename Scalar>
+SecondPadenKahanProblem<Scalar>::SecondPadenKahanProblem()
+{
+
+}
+
 template<typename Scalar>
 SecondPadenKahanProblem<Scalar>::SecondPadenKahanProblem(Quaternion& p_pointOnLines, Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_startPoint, Quaternion& p_endPoint)
 {
-    m_firstRotations.emplace();
-    m_secondRotations.emplace();
+    compute(p_pointOnLines, p_axis1, p_axis2, p_startPoint, p_endPoint);
+}
 
+template<typename Scalar>
+void SecondPadenKahanProblem<Scalar>::compute(Quaternion& p_pointOnLines, Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_startPoint, Quaternion& p_endPoint)
+{
     Quaternion l_x(0.0, p_startPoint.x()-p_pointOnLines.x(), p_startPoint.y()-p_pointOnLines.y(), p_startPoint.z()-p_pointOnLines.z());
     Quaternion l_y(0.0, p_endPoint.x()-p_pointOnLines.x(), p_endPoint.y()-p_pointOnLines.y(), p_endPoint.z()-p_pointOnLines.z());
 
@@ -73,13 +96,13 @@ SecondPadenKahanProblem<Scalar>::SecondPadenKahanProblem(Quaternion& p_pointOnLi
             Quaternion l_c(0.0, l_intersections.at(i).x() + p_pointOnLines.x(), l_intersections.at(i).y() + p_pointOnLines.y(), l_intersections.at(i).z() + p_pointOnLines.z());
             Quaternion l_axis1Minus(0.0, -p_axis1.x(), -p_axis1.y(), -p_axis1.z());
 
-            m_secondRotations.value().push_back(dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, p_axis2, p_startPoint, l_c));//sigma 2
-            m_firstRotations.value().push_back(dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, p_axis1, l_c, p_endPoint));//sigma 1
+            m_secondRotations.push_back( dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, p_axis2, p_startPoint, l_c));//sigma 2
+            m_firstRotations.push_back( dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, p_axis1, l_c, p_endPoint));//sigma 1
 
-            if(m_firstRotations.value().at(i).getResult().has_value() && m_secondRotations.value().at(i).getResult().has_value())
+            if(m_firstRotations.at(i).getResult().has_value() && m_secondRotations.at(i).getResult().has_value())
             {
-                m_resultsAngle1_rad.push_back(m_firstRotations.value().at(i).getResult().value());
-                m_resultsAngle2_rad.push_back(m_secondRotations.value().at(i).getResult().value());
+                m_resultsAngle1_rad.push_back(m_firstRotations.at(i).getResult().value());
+                m_resultsAngle2_rad.push_back(m_secondRotations.at(i).getResult().value());
             }
         }
         
