@@ -6,6 +6,7 @@
 constexpr double c_tolerance = 1e-3;
 using FirstPadenKahan = dualq_kinematics::FirstPadenKahanProblem<double>;
 using SecondPadenKahan = dualq_kinematics::SecondPadenKahanProblem<double>;
+using ThirdPadenKahan = dualq_kinematics::ThirdPadenKahanProblem<double>;
 
 TEST(dualq_kinematics, FirstPadenKahanProblemTest)
 {
@@ -67,7 +68,39 @@ TEST(dualq_kinematics, SecondPadenKahanProblemTest)
         EXPECT_TRUE(FirstPadenKahan::compareFloatNum(l_expectedSigma1.at(i), l_testResultFinite.getAngle1Result().at(i), 0.01));
         std::cout << "Angle 2 : " << l_testResultFinite.getAngle2Result().at(i) << " rad" << std::endl;
         EXPECT_TRUE(FirstPadenKahan::compareFloatNum(l_expectedSigma2.at(i), l_testResultFinite.getAngle2Result().at(i), 0.01));
+        std::cout << "" << std::endl;
     }
+}
+
+TEST(dualq_kinematics, ThirdPadenKahanTest)
+{
+    //panda robot dimentions
+    const double l_d1 = 0.333;
+    const double l_d3 = 0.316;
+    const double l_d5 = 0.384;
+    //const double l_a5 = 0.0825;
+    const double l_df = 0.107;
+    const double l_a7 = 0.088;
+
+    const double l_delta = 0.5;
+
+    Eigen::Quaterniond l_jointScrewAxis(0.0, 0.0, 0.0, 1.0);
+    Eigen::Quaterniond l_positionOnLine(0.0, 0.0, 0.0, l_d1);
+    Eigen::Quaterniond l_startPoint(0.0, l_a7, 0.0, l_d1+l_d3+l_d5-l_df);
+    Eigen::Quaterniond l_endPoint(0.0, 0.0621879, 0.0622628 + l_delta, 0.926);
+
+    const std::vector<double> l_expectedResults = {2.13528, 0.784};
+
+    ThirdPadenKahan l_testResultFinite(l_positionOnLine,  l_jointScrewAxis, l_startPoint, l_endPoint, l_delta);
+    EXPECT_EQ(l_testResultFinite.getResults().size(), 2) << "3rd Paden Kahan SubProblem should return 2 solutions in this case";
+    
+    std::cout << "Third SubProbem results size : " << l_testResultFinite.getResults().size() << std::endl;
+    for (size_t i = 0; i < l_testResultFinite.getResults().size(); i++)
+    {
+        std::cout << "Third SubProblem - Angle  : " << l_testResultFinite.getResults().at(i) << " rad" << std::endl;
+        EXPECT_TRUE(FirstPadenKahan::compareFloatNum(l_expectedResults.at(i), l_testResultFinite.getResults().at(i), 0.01)) << "Results of 3rd Paden Kahan subproblem don't watch expected ones";
+    }
+    
 }
 
 int main(int argc, char ** argv)

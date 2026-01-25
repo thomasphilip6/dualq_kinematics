@@ -45,9 +45,9 @@ This repository has:
 - ✅ A library enabling construction and operations on dual quaternions
 - ✅ The capability of getting screw coordinates out of a MoveIt robot (defined by an URDF)
 - ✅ Compute forward kinematics (through the use of dual quaternion exponential and multiplication)
+- ✅ Adding Paden-Kahan subproblems handling (for inverse kinematics)
 
 The following is currently under development:
-- Adding Paden-Kahan subproblems handling with dual quaternions (for inverse kinematics)
 - Adding Inverse Kinematics solution for 6DOF
 - Adding redundancy resolution to handle 7DOF
 - Make the plugin out of the package
