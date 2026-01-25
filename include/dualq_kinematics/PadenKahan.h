@@ -32,6 +32,8 @@ namespace dualq_kinematics
 
             void compute(Quaternion& p_pointOnLine, Quaternion& p_axis, Quaternion& p_startPoint, Quaternion& p_endPoint);
 
+            void computeFromProjectedPoints(Quaternion& p_axis, const Quaternion& p_xProjected, const Quaternion& p_yProjected, bool p_checkConditions);
+
             const std::optional<Scalar>& getResult() const;
 
             static bool compareFloatNum(Scalar p_a, Scalar p_b, Scalar p_tolerance);
@@ -75,6 +77,34 @@ namespace dualq_kinematics
 
             std::vector<Quaternion> computeIntersection(Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_x, Quaternion& p_y);
             Scalar squaredNormOfQuatVectPart(Quaternion& p_quat);
+
+    };
+
+    template<typename Scalar>
+    /**
+     * @class ThirdPadenKahanProblem
+     * @brief Solves the thrid Paden-Kahan subproblem with quaternions
+     */
+    class ThirdPadenKahanProblem
+    {
+        public:
+
+            using Quaternion = Eigen::Quaternion<Scalar>;
+            using Vector3 = Eigen::Matrix<Scalar, 3, 1>; 
+            using FirstPadenKahanProblem = dualq_kinematics::FirstPadenKahanProblem<Scalar>;
+            using DualQuaternion = dualq_kinematics::DualQuaternion<Scalar>;
+
+            ThirdPadenKahanProblem();
+
+            ThirdPadenKahanProblem(Quaternion& p_pointOnLine, Quaternion& p_axis, Quaternion& p_startPoint, Quaternion& p_endPoint, Scalar p_distanceToEnd);
+
+            void compute(Quaternion& p_pointOnLine, Quaternion& p_axis, Quaternion& p_startPoint, Quaternion& p_endPoint, Scalar p_distanceToEnd);
+
+            const std::vector<Scalar>& getResults() const;
+        
+        private:
+            std::vector< Scalar > m_results;
+            FirstPadenKahanProblem m_theta0Problem;
 
     };
 

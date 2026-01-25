@@ -33,17 +33,26 @@ void FirstPadenKahanProblem<Scalar>::compute(Quaternion& p_pointOnLine, Quaterni
         l_y.z() - DualQuaternion::quatMulScalarPart(p_axis, l_y)*p_axis.z()
     );
 
+    if(compareFloatNum(DualQuaternion::quatMulScalarPart(p_axis, l_y), DualQuaternion::quatMulScalarPart(p_axis, l_x), c_tolerance))
+    {
+        computeFromProjectedPoints(p_axis, l_xProjected, l_yProjected, true);
+    }
+}
+
+template<typename Scalar>
+void FirstPadenKahanProblem<Scalar>::computeFromProjectedPoints(Quaternion& p_axis, const Quaternion& p_xProjected, const Quaternion& p_yProjected, bool p_checkConditions)
+{
     //Checking the conditions for finite solution
     if(
-        compareFloatNum(l_yProjected.norm(),l_xProjected.norm(), c_tolerance) && 
-        !compareFloatNum(0.0, l_xProjected.norm(), c_tolerance) && 
-        !(l_yProjected.isApprox(l_xProjected, c_tolerance) && 
-        compareFloatNum(DualQuaternion::quatMulScalarPart(p_axis, l_y), DualQuaternion::quatMulScalarPart(p_axis, l_x), c_tolerance))
+        (compareFloatNum(p_yProjected.norm(),p_xProjected.norm(), c_tolerance) && 
+        !compareFloatNum(0.0, p_xProjected.norm(), c_tolerance) && 
+        !(p_yProjected.isApprox(p_xProjected, c_tolerance)))  
+        || !p_checkConditions
     )
     {
         m_resultAngle_rad = std::atan2(
-            DualQuaternion::quatMulScalarPart(p_axis, l_xProjected*l_yProjected),
-            DualQuaternion::quatMulScalarPart(l_xProjected, l_yProjected)
+            DualQuaternion::quatMulScalarPart(p_axis, p_xProjected*p_yProjected),
+            DualQuaternion::quatMulScalarPart(p_xProjected, p_yProjected)
         );
     }  
 }
@@ -176,6 +185,79 @@ template<typename Scalar>
 Scalar SecondPadenKahanProblem<Scalar>::squaredNormOfQuatVectPart(Quaternion& p_quat)
 {
     return std::pow(p_quat.x(), 2) + std::pow(p_quat.y(), 2) + std::pow(p_quat.z(), 2);
+}
+
+// ------------------ Third Paden Kahan Subproblem --------------------------- //
+
+template<typename Scalar>
+ThirdPadenKahanProblem<Scalar>::ThirdPadenKahanProblem()
+{
+
+}
+
+template<typename Scalar>
+ThirdPadenKahanProblem<Scalar>::ThirdPadenKahanProblem(Quaternion& p_pointOnLine, Quaternion& p_axis, Quaternion& p_startPoint, Quaternion& p_endPoint, Scalar p_distanceToEnd)
+{
+    compute(p_pointOnLine, p_axis, p_startPoint, p_endPoint, p_distanceToEnd);
+}
+
+template<typename Scalar>
+void ThirdPadenKahanProblem<Scalar>::compute(Quaternion& p_pointOnLine, Quaternion& p_axis, Quaternion& p_startPoint, Quaternion& p_endPoint, Scalar p_distanceToEnd)
+{
+    const Quaternion l_x(0.0, p_startPoint.x()-p_pointOnLine.x(), p_startPoint.y()-p_pointOnLine.y(), p_startPoint.z()-p_pointOnLine.z());
+    const Quaternion l_y(0.0, p_endPoint.x()-p_pointOnLine.x(), p_endPoint.y()-p_pointOnLine.y(), p_endPoint.z()-p_pointOnLine.z());
+
+    const Quaternion l_xProjected(
+        0.0,
+        l_x.x() - DualQuaternion::quatMulScalarPart(p_axis, l_x)*p_axis.x(),
+        l_x.y() - DualQuaternion::quatMulScalarPart(p_axis, l_x)*p_axis.y(),
+        l_x.z() - DualQuaternion::quatMulScalarPart(p_axis, l_x)*p_axis.z()
+    );
+
+    const Quaternion l_yProjected(
+        0.0,
+        l_y.x() - DualQuaternion::quatMulScalarPart(p_axis, l_y)*p_axis.x(),
+        l_y.y() - DualQuaternion::quatMulScalarPart(p_axis, l_y)*p_axis.y(),
+        l_y.z() - DualQuaternion::quatMulScalarPart(p_axis, l_y)*p_axis.z()
+    );
+
+    const Quaternion l_startMinusEnd(0.0, p_startPoint.x()-p_endPoint.x(), p_startPoint.y()-p_endPoint.y(), p_startPoint.z()-p_endPoint.z());
+    const Scalar l_deltaProjSquared = std::pow(p_distanceToEnd, 2) - std::pow( DualQuaternion::quatMulScalarPart(p_axis, l_startMinusEnd), 2);
+
+    if(FirstPadenKahanProblem::compareFloatNum(DualQuaternion::quatMulScalarPart(p_axis, l_y), DualQuaternion::quatMulScalarPart(p_axis, l_x), FirstPadenKahanProblem::c_tolerance))
+    {
+        m_theta0Problem.computeFromProjectedPoints(p_axis, l_xProjected, l_yProjected, false);
+    }
+    else
+    {
+        return;
+    }
+
+    //Check if first subproblem could be solved
+    if(!m_theta0Problem.getResult().has_value())
+    {
+        return;
+    }
+
+    const Scalar l_theta1 = std::acos(
+        ((l_xProjected.squaredNorm() + l_yProjected.squaredNorm() - l_deltaProjSquared ) / (2*l_xProjected.norm()*l_yProjected.norm()))
+    );
+
+    if(l_theta1 != 0)
+    {
+        m_results.push_back( m_theta0Problem.getResult().value() + l_theta1);
+        m_results.push_back( m_theta0Problem.getResult().value() - l_theta1);
+    }
+    else
+    {
+        m_results.push_back(m_theta0Problem.getResult().value());
+    }
+}
+
+template<typename Scalar>
+const typename std::vector<Scalar>& ThirdPadenKahanProblem<Scalar>::getResults() const
+{
+    return m_results;
 }
 
 }
