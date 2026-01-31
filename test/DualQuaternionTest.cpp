@@ -6,6 +6,9 @@
 
 using DualQuaternion = dualq_kinematics::DualQuaternion<double>;
 using FirstPadenKahan = dualq_kinematics::FirstPadenKahanProblem<double>;
+using Translation = Eigen::Translation<double, 3>;
+using Quaternion = Eigen::Quaterniond;
+
 constexpr double l_tolerance = 1e-6;
 constexpr int c_repetitions = 1000;
 
@@ -208,7 +211,6 @@ TEST(dualq_kinematics, quatMulScalarPartTest)
 
 TEST(dualq_kinematics, exponentialTest)
 {
-    using Translation = Eigen::Translation<double, 3>;
     const double l_1 = 0.4;
     const double l_2 = 1.12;
     const double l_3 = 1.76;
@@ -243,6 +245,17 @@ TEST(dualq_kinematics, exponentialTest)
     std::cout << l_forwardKinematics.getTranslation(true).y() << std::endl;
     std::cout << l_forwardKinematics.getTranslation(true).z() << std::endl;
     EXPECT_TRUE(l_forwardKinematics.isApprox(l_expected, 0.001));
+}
+
+TEST(dualq_kinematics, getIntersectionOfLinesTest)
+{
+    //constructing two 3d lines 
+    const double l_1 = 0.4;
+    DualQuaternion l_line1(Translation(0.0, 0.0, 1.0), Translation(0.0, 0.0, 0.0));
+    DualQuaternion l_line2(Translation(0.0, 1.0, 0.0), Translation(0.0, 0.0, l_1));
+    const Quaternion l_expected(0.0, 0.0, 0.0, l_1); 
+    auto l_intersection = l_line1.getIntersectionOfLines(l_line2);
+    EXPECT_TRUE(l_intersection.isApprox(l_expected, 0.01));
 }
 
 int main(int argc, char ** argv)
