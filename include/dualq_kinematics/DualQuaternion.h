@@ -128,6 +128,11 @@ namespace dualq_kinematics
             DualQuaternion conjugate() const;
 
             /**
+             * @brief Returns the "third conjugate" of the dual quaternion
+             */
+            DualQuaternion thirdConjugate() const;
+
+            /**
              * @brief  Returns true if dual quaternion is a unit one
              * @param p_tolerance tolerance used
              * @return True if instance is a unit dual quaternion
@@ -201,6 +206,13 @@ namespace dualq_kinematics
             DualQuaternion dqExp() const;
 
             Quaternion getIntersectionOfLines(DualQuaternion& p_line2);
+
+            /**
+             * @brief Applies the dual quaternion as a transformation to the vector represented by the pure quaternion passed
+             * @brief p_vector quaternion defining a vector as (0, vec)
+             * @return vector transformed as a pure quaternion (0, vec) 
+             */
+            void transformVector(Quaternion& p_vector) const;
             
         private:
 

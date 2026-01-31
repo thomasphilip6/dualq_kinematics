@@ -121,6 +121,12 @@ DualQuaternion<Scalar> DualQuaternion<Scalar>::conjugate() const
 }
 
 template<typename Scalar>
+DualQuaternion<Scalar> DualQuaternion<Scalar>::thirdConjugate() const
+{
+    return DualQuaternion<Scalar>(m_realPart.conjugate(), (-1.0)*m_dualPart.conjugate());
+}
+
+template<typename Scalar>
 bool DualQuaternion<Scalar>::isUnit(const Scalar p_tolerance) const
 {
     const Scalar l_firstCondition = m_realPart.w()*m_realPart.w() + m_realPart.x()*m_realPart.x() + m_realPart.y()*m_realPart.y() + m_realPart.z()*m_realPart.z();
@@ -273,6 +279,16 @@ typename DualQuaternion<Scalar>::Quaternion DualQuaternion<Scalar>::getIntersect
     Quaternion l_result = (p_line2.getRealPart() * p_line2.getDualPart()) + (p_line2.getRealPart() * quatMulScalarPart(this->getRealPart()*this->getDualPart(), p_line2.getRealPart()));
     l_result.w() = 0;
     return l_result;
+}
+
+template<typename Scalar>
+void DualQuaternion<Scalar>::transformVector(Quaternion& p_vector) const
+{
+    p_vector = this->getRealPart() * p_vector * this->getRealPart().conjugate();
+    auto l_translation = this->getTranslation(true);
+    p_vector.x() = p_vector.x() + l_translation.x();
+    p_vector.y() = p_vector.y() + l_translation.y();
+    p_vector.z() = p_vector.z() + l_translation.z();
 }
 
 }
