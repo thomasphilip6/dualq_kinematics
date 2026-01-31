@@ -74,16 +74,7 @@ DualQuaternion<Scalar>::DualQuaternion(const Transform& p_transform)
 template<typename Scalar>
 DualQuaternion<Scalar> DualQuaternion<Scalar>::operator*(const DualQuaternion<Scalar>& p_other) const
 {
-    const Quaternion l_realPart(m_realPart * p_other.m_realPart);
-    const Quaternion l_dualPartOne(m_realPart * p_other.m_dualPart);
-    const Quaternion l_dualPartTwo(m_dualPart * p_other.m_realPart);
-    const Quaternion l_dualPart(
-        l_dualPartOne.w()+l_dualPartTwo.w(),
-        l_dualPartOne.x()+l_dualPartTwo.x(),
-        l_dualPartOne.y()+l_dualPartTwo.y(),
-        l_dualPartOne.z()+l_dualPartTwo.z()
-    );
-    return DualQuaternion<Scalar>(l_realPart, l_dualPart);
+    return DualQuaternion<Scalar>(m_realPart * p_other.m_realPart, (m_realPart * p_other.m_dualPart) + (m_dualPart * p_other.m_realPart));
 }
 
 template<typename Scalar>
@@ -246,12 +237,6 @@ Scalar DualQuaternion<Scalar>::quatMulScalarPart(const Eigen::Quaternion<Scalar>
 }
 
 template<typename Scalar>
-typename DualQuaternion<Scalar>::Quaternion DualQuaternion<Scalar>::addQuaternions(const Eigen::Quaternion<Scalar>& p_quat1, const Eigen::Quaternion<Scalar>& p_quat2)
-{
-    return Quaternion(p_quat1.w()+p_quat2.w(), p_quat1.x()+p_quat2.x(), p_quat1.y()+p_quat2.y(), p_quat1.z()+p_quat2.z());
-}
-
-template<typename Scalar>
 typename DualQuaternion<Scalar>::DualQuaternion DualQuaternion<Scalar>::dqExp() const
 {
     const Scalar l_psi = m_realPart.vec().norm();
@@ -285,7 +270,7 @@ template<typename Scalar>
 typename DualQuaternion<Scalar>::Quaternion DualQuaternion<Scalar>::getIntersectionOfLines(DualQuaternion& p_line2)
 {
     //because p_line2.getRealPart().w() = 0
-    Quaternion l_result = addQuaternions(p_line2.getRealPart() * p_line2.getDualPart(), p_line2.getRealPart() * quatMulScalarPart(this->getRealPart()*this->getDualPart(), p_line2.getRealPart()));
+    Quaternion l_result = (p_line2.getRealPart() * p_line2.getDualPart()) + (p_line2.getRealPart() * quatMulScalarPart(this->getRealPart()*this->getDualPart(), p_line2.getRealPart()));
     l_result.w() = 0;
     return l_result;
 }

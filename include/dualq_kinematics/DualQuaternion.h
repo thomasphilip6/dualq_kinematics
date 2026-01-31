@@ -195,9 +195,6 @@ namespace dualq_kinematics
              */
             static Scalar quatMulScalarPart(const Eigen::Quaternion<Scalar>& p_quaternion1, const Eigen::Quaternion<Scalar>& p_quaternion2);
 
-            //move this to quaternion utils
-            static Quaternion addQuaternions(const Eigen::Quaternion<Scalar>& p_quat1, const Eigen::Quaternion<Scalar>& p_quat2);
-
             /**
              * @brief Returns the exponential of a dual quaternion
              */
@@ -227,6 +224,12 @@ namespace dualq_kinematics
     Eigen::Quaternion<Scalar> operator*(const Eigen::Quaternion<Scalar>& p_q, const Scalar& p_scalar)
     {
         return Eigen::Quaternion<Scalar>(p_q.coeffs() * p_scalar);
+    }
+
+    template<typename Scalar>
+    Eigen::Quaternion<Scalar> operator+(const Eigen::Quaternion<Scalar>& p_q1, const Eigen::Quaternion<Scalar>& p_q2)
+    {
+        return Eigen::Quaternion<Scalar>(p_q1.w() + p_q2.w(), p_q1.x() + p_q2.x(), p_q1.y() + p_q2.y(), p_q1.z() + p_q2.z());
     }
 
 
