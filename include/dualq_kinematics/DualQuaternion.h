@@ -26,6 +26,8 @@ namespace dualq_kinematics
             using Translation = Eigen::Translation<Scalar, 3> ;
             using Transform = Eigen::Transform<Scalar,3, Eigen::Isometry>;
             using RotationMatrix = Eigen::Matrix<Scalar, 3, 3>;
+            using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
+
             static constexpr Scalar c_tolerance = 1e-6;
 
             /**
@@ -193,10 +195,15 @@ namespace dualq_kinematics
              */
             static Scalar quatMulScalarPart(const Eigen::Quaternion<Scalar>& p_quaternion1, const Eigen::Quaternion<Scalar>& p_quaternion2);
 
+            //move this to quaternion utils
+            static Quaternion addQuaternions(const Eigen::Quaternion<Scalar>& p_quat1, const Eigen::Quaternion<Scalar>& p_quat2);
+
             /**
              * @brief Returns the exponential of a dual quaternion
              */
             DualQuaternion dqExp() const;
+
+            Quaternion getIntersectionOfLines(DualQuaternion& p_line2);
             
         private:
 
@@ -205,9 +212,24 @@ namespace dualq_kinematics
 
             // Dual Part of the dual quaternion
             Quaternion m_dualPart;
-            
-            
+                   
     };
+
+    // ------------------ Eigen::Quaternion<Scalar> utils --------------- //
+
+    template<typename Scalar>
+    Eigen::Quaternion<Scalar> operator*(const Scalar& p_scalar, const Eigen::Quaternion<Scalar>& p_q)
+    {
+        return Eigen::Quaternion<Scalar>(p_q.coeffs() * p_scalar);
+    }
+
+    template<typename Scalar>
+    Eigen::Quaternion<Scalar> operator*(const Eigen::Quaternion<Scalar>& p_q, const Scalar& p_scalar)
+    {
+        return Eigen::Quaternion<Scalar>(p_q.coeffs() * p_scalar);
+    }
+
+
 }
 
 #include "dualq_kinematics/DualQuaternion.tpp"

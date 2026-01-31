@@ -246,6 +246,12 @@ Scalar DualQuaternion<Scalar>::quatMulScalarPart(const Eigen::Quaternion<Scalar>
 }
 
 template<typename Scalar>
+typename DualQuaternion<Scalar>::Quaternion DualQuaternion<Scalar>::addQuaternions(const Eigen::Quaternion<Scalar>& p_quat1, const Eigen::Quaternion<Scalar>& p_quat2)
+{
+    return Quaternion(p_quat1.w()+p_quat2.w(), p_quat1.x()+p_quat2.x(), p_quat1.y()+p_quat2.y(), p_quat1.z()+p_quat2.z());
+}
+
+template<typename Scalar>
 typename DualQuaternion<Scalar>::DualQuaternion DualQuaternion<Scalar>::dqExp() const
 {
     const Scalar l_psi = m_realPart.vec().norm();
@@ -273,6 +279,15 @@ typename DualQuaternion<Scalar>::DualQuaternion DualQuaternion<Scalar>::dqExp() 
         exp(m_realPart.w())*(l_A*m_dualPart.z() + l_B*m_realPart.z()*l_gamma) + m_dualPart.w()*l_realPartExp.z()
     );
     return DualQuaternion(l_realPartExp, l_dualPartExp);
+}
+
+template<typename Scalar>
+typename DualQuaternion<Scalar>::Quaternion DualQuaternion<Scalar>::getIntersectionOfLines(DualQuaternion& p_line2)
+{
+    //because p_line2.getRealPart().w() = 0
+    Quaternion l_result = addQuaternions(p_line2.getRealPart() * p_line2.getDualPart(), p_line2.getRealPart() * quatMulScalarPart(this->getRealPart()*this->getDualPart(), p_line2.getRealPart()));
+    l_result.w() = 0;
+    return l_result;
 }
 
 }
