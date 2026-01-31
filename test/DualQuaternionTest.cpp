@@ -8,6 +8,7 @@ using DualQuaternion = dualq_kinematics::DualQuaternion<double>;
 using FirstPadenKahan = dualq_kinematics::FirstPadenKahanProblem<double>;
 using Translation = Eigen::Translation<double, 3>;
 using Quaternion = Eigen::Quaterniond;
+using Vector3 = Eigen::Matrix<double, 3, 1>;
 
 constexpr double l_tolerance = 1e-6;
 constexpr int c_repetitions = 1000;
@@ -256,6 +257,31 @@ TEST(dualq_kinematics, getIntersectionOfLinesTest)
     const Quaternion l_expected(0.0, 0.0, 0.0, l_1); 
     auto l_intersection = l_line1.getIntersectionOfLines(l_line2);
     EXPECT_TRUE(l_intersection.isApprox(l_expected, 0.01));
+}
+
+TEST(dualq_kinematics, thirdConjugateTest)
+{
+    const Quaternion l_q1(1.0, 2.0, 3.0, 4.0);
+    const Quaternion l_q2(5.0, 6.0, 7.0, 8.0);
+
+    const Quaternion l_q1Expected(1.0, -2.0, -3.0, -4.0);
+    const Quaternion l_q2Expected(-5.0, 6.0, 7.0, 8.0);
+
+    const DualQuaternion l_input(l_q1, l_q2);
+    const DualQuaternion l_expected(l_q1Expected, l_q2Expected);
+    EXPECT_TRUE(l_input.thirdConjugate().isApprox(l_expected, 0.1));
+}
+
+TEST(dualq_kinematics, transformVectorTest)
+{
+    Eigen::Isometry3d l_transform = Eigen::Translation3d(10, 12, 45) * Eigen::AngleAxisd(M_PI/4, Eigen::Vector3d::UnitZ());
+    const DualQuaternion l_transformDQ(l_transform);
+    const Vector3 l_vector(1.0, 0.0, 0.0);
+    Quaternion l_vectorQuat(0.0, 1.0, 0.0, 0.0);
+    auto l_resultEigen = l_transform * l_vector;
+    l_transformDQ.transformVector(l_vectorQuat);
+    const Quaternion l_eigen(0.0, l_resultEigen(0), l_resultEigen(1), l_resultEigen(2));
+    EXPECT_TRUE(l_eigen.isApprox(l_vectorQuat, l_tolerance));
 }
 
 int main(int argc, char ** argv)
