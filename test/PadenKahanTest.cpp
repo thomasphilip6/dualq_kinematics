@@ -6,6 +6,7 @@
 constexpr double c_tolerance = 1e-3;
 using FirstPadenKahan = dualq_kinematics::FirstPadenKahanProblem<double>;
 using SecondPadenKahan = dualq_kinematics::SecondPadenKahanProblem<double>;
+using SecondPadenKahanExt = dualq_kinematics::SecondPadenKahanProblemExt<double>;
 using ThirdPadenKahan = dualq_kinematics::ThirdPadenKahanProblem<double>;
 
 TEST(dualq_kinematics, FirstPadenKahanProblemTest)
@@ -57,6 +58,44 @@ TEST(dualq_kinematics, SecondPadenKahanProblemTest)
     Eigen::Quaterniond l_intersectionPoint(0.0, 0.0, 0.0, l_d1);
 
     SecondPadenKahan l_testResultFinite(l_intersectionPoint, l_joint1ScrewAxis, l_joint2ScrewAxis, l_startPoint, l_endPoint);
+
+    EXPECT_EQ(l_testResultFinite.getAngle1Result().size(), l_expectedSigma1.size());
+    EXPECT_EQ(l_testResultFinite.getAngle2Result().size(), l_expectedSigma1.size());
+    std::cout << "number of angle pairs " << l_testResultFinite.getAngle1Result().size() << std::endl;
+
+    for (size_t i = 0; i < l_testResultFinite.getAngle1Result().size(); i++)
+    {
+        std::cout << "Angle 1 : " << l_testResultFinite.getAngle1Result().at(i) << " rad" << std::endl;
+        EXPECT_TRUE(FirstPadenKahan::compareFloatNum(l_expectedSigma1.at(i), l_testResultFinite.getAngle1Result().at(i), 0.01));
+        std::cout << "Angle 2 : " << l_testResultFinite.getAngle2Result().at(i) << " rad" << std::endl;
+        EXPECT_TRUE(FirstPadenKahan::compareFloatNum(l_expectedSigma2.at(i), l_testResultFinite.getAngle2Result().at(i), 0.01));
+        std::cout << "" << std::endl;
+    }
+}
+
+TEST(dualq_kinematics, SecondPadenKahanProblemExtTest)
+{
+    //panda robot dimentions
+    const double l_d1 = 0.333;
+    const double l_d3 = 0.316;
+    const double l_d5 = 0.384;
+    const double l_a5 = 0.0825;
+    const double l_df = 0.107;
+    const double l_a7 = 0.088;
+
+    const std::vector<double> l_expectedSigma1 = {-0.16};
+    const std::vector<double> l_expectedSigma2 = {0.47};
+
+    Eigen::Quaterniond l_joint4ScrewAxis(0.0, 0.0, -1.0, 0.0);
+    Eigen::Quaterniond l_joint5ScrewAxis(0.0, 0.0, 0.0, 1.0);
+
+    Eigen::Quaterniond l_pointOnScrewAxis4(0.0, l_a5, 0.0, l_d1+l_d3);
+    Eigen::Quaterniond l_pointOnScrewAxis5(0.0, 0.0, 0.0, l_d1+l_d3+l_d5);
+
+    Eigen::Quaterniond l_startPoint(0.0, l_a7, 0.0, l_d1+l_d3+l_d5-l_df);
+    Eigen::Quaterniond l_endPoint(0.0, 0.122641, 0.039854, 0.923106);
+
+    SecondPadenKahanExt l_testResultFinite(l_pointOnScrewAxis4, l_pointOnScrewAxis5, l_joint4ScrewAxis, l_joint5ScrewAxis, l_startPoint, l_endPoint);
 
     EXPECT_EQ(l_testResultFinite.getAngle1Result().size(), l_expectedSigma1.size());
     EXPECT_EQ(l_testResultFinite.getAngle2Result().size(), l_expectedSigma1.size());
