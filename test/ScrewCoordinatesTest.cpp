@@ -25,6 +25,7 @@ const std::string ROBOT_DESCRIPTION_PARAM = "robot_description";
 static const rclcpp::Logger LOGGER = rclcpp::get_logger("ScrewCoordinatesTest");
 
 using ScrewCoordinates = dualq_kinematics::ScrewCoordinates<double>;
+using Vector3 = Eigen::Matrix<double, 3, 1>; 
 
 void printJointsInfo(moveit::core::RobotModelPtr p_robotModelPtr)
 {
@@ -91,14 +92,14 @@ TEST(dualq_kinematics, ScrewCoordinatesConstructionTest)
     printScrewInfo(l_screwCoord);
 
     //The following are the references 
-    const std::array<Eigen::Translation<double, 3>, c_dofNumberPanda> l_screwAxesRef = {
-        Eigen::Translation<double, 3>(0.0, 0.0, 1.0),
-        Eigen::Translation<double, 3>(0.0, 1.0, 0.0),
-        Eigen::Translation<double, 3>(0.0, 0.0, 1.0),
-        Eigen::Translation<double, 3>(0.0, -1.0, 0.0),
-        Eigen::Translation<double, 3>(0.0, 0.0, 1.0),
-        Eigen::Translation<double, 3>(0.0, -1.0, 0.0),
-        Eigen::Translation<double, 3>(0.0, 0.0, -1.0),
+    const std::array<Vector3, c_dofNumberPanda> l_screwAxesRef = {
+        Vector3(0.0, 0.0, 1.0),
+        Vector3(0.0, 1.0, 0.0),
+        Vector3(0.0, 0.0, 1.0),
+        Vector3(0.0, -1.0, 0.0),
+        Vector3(0.0, 0.0, 1.0),
+        Vector3(0.0, -1.0, 0.0),
+        Vector3(0.0, 0.0, -1.0),
     };
 
     const double l_d1 = 0.333;
@@ -108,14 +109,14 @@ TEST(dualq_kinematics, ScrewCoordinatesConstructionTest)
     const double l_df = 0.107;
     const double l_a7 = 0.088;
 
-    const std::array<Eigen::Translation<double, 3>, c_dofNumberPanda> l_positionsRef = {
-        Eigen::Translation<double, 3>(0.0, 0.0, l_d1),
-        Eigen::Translation<double, 3>(0.0, 0.0, l_d1),
-        Eigen::Translation<double, 3>(0.0, 0.0, l_d1+l_d3),
-        Eigen::Translation<double, 3>(l_a5, 0.0, l_d1+l_d3),
-        Eigen::Translation<double, 3>(0.0, 0.0, l_d1+l_d3+l_d5),
-        Eigen::Translation<double, 3>(0.0, 0.0, l_d1+l_d3+l_d5),
-        Eigen::Translation<double, 3>(l_a7, 0.0, l_d1+l_d3+l_d5),
+    const std::array<Vector3, c_dofNumberPanda> l_positionsRef = {
+        Vector3(0.0, 0.0, l_d1),
+        Vector3(0.0, 0.0, l_d1),
+        Vector3(0.0, 0.0, l_d1+l_d3),
+        Vector3(l_a5, 0.0, l_d1+l_d3),
+        Vector3(0.0, 0.0, l_d1+l_d3+l_d5),
+        Vector3(0.0, 0.0, l_d1+l_d3+l_d5),
+        Vector3(l_a7, 0.0, l_d1+l_d3+l_d5),
     };
 
     const std::array<std::string, c_dofNumberPanda> l_jointNamesRef = {

@@ -66,8 +66,8 @@ namespace dualq_kinematics
              * @param p_position defines a point on the screw axis carried by the dualq 
              */
             DualQuaternion(
-                const Translation& p_rotationAxis,
-                const Translation& p_position
+                const Vector3& p_rotationAxis,
+                const Vector3& p_position
             );
 
             /**

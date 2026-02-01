@@ -29,15 +29,15 @@ DualQuaternion<Scalar>::DualQuaternion(const Translation& p_translation, const A
 
 //Construction for screw axis
 template<typename Scalar>
-DualQuaternion<Scalar>::DualQuaternion(const Translation& p_rotationAxis, const Translation& p_position)
+DualQuaternion<Scalar>::DualQuaternion(const Vector3& p_rotationAxis, const Vector3& p_position)
 {
     //todo make sure screw axis is a unit vector
-    m_realPart = Quaternion(0.0, p_rotationAxis.x(), p_rotationAxis.y(), p_rotationAxis.z());
+    m_realPart = Quaternion(0.0, p_rotationAxis(0), p_rotationAxis(1), p_rotationAxis(2));
     m_dualPart = Quaternion(
         0.0,
-        p_position.y()*p_rotationAxis.z() - p_position.z()*p_rotationAxis.y(),
-        p_position.z()*p_rotationAxis.x() - p_position.x()*p_rotationAxis.z(),
-        p_position.x()*p_rotationAxis.y() - p_position.y()*p_rotationAxis.x()
+        p_position(1)*p_rotationAxis(2) - p_position(2)*p_rotationAxis(1),
+        p_position(2)*p_rotationAxis(0) - p_position(0)*p_rotationAxis(2),
+        p_position(0)*p_rotationAxis(1) - p_position(1)*p_rotationAxis(0)
     );
 }
 

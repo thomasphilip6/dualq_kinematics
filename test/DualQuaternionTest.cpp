@@ -31,8 +31,8 @@ TEST(dualq_kinematics, ConstructionTest)
     EXPECT_FALSE(l_angleAxisDQTransFirst.getDualPart().isApprox(l_angleAxisDQ.getDualPart(), l_tolerance)) << "Construction of dualq by angle axis fails";
 
     //Construction with ScrewAxis
-    const Eigen::Translation<double, 3> l_screwAxis(0.101351, 0.244683, 0.964291);
-    const Eigen::Translation<double, 3> l_position(0.0,0.5, 0.0);
+    const Vector3 l_screwAxis(0.101351, 0.244683, 0.964291);
+    const Vector3 l_position(0.0,0.5, 0.0);
     const Eigen::Quaterniond l_expectedReal(0.0, 0.101351, 0.244683, 0.964291);
     const Eigen::Quaterniond l_expectedDual(0.0, 0.5*0.964261, 0.0, -0.5*0.101351);
     const DualQuaternion l_screwAxisDQ(l_screwAxis, l_position);
@@ -217,13 +217,13 @@ TEST(dualq_kinematics, exponentialTest)
     const double l_3 = 1.76;
     const double l_4 = 2.1;
     std::array<DualQuaternion, 7> l_joints = {
-        DualQuaternion(Translation(0.0, 0.0, 1.0), Translation(0.0, 0.0, 0.0)),
-        DualQuaternion(Translation(0.0, 1.0, 0.0), Translation(0.0, 0.0, l_1)),
-        DualQuaternion(Translation(0.0, 0.0, 1.0), Translation(0.0, 0.0, l_1)),
-        DualQuaternion(Translation(0.0, 1.0, 0.0), Translation(0.0, 0.0, l_2)),
-        DualQuaternion(Translation(0.0, 0.0, 1.0), Translation(0.0, 0.0, l_2)),
-        DualQuaternion(Translation(0.0, 1.0, 0.0), Translation(0.0, 0.0, l_3)),
-        DualQuaternion(Translation(0.0, 0.0, 1.0), Translation(0.0, 0.0, l_3))
+        DualQuaternion(Vector3(0.0, 0.0, 1.0), Vector3(0.0, 0.0, 0.0)),
+        DualQuaternion(Vector3(0.0, 1.0, 0.0), Vector3(0.0, 0.0, l_1)),
+        DualQuaternion(Vector3(0.0, 0.0, 1.0), Vector3(0.0, 0.0, l_1)),
+        DualQuaternion(Vector3(0.0, 1.0, 0.0), Vector3(0.0, 0.0, l_2)),
+        DualQuaternion(Vector3(0.0, 0.0, 1.0), Vector3(0.0, 0.0, l_2)),
+        DualQuaternion(Vector3(0.0, 1.0, 0.0), Vector3(0.0, 0.0, l_3)),
+        DualQuaternion(Vector3(0.0, 0.0, 1.0), Vector3(0.0, 0.0, l_3))
     };
     DualQuaternion l_ee(Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0), Translation(0.0, 0.0, l_4));
 
@@ -252,8 +252,8 @@ TEST(dualq_kinematics, getIntersectionOfLinesTest)
 {
     //constructing two 3d lines 
     const double l_1 = 0.4;
-    DualQuaternion l_line1(Translation(0.0, 0.0, 1.0), Translation(0.0, 0.0, 0.0));
-    DualQuaternion l_line2(Translation(0.0, 1.0, 0.0), Translation(0.0, 0.0, l_1));
+    DualQuaternion l_line1(Vector3(0.0, 0.0, 1.0), Vector3(0.0, 0.0, 0.0));
+    DualQuaternion l_line2(Vector3(0.0, 1.0, 0.0), Vector3(0.0, 0.0, l_1));
     const Quaternion l_expected(0.0, 0.0, 0.0, l_1); 
     auto l_intersection = l_line1.getIntersectionOfLines(l_line2);
     EXPECT_TRUE(l_intersection.isApprox(l_expected, 0.01));

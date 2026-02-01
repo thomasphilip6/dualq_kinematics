@@ -32,18 +32,19 @@ namespace dualq_kinematics
             using Translation = Eigen::Translation<Scalar, 3>;
             using Transform = Eigen::Transform<Scalar,3, Eigen::Isometry>;
             using Quaternion = Eigen::Quaternion<Scalar>;
+            using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
 
             ScrewCoordinates(const moveit::core::RobotModel& p_robotModel, std::string p_tipLinkName);
 
-            const std::vector<Translation>& getScrewAxes() const;
-            const std::vector<Translation>& getPositions() const;
+            const std::vector<Vector3>& getScrewAxes() const;
+            const std::vector<Vector3>& getPositions() const;
             const std::vector<std::string>& getJointsNames() const;
             const Transform& getTip2BaseInit() const;
             // const std::pair<Quaternion, Translation> getTip2BaseInit(const moveit::core::RobotModel& p_robotModel, std::string p_tipLinkName) const;
 
         private:
-            std::vector<Translation> m_screwAxes;
-            std::vector<Translation> m_positions;
+            std::vector<Vector3> m_screwAxes;
+            std::vector<Vector3> m_positions;
             std::vector<std::string> m_jointNames;
             Transform m_tip2BaseInit;
             std::string m_tipLinkName;

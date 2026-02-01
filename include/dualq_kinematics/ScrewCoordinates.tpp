@@ -26,13 +26,13 @@ ScrewCoordinates<Scalar>::ScrewCoordinates(const moveit::core::RobotModel& p_rob
 }
 
 template<typename Scalar>
-const std::vector< typename ScrewCoordinates<Scalar>::Translation >& ScrewCoordinates<Scalar>::getScrewAxes() const
+const std::vector< typename ScrewCoordinates<Scalar>::Vector3 >& ScrewCoordinates<Scalar>::getScrewAxes() const
 {
     return m_screwAxes;
 }
 
 template<typename Scalar>
-const  std::vector< typename ScrewCoordinates<Scalar>::Translation >& ScrewCoordinates<Scalar>::getPositions() const
+const  std::vector< typename ScrewCoordinates<Scalar>::Vector3 >& ScrewCoordinates<Scalar>::getPositions() const
 {
     return m_positions;
 }
@@ -135,10 +135,10 @@ void ScrewCoordinates<Scalar>::transformToScrewCoordinates(std::vector<urdf::Pos
         l_jnt2Base.at(i) = l_transform;  
 
         //Screw Axis is z vector in Base frame
-        m_screwAxes.at(i) = Eigen::Translation<Scalar,3>( l_transform.rotation().col(2) );
+        m_screwAxes.at(i) = Vector3( l_transform.rotation().col(2) );
 
         //Position on the screw axis is for example the translation from Base to Joint i
-        m_positions.at(i) = Eigen::Translation<Scalar,3>( l_transform.translation() );
+        m_positions.at(i) = Vector3( l_transform.translation() );
     }
 
     //Deal with tip2BaseInit
