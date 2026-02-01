@@ -66,6 +66,8 @@ namespace dualq_kinematics
             const std::vector<Scalar>& getAngle1Result() const;
 
             const std::vector<Scalar>& getAngle2Result() const;
+
+            static std::vector<Quaternion> computeIntersection(Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_x, Quaternion& p_y);
         
         private:
 
@@ -75,7 +77,6 @@ namespace dualq_kinematics
             std::vector<FirstPadenKahanProblem> m_firstRotations;
             std::vector<FirstPadenKahanProblem> m_secondRotations;
 
-            std::vector<Quaternion> computeIntersection(Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_x, Quaternion& p_y);
             Scalar squaredNormOfQuatVectPart(Quaternion& p_quat);
 
     };
@@ -83,7 +84,41 @@ namespace dualq_kinematics
     template<typename Scalar>
     /**
      * @class ThirdPadenKahanProblem
-     * @brief Solves the thrid Paden-Kahan subproblem with quaternions
+     * @brief Solves the extended 2nd Paden-Kahan subproblem with quaternions : two rotations about not intersecting axes (they can't be colinear)
+     */
+    class SecondPadenKahanProblemExt
+    {
+        public:
+
+            using Quaternion = Eigen::Quaternion<Scalar>;
+            using Vector3 = Eigen::Matrix<Scalar, 3, 1>; 
+            using FirstPadenKahanProblem = dualq_kinematics::FirstPadenKahanProblem<Scalar>;
+            using DualQuaternion = dualq_kinematics::DualQuaternion<Scalar>;
+
+            SecondPadenKahanProblemExt();
+
+            SecondPadenKahanProblemExt(Quaternion& p_pointOnLine1, Quaternion& p_pointOnLine2,  Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_startPoint, Quaternion& p_endPoint);
+
+            void compute(Quaternion& p_pointOnLine1, Quaternion& p_pointOnLine2, Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_startPoint, Quaternion& p_endPoint);
+
+            const std::vector<Scalar>& getAngle1Result() const;
+
+            const std::vector<Scalar>& getAngle2Result() const;
+    
+        private:
+
+            std::vector<Scalar> m_resultsAngle1_rad;
+            std::vector<Scalar> m_resultsAngle2_rad;
+
+            std::vector<FirstPadenKahanProblem> m_firstRotations;
+            std::vector<FirstPadenKahanProblem> m_secondRotations;
+
+    };
+
+    template<typename Scalar>
+    /**
+     * @class ThirdPadenKahanProblem
+     * @brief Solves the third Paden-Kahan subproblem with quaternions
      */
     class ThirdPadenKahanProblem
     {

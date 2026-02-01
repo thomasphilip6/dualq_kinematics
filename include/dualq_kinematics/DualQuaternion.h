@@ -244,6 +244,12 @@ namespace dualq_kinematics
         return Eigen::Quaternion<Scalar>(p_q1.w() + p_q2.w(), p_q1.x() + p_q2.x(), p_q1.y() + p_q2.y(), p_q1.z() + p_q2.z());
     }
 
+    template<typename Scalar>
+    Eigen::Quaternion<Scalar> operator-(const Eigen::Quaternion<Scalar>& p_q1, const Eigen::Quaternion<Scalar>& p_q2)
+    {
+        return Eigen::Quaternion<Scalar>(p_q1.w() - p_q2.w(), p_q1.x() - p_q2.x(), p_q1.y() - p_q2.y(), p_q1.z() - p_q2.z());
+    }
+
 
 }
 

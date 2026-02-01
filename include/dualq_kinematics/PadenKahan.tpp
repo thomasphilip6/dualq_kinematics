@@ -103,7 +103,6 @@ void SecondPadenKahanProblem<Scalar>::compute(Quaternion& p_pointOnLines, Quater
         for (size_t i=0; i < l_intersections.size(); i++)
         {
             Quaternion l_c(0.0, l_intersections.at(i).x() + p_pointOnLines.x(), l_intersections.at(i).y() + p_pointOnLines.y(), l_intersections.at(i).z() + p_pointOnLines.z());
-            Quaternion l_axis1Minus(0.0, -p_axis1.x(), -p_axis1.y(), -p_axis1.z());
 
             m_secondRotations.push_back( dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, p_axis2, p_startPoint, l_c));//sigma 2
             m_firstRotations.push_back( dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, p_axis1, l_c, p_endPoint));//sigma 1
@@ -185,6 +184,61 @@ template<typename Scalar>
 Scalar SecondPadenKahanProblem<Scalar>::squaredNormOfQuatVectPart(Quaternion& p_quat)
 {
     return std::pow(p_quat.x(), 2) + std::pow(p_quat.y(), 2) + std::pow(p_quat.z(), 2);
+}
+
+// ------------------ Extended second Paden Kahan Subproblem --------------------------- //
+
+template<typename Scalar>
+SecondPadenKahanProblemExt<Scalar>::SecondPadenKahanProblemExt()
+{
+
+}
+
+template<typename Scalar>
+SecondPadenKahanProblemExt<Scalar>::SecondPadenKahanProblemExt(Quaternion& p_pointOnLine1, Quaternion& p_pointOnLine2,  Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_startPoint, Quaternion& p_endPoint)
+{
+    compute(p_pointOnLine1, p_pointOnLine2, p_axis1, p_axis2, p_startPoint, p_endPoint);
+}
+
+template<typename Scalar>
+void SecondPadenKahanProblemExt<Scalar>::compute(Quaternion& p_pointOnLine1, Quaternion& p_pointOnLine2, Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_startPoint, Quaternion& p_endPoint)
+{
+    Quaternion l_x = p_startPoint - p_pointOnLine2;
+    Quaternion l_y = p_endPoint - p_pointOnLine1;
+
+    std::vector<Quaternion> l_z2 = SecondPadenKahanProblem<Scalar>::computeIntersection(p_axis1, p_axis2, l_x, l_y);
+
+    if (l_z2.size() != 0)
+    {
+
+        for (size_t i=0; i < l_z2.size(); i++)
+        {
+            Quaternion l_c(0.0, l_z2.at(i).x() + p_pointOnLine2.x(), l_z2.at(i).y() + p_pointOnLine2.y(), l_z2.at(i).z() + p_pointOnLine2.z());
+
+            m_secondRotations.push_back( dualq_kinematics::FirstPadenKahanProblem(p_pointOnLine2, p_axis2, p_startPoint, l_c));//sigma 2
+            m_firstRotations.push_back( dualq_kinematics::FirstPadenKahanProblem(p_pointOnLine1, p_axis1, l_c, p_endPoint));//sigma 1
+
+            if(m_firstRotations.at(i).getResult().has_value() && m_secondRotations.at(i).getResult().has_value())
+            {
+                m_resultsAngle1_rad.push_back(m_firstRotations.at(i).getResult().value());
+                m_resultsAngle2_rad.push_back(m_secondRotations.at(i).getResult().value());
+            }
+        }
+        
+    }
+
+}
+
+template<typename Scalar>
+const typename std::vector<Scalar>&  SecondPadenKahanProblemExt<Scalar>::getAngle1Result() const
+{
+    return m_resultsAngle1_rad;
+}
+
+template<typename Scalar>
+const typename std::vector<Scalar>&  SecondPadenKahanProblemExt<Scalar>::getAngle2Result() const
+{
+    return m_resultsAngle2_rad;
 }
 
 // ------------------ Third Paden Kahan Subproblem --------------------------- //
