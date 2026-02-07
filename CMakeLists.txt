@@ -117,13 +117,23 @@ if(BUILD_TESTING)
     ${PROJECT_NAME} 
   )
 
-  #Second ScrewCoordinatesTest, only used in an integration test context only
+  #Second ScrewCoordinatesTest, only used in an integration test context
   ament_add_gtest_executable(${PROJECT_NAME}_ScrewCoordinatesTest  test/ScrewCoordinatesTest.cpp)
   target_include_directories(${PROJECT_NAME}_ScrewCoordinatesTest PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
   )
   target_link_libraries(${PROJECT_NAME}_ScrewCoordinatesTest 
+    ${PROJECT_NAME} 
+  )
+
+  #add FrankaKinSolverTest
+  ament_add_gtest_executable(${PROJECT_NAME}_FrankaKinSolverTest  test/FrankaKinSolverTest.cpp)
+  target_include_directories(${PROJECT_NAME}_FrankaKinSolverTest PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+  )
+  target_link_libraries(${PROJECT_NAME}_FrankaKinSolverTest 
     ${PROJECT_NAME} 
   )
 
@@ -139,8 +149,10 @@ if(BUILD_TESTING)
   # endfunction()
   # add_ros_isolated_launch_test(test/launch/ScrewCoordinates.test.py)
   add_ros_test(test/launch/ScrewCoordinates.test.py ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
+  add_ros_test(test/launch/FrankaKinSolver.test.py ARGS "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
 
   install(TARGETS ${PROJECT_NAME}_ScrewCoordinatesTest DESTINATION lib/${PROJECT_NAME})
+  install(TARGETS ${PROJECT_NAME}_FrankaKinSolverTest DESTINATION lib/${PROJECT_NAME})
   install(DIRECTORY test/config DESTINATION share/${PROJECT_NAME})
 
 endif()
