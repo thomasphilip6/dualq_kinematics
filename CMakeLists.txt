@@ -117,6 +117,15 @@ if(BUILD_TESTING)
     ${PROJECT_NAME} 
   )
 
+  ament_add_gtest(${PROJECT_NAME}_FrankaKinSolverUnitTest test/FrankaKinSolverUnitTest.cpp)
+  target_include_directories(${PROJECT_NAME}_FrankaKinSolverUnitTest PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+  )
+  target_link_libraries(${PROJECT_NAME}_FrankaKinSolverUnitTest
+    ${PROJECT_NAME} 
+  )
+
   #Second ScrewCoordinatesTest, only used in an integration test context
   ament_add_gtest_executable(${PROJECT_NAME}_ScrewCoordinatesTest  test/ScrewCoordinatesTest.cpp)
   target_include_directories(${PROJECT_NAME}_ScrewCoordinatesTest PUBLIC
