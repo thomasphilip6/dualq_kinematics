@@ -19,8 +19,9 @@ def generate_test_description():
     franka_kin_solver_node =  launch_ros.actions.Node(
                 package="dualq_kinematics",
                 executable="dualq_kinematics_FrankaKinSolverTest",
-                #Uncomment following line to debug with gdb
-                #prefix=['gdb -ex run --args'],
+
+                #Uncomment following line to debug with gdb, gdbserver is used as this is an integration test
+                prefix=['gdbserver localhost:3000'],
                 parameters=[
                     moveit_config.robot_description,
                     moveit_config.robot_description_semantic,
