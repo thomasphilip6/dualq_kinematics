@@ -12,26 +12,40 @@ FrankaKinSolver<Scalar>::FrankaKinSolver(const ScrewCoordinates& p_screwCoordina
     }
 
     //Check that all dual quaternions are unit dual quaternions
-    for (auto &&l_dq : m_screwCoordinatesDualQ)
-    {
-        try
-        {
-            const bool l_isUnit = l_dq.isUnit(c_tolerance);
-            if(!l_isUnit)
-            {
-                throw(l_isUnit);
-            }
-        }
-        //todo change to a parameter to an error for better error handling
-        catch(const bool& e)
-        {
-            //do something
-        }
+    // for (auto &&l_dq : m_screwCoordinatesDualQ)
+    // {
+    //     try
+    //     {
+    //         const bool l_isUnit = l_dq.isUnit(c_tolerance);
+    //         if(!l_isUnit)
+    //         {
+    //             throw(l_isUnit);
+    //         }
+    //     }
+    //     //todo change to a parameter to an error for better error handling
+    //     catch(const bool& e)
+    //     {
+    //         //do something
+    //     }
         
+    // }
+
+    m_tip2BaseInit = DualQuaternion(m_screwCoordinates.value().getTip2BaseInit());
+
+}
+
+template<typename Scalar>
+FrankaKinSolver<Scalar>::FrankaKinSolver(const std::vector<Vector3> p_screwAxes, const std::vector<Vector3> p_positions, const Eigen::Isometry3d p_tip2BaseInit)
+{
+    m_screwAxes = p_screwAxes;
+    m_positionsOnScrew = p_positions;
+    for (size_t i = 0; i < m_screwAxes.size(); i++)
+    {
+        m_screwCoordinatesDualQ.push_back(DualQuaternion(m_screwAxes.at(i), m_positionsOnScrew.at(i)));
     }
-
-    m_tip2BaseInit.value() = DualQuaternion(m_screwCoordinates.value().getTip2BaseInit());
-
+    
+    m_tip2BaseInit = DualQuaternion(p_tip2BaseInit);
+    m_tip2BaseInitTf = p_tip2BaseInit;
 }
 
 template<typename Scalar>
@@ -49,10 +63,20 @@ void FrankaKinSolver<Scalar>::computeTipFK(std::vector<double>& p_jointValues_ra
 template<typename Scalar>
 void FrankaKinSolver<Scalar>::computeWristPosition(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7, Vector3& p_wrist) const
 {
-    Scalar l_a7 = m_screwCoordinates.value().getPositions().at(6)(0);
-
+    Scalar l_a7;
     // r7 = eeWanted.translation - df * eeWanted.z()
-    Vector3 l_r7 = p_tip2BaseWanted.translation() - (m_screwCoordinates.value().getTip2BaseInit().translation().z() - m_screwCoordinates.value().getPositions().at(6)(2))*p_tip2BaseWanted.rotation().col(2);
+    Vector3 l_r7;
+    if(m_screwCoordinates.has_value())
+    {
+        l_a7 = m_screwCoordinates.value().getPositions().at(6)(0);
+        l_r7 = p_tip2BaseWanted.translation() - (m_screwCoordinates.value().getPositions().at(6)(2) - m_screwCoordinates.value().getTip2BaseInit().translation().z())*p_tip2BaseWanted.rotation().col(2);
+    }
+    else
+    {
+        l_a7 = m_positionsOnScrew.at(6)(0);
+        Scalar l_df = m_positionsOnScrew.at(6)(2) - m_tip2BaseInitTf.translation().z();
+        l_r7 = p_tip2BaseWanted.translation() - l_df*p_tip2BaseWanted.rotation().col(2);
+    }
 
     Quaternion l_eeY(0.0, p_tip2BaseWanted.rotation().col(1)(0), p_tip2BaseWanted.rotation().col(1)(1), p_tip2BaseWanted.rotation().col(1)(2));
     Quaternion l_s7(0.0, p_tip2BaseWanted.rotation().col(2)(0), p_tip2BaseWanted.rotation().col(2)(1), p_tip2BaseWanted.rotation().col(2)(2));
@@ -60,15 +84,16 @@ void FrankaKinSolver<Scalar>::computeWristPosition(const Eigen::Isometry3d& p_ti
     if (p_q7 != 0.0)
     {
         l_s6 = DualQuaternion::quaternionExp(-p_q7*l_s7)*l_eeY;
+        l_s6.normalize();
     }
     else
     {
         l_s6 = l_eeY;
     }
     Quaternion l_product = l_s6 * l_s7;
-    p_wrist(0) = l_r7(0) - l_a7*l_product.x();
-    p_wrist(1) = l_r7(1) - l_a7*l_product.y();
-    p_wrist(2) = l_r7(2) - l_a7*l_product.z();
+    p_wrist(0) = l_r7(0) - l_a7*(l_product.x());
+    p_wrist(1) = l_r7(1) - l_a7*(l_product.y());
+    p_wrist(2) = l_r7(2) - l_a7*(l_product.z());
 
 }
 

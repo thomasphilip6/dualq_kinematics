@@ -34,6 +34,8 @@ namespace dualq_kinematics
 
             FrankaKinSolver(const ScrewCoordinates& p_screwCoordinates);
 
+            FrankaKinSolver(const std::vector<Vector3> p_screwAxes, const std::vector<Vector3> p_positions, const Eigen::Isometry3d p_tip2BaseInit);
+
             void computeTipFK(std::vector<double>& p_jointValues_rad, Eigen::Isometry3d& p_tip2BaseComputed) const;
 
             void computeWristPosition(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7, Vector3& p_wrist) const;
@@ -44,6 +46,10 @@ namespace dualq_kinematics
             std::optional<DualQuaternion> m_tip2BaseInit;
             std::vector<DualQuaternion> m_screwCoordinatesDualQ;
 
+            //depreciated, useful for unit test
+            std::vector<Vector3> m_screwAxes;
+            std::vector<Vector3> m_positionsOnScrew; 
+            Eigen::Isometry3d m_tip2BaseInitTf;
     };
 }
 
