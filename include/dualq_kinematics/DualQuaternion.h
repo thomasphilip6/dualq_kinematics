@@ -213,6 +213,8 @@ namespace dualq_kinematics
              * @return vector transformed as a pure quaternion (0, vec) 
              */
             void transformVector(Quaternion& p_vector) const;
+
+            Quaternion getTransformedVector(const Quaternion& p_vector) const;
             
         private:
 

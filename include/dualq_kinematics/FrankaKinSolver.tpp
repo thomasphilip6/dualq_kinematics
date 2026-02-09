@@ -97,4 +97,59 @@ void FrankaKinSolver<Scalar>::computeWristPosition(const Eigen::Isometry3d& p_ti
 
 }
 
+template<typename Scalar>
+typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7) const
+{
+    std::vector<std::vector<Scalar>> l_solutions;
+
+    // First compute right-end side l_g = l_eeWanted * l_ee0^-1 * l_g7^-1
+    DualQuaternion l_g = DualQuaternion(p_tip2BaseWanted) * m_tip2BaseInit.inverse() * (m_screwCoordinatesDualQ.at(6)* (p_q7 * 0.5)).dqExp().inverse();
+    
+    // Inverse Kinematic chain to get rid of spherical joint
+    l_g.invert();
+
+    // ------------------- Solve for q4 ---------------- //
+    const Quaternion l_shoulderQuat(0.0, m_screwCoordinates.value().getPositions().at(0)(0), m_screwCoordinates.value().getPositions().at(0)(1), m_screwCoordinates.value().getPositions().at(0)(2));
+    Quaternion l_shoulderQuatCopy = l_shoulderQuat;
+    
+    Vector3 l_wrist;
+    computeWristPosition(p_tip2BaseWanted, p_q7, l_wrist);
+    const Quaternion l_wristQuat(0.0, l_wrist(0), l_wrist(1), l_wrist(2));
+    const Scalar l_delta = (l_g.transformVector(l_shoulderQuatCopy) - l_wristQuat).norm();
+    const ThirdPadenKahan l_q4ThirdPKProbem( 
+        Quaternion(0.0, m_screwCoordinates.value().getPositions().at(3)(0), m_screwCoordinates.value().getPositions().at(3)(1), m_screwCoordinates.value().getPositions().at(3)(2)), 
+        m_screwCoordinatesDualQ.at(3).getRealPart(), 
+        l_shoulderQuat, 
+        l_wristQuat, 
+        l_delta
+    );
+
+    for (size_t i = 0; i < l_q4ThirdPKProbem.getResults(); i++)
+    {
+        std::vector<Scalar> l_solutionSet;
+        l_solutionSet.resize(7);
+        l_solutionSet.at(3) = l_q4ThirdPKProbem.getResults().at(i) * (-1); // * (-1) as kinematic chain was inverted
+        l_solutions.push_back(l_solutionSet);
+    }
+
+    // ------------------- Solve for q5, q6 ---------------- //
+
+    // Remember that l_shoulderQuatCopy  = l_g^-1 * l_shoulder
+
+    for(size_t i = 0; i < l_q4ThirdPKProbem.getResults(); i++)
+    {
+        const SecondPadenKahan l_q5Q6SecondPKProblem(
+            Quaternion(0.0, m_screwCoordinates.value().getPositions().at(5)(0), m_screwCoordinates.value().getPositions().at(5)(1), m_screwCoordinates.value().getPositions().at(5)(2)),
+            m_screwCoordinatesDualQ.at(5).getRealPart(),
+            m_screwCoordinatesDualQ.at(4).getRealPart(),
+            ((m_screwCoordinatesDualQ.at(3)* (l_solutions.at(i).at(3) * -0.5)).dqExp()).getTransformVector(l_shoulderQuat),
+            l_shoulderQuatCopy
+        );
+
+    }
+    
+    return l_solutions; 
+
+}
+
 } // namespace dualq_kinematics

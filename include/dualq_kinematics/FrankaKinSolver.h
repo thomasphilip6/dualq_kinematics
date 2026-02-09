@@ -2,6 +2,9 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include "dualq_kinematics/DualQuaternion.h"
+#include "dualq_kinematics/PadenKahan.h"
+#include "dualq_kinematics/ScrewCoordinates.h"
 
 #include <array>
 #include <optional>
@@ -30,7 +33,15 @@ namespace dualq_kinematics
             using ScrewCoordinates = dualq_kinematics::ScrewCoordinates<Scalar>;
             using DualQuaternion = dualq_kinematics::DualQuaternion<Scalar>;
 
-            static constexpr double c_tolerance = 1e-6;
+            using FirstPadenKahan = dualq_kinematics::FirstPadenKahanProblem<Scalar>;
+            using SecondPadenKahan = dualq_kinematics::SecondPadenKahanProblem<Scalar>;
+            using ThirdPadenKahan = dualq_kinematics::ThirdPadenKahanProblem<Scalar>;
+
+
+
+            static constexpr Scalar c_dof = 7;
+
+            static constexpr Scalar c_tolerance = 1e-6;
 
             FrankaKinSolver(const ScrewCoordinates& p_screwCoordinates);
 
@@ -39,6 +50,8 @@ namespace dualq_kinematics
             void computeTipFK(std::vector<double>& p_jointValues_rad, Eigen::Isometry3d& p_tip2BaseComputed) const;
 
             void computeWristPosition(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7, Vector3& p_wrist) const;
+
+            std::vector<std::vector<Scalar>> compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7) const;
         
         private:
 

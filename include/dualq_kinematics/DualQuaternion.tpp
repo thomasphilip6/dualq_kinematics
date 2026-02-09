@@ -291,4 +291,11 @@ void DualQuaternion<Scalar>::transformVector(Quaternion& p_vector) const
     p_vector.z() = p_vector.z() + l_translation.z();
 }
 
+template<typename Scalar>
+typename DualQuaternion<Scalar>::Quaternion DualQuaternion<Scalar>::getTransformedVector(const Quaternion& p_vector) const
+{
+    Quaternion l_vectorCopy = p_vector;
+    return transformVector(l_vectorCopy);
+}
+
 }
