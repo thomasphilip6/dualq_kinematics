@@ -245,6 +245,13 @@ TEST(dualq_kinematics, exponentialTest)
     std::cout << l_forwardKinematics.getTranslation(true).x() << std::endl;
     std::cout << l_forwardKinematics.getTranslation(true).y() << std::endl;
     std::cout << l_forwardKinematics.getTranslation(true).z() << std::endl;
+
+    DualQuaternion l_twist = (l_joints.at(1)*0.5).dqExp();
+    DualQuaternion l_twistInverted = (l_joints.at(1)*(-0.5)).dqExp();
+    l_twist.invert(l_tolerance);
+    bool l_inverseMatch = l_twistInverted.isApprox(l_twist, 0.001);
+    EXPECT_TRUE(l_inverseMatch);
+
     EXPECT_TRUE(l_forwardKinematics.isApprox(l_expected, 0.001));
 }
 
