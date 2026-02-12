@@ -89,6 +89,19 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     l_frankaKin.computeWristPosition(l_robotState->getGlobalLinkTransform("panda_link8"), l_jointValuesReady_rad.at(6), l_wrist);
     EXPECT_TRUE(l_wrist.isApprox(l_robotState->getGlobalLinkTransform("panda_link6").translation(), c_tolerance)) << "Compute Wrist with q7 !=0 fails";
 
+    l_jointValuesReady_rad ={2.13528, 0.45, 0.16, -0.42, 0.18, 2.14, 0.0};;
+    l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
+    const Eigen::Isometry3d& l_eeWantedForIK = l_robotState->getGlobalLinkTransform("panda_link8"); 
+
+    std::vector<std::vector<double>> l_allIKSolutions = l_frankaKin.compute6DOFIK(l_eeWantedForIK, l_jointValuesReady_rad.at(6));
+    RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver IK returned " << l_allIKSolutions.size() << " solutions ");
+    for (auto &&l_solution : l_allIKSolutions)
+    {
+        l_robotState->setJointGroupPositions(l_jointModelGroup, l_solution);
+        EXPECT_TRUE(l_eeWantedForIK.isApprox(l_robotState->getGlobalLinkTransform("panda_link8"), c_tolerance)) << "IK returned wrong solutions";
+    }
+    
+
 }
 
 int main(int argc, char ** argv)
