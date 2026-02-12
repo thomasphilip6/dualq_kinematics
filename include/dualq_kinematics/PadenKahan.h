@@ -28,11 +28,11 @@ namespace dualq_kinematics
 
             FirstPadenKahanProblem();
 
-            FirstPadenKahanProblem(Quaternion& p_pointOnLine, Quaternion& p_axis, Quaternion& p_startPoint, Quaternion& p_endPoint);
+            FirstPadenKahanProblem(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint);
 
-            void compute(Quaternion& p_pointOnLine, Quaternion& p_axis, Quaternion& p_startPoint, Quaternion& p_endPoint);
+            void compute(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint);
 
-            void computeFromProjectedPoints(Quaternion& p_axis, const Quaternion& p_xProjected, const Quaternion& p_yProjected, bool p_checkConditions);
+            void computeFromProjectedPoints(const Quaternion& p_axis, const Quaternion& p_xProjected, const Quaternion& p_yProjected, bool p_checkConditions);
 
             const std::optional<Scalar>& getResult() const;
 
@@ -59,15 +59,15 @@ namespace dualq_kinematics
 
             SecondPadenKahanProblem();
 
-            SecondPadenKahanProblem(Quaternion& p_pointOnLines, Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_startPoint, Quaternion& p_endPoint);
+            SecondPadenKahanProblem(const Quaternion& p_pointOnLines, const Quaternion& p_axis1, const Quaternion& p_axis2, const Quaternion& p_startPoint, const Quaternion& p_endPoint);
 
-            void compute(Quaternion& p_pointOnLines, Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_startPoint, Quaternion& p_endPoint);
+            void compute(const Quaternion& p_pointOnLines, const Quaternion& p_axis1, const Quaternion& p_axis2, const Quaternion& p_startPoint, const Quaternion& p_endPoint);
 
             const std::vector<Scalar>& getAngle1Result() const;
 
             const std::vector<Scalar>& getAngle2Result() const;
 
-            static std::vector<Quaternion> computeIntersection(Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_x, Quaternion& p_y);
+            static std::vector<Quaternion> computeIntersection(const Quaternion& p_axis1, const Quaternion& p_axis2, Quaternion& p_x, Quaternion& p_y);
         
         private:
 
@@ -97,9 +97,9 @@ namespace dualq_kinematics
 
             SecondPadenKahanProblemExt();
 
-            SecondPadenKahanProblemExt(Quaternion& p_pointOnLine1, Quaternion& p_pointOnLine2,  Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_startPoint, Quaternion& p_endPoint);
+            SecondPadenKahanProblemExt(const Quaternion& p_pointOnLine1, const Quaternion& p_pointOnLine2,  const Quaternion& p_axis1, const Quaternion& p_axis2, const Quaternion& p_startPoint, const Quaternion& p_endPoint);
 
-            void compute(Quaternion& p_pointOnLine1, Quaternion& p_pointOnLine2, Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_startPoint, Quaternion& p_endPoint);
+            void compute(const Quaternion& p_pointOnLine1, const Quaternion& p_pointOnLine2, const Quaternion& p_axis1, const Quaternion& p_axis2, const Quaternion& p_startPoint, const Quaternion& p_endPoint);
 
             const std::vector<Scalar>& getAngle1Result() const;
 
@@ -131,9 +131,9 @@ namespace dualq_kinematics
 
             ThirdPadenKahanProblem();
 
-            ThirdPadenKahanProblem(Quaternion& p_pointOnLine, Quaternion& p_axis, Quaternion& p_startPoint, Quaternion& p_endPoint, Scalar p_distanceToEnd);
+            ThirdPadenKahanProblem(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint, const Scalar p_distanceToEnd);
 
-            void compute(Quaternion& p_pointOnLine, Quaternion& p_axis, Quaternion& p_startPoint, Quaternion& p_endPoint, Scalar p_distanceToEnd);
+            void compute(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint, const Scalar p_distanceToEnd);
 
             const std::vector<Scalar>& getResults() const;
         

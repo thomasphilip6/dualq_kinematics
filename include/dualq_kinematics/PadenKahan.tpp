@@ -8,13 +8,13 @@ FirstPadenKahanProblem<Scalar>::FirstPadenKahanProblem()
 }
 
 template<typename Scalar>
-FirstPadenKahanProblem<Scalar>::FirstPadenKahanProblem(Quaternion& p_pointOnLine, Quaternion& p_axis, Quaternion& p_startPoint, Quaternion& p_endPoint)
+FirstPadenKahanProblem<Scalar>::FirstPadenKahanProblem(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint)
 {
     compute(p_pointOnLine, p_axis, p_startPoint, p_endPoint);
 }
 
 template<typename Scalar>
-void FirstPadenKahanProblem<Scalar>::compute(Quaternion& p_pointOnLine, Quaternion& p_axis, Quaternion& p_startPoint, Quaternion& p_endPoint)
+void FirstPadenKahanProblem<Scalar>::compute(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint)
 {
     const Quaternion l_x(0.0, p_startPoint.x()-p_pointOnLine.x(), p_startPoint.y()-p_pointOnLine.y(), p_startPoint.z()-p_pointOnLine.z());
     const Quaternion l_y(0.0, p_endPoint.x()-p_pointOnLine.x(), p_endPoint.y()-p_pointOnLine.y(), p_endPoint.z()-p_pointOnLine.z());
@@ -40,7 +40,7 @@ void FirstPadenKahanProblem<Scalar>::compute(Quaternion& p_pointOnLine, Quaterni
 }
 
 template<typename Scalar>
-void FirstPadenKahanProblem<Scalar>::computeFromProjectedPoints(Quaternion& p_axis, const Quaternion& p_xProjected, const Quaternion& p_yProjected, bool p_checkConditions)
+void FirstPadenKahanProblem<Scalar>::computeFromProjectedPoints(const Quaternion& p_axis, const Quaternion& p_xProjected, const Quaternion& p_yProjected, bool p_checkConditions)
 {
     //Checking the conditions for finite solution
     if(
@@ -85,13 +85,13 @@ SecondPadenKahanProblem<Scalar>::SecondPadenKahanProblem()
 }
 
 template<typename Scalar>
-SecondPadenKahanProblem<Scalar>::SecondPadenKahanProblem(Quaternion& p_pointOnLines, Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_startPoint, Quaternion& p_endPoint)
+SecondPadenKahanProblem<Scalar>::SecondPadenKahanProblem(const Quaternion& p_pointOnLines, const Quaternion& p_axis1, const Quaternion& p_axis2, const Quaternion& p_startPoint, const Quaternion& p_endPoint)
 {
     compute(p_pointOnLines, p_axis1, p_axis2, p_startPoint, p_endPoint);
 }
 
 template<typename Scalar>
-void SecondPadenKahanProblem<Scalar>::compute(Quaternion& p_pointOnLines, Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_startPoint, Quaternion& p_endPoint)
+void SecondPadenKahanProblem<Scalar>::compute(const Quaternion& p_pointOnLines, const Quaternion& p_axis1, const Quaternion& p_axis2, const Quaternion& p_startPoint, const Quaternion& p_endPoint)
 {
     Quaternion l_x(0.0, p_startPoint.x()-p_pointOnLines.x(), p_startPoint.y()-p_pointOnLines.y(), p_startPoint.z()-p_pointOnLines.z());
     Quaternion l_y(0.0, p_endPoint.x()-p_pointOnLines.x(), p_endPoint.y()-p_pointOnLines.y(), p_endPoint.z()-p_pointOnLines.z());
@@ -130,7 +130,7 @@ const typename std::vector<Scalar>&  SecondPadenKahanProblem<Scalar>::getAngle2R
 }
 
 template<typename Scalar>
-typename std::vector<Eigen::Quaternion<Scalar>> SecondPadenKahanProblem<Scalar>::computeIntersection(Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_x, Quaternion& p_y)
+typename std::vector<Eigen::Quaternion<Scalar>> SecondPadenKahanProblem<Scalar>::computeIntersection(const Quaternion& p_axis1, const Quaternion& p_axis2, Quaternion& p_x, Quaternion& p_y)
 {
     std::vector<Quaternion> l_results;
     const Scalar l_l2XScalar = DualQuaternion::quatMulScalarPart(p_axis2, p_x);
@@ -195,13 +195,13 @@ SecondPadenKahanProblemExt<Scalar>::SecondPadenKahanProblemExt()
 }
 
 template<typename Scalar>
-SecondPadenKahanProblemExt<Scalar>::SecondPadenKahanProblemExt(Quaternion& p_pointOnLine1, Quaternion& p_pointOnLine2,  Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_startPoint, Quaternion& p_endPoint)
+SecondPadenKahanProblemExt<Scalar>::SecondPadenKahanProblemExt(const Quaternion& p_pointOnLine1, const Quaternion& p_pointOnLine2,  const Quaternion& p_axis1, const Quaternion& p_axis2, const Quaternion& p_startPoint, const Quaternion& p_endPoint)
 {
     compute(p_pointOnLine1, p_pointOnLine2, p_axis1, p_axis2, p_startPoint, p_endPoint);
 }
 
 template<typename Scalar>
-void SecondPadenKahanProblemExt<Scalar>::compute(Quaternion& p_pointOnLine1, Quaternion& p_pointOnLine2, Quaternion& p_axis1, Quaternion& p_axis2, Quaternion& p_startPoint, Quaternion& p_endPoint)
+void SecondPadenKahanProblemExt<Scalar>::compute(const Quaternion& p_pointOnLine1, const Quaternion& p_pointOnLine2, const Quaternion& p_axis1, const Quaternion& p_axis2, const Quaternion& p_startPoint, const Quaternion& p_endPoint)
 {
     Quaternion l_x = p_startPoint - p_pointOnLine2;
     Quaternion l_y = p_endPoint - p_pointOnLine1;
@@ -250,13 +250,13 @@ ThirdPadenKahanProblem<Scalar>::ThirdPadenKahanProblem()
 }
 
 template<typename Scalar>
-ThirdPadenKahanProblem<Scalar>::ThirdPadenKahanProblem(Quaternion& p_pointOnLine, Quaternion& p_axis, Quaternion& p_startPoint, Quaternion& p_endPoint, Scalar p_distanceToEnd)
+ThirdPadenKahanProblem<Scalar>::ThirdPadenKahanProblem(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint, const Scalar p_distanceToEnd)
 {
     compute(p_pointOnLine, p_axis, p_startPoint, p_endPoint, p_distanceToEnd);
 }
 
 template<typename Scalar>
-void ThirdPadenKahanProblem<Scalar>::compute(Quaternion& p_pointOnLine, Quaternion& p_axis, Quaternion& p_startPoint, Quaternion& p_endPoint, Scalar p_distanceToEnd)
+void ThirdPadenKahanProblem<Scalar>::compute(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint, const Scalar p_distanceToEnd)
 {
     const Quaternion l_x(0.0, p_startPoint.x()-p_pointOnLine.x(), p_startPoint.y()-p_pointOnLine.y(), p_startPoint.z()-p_pointOnLine.z());
     const Quaternion l_y(0.0, p_endPoint.x()-p_pointOnLine.x(), p_endPoint.y()-p_pointOnLine.y(), p_endPoint.z()-p_pointOnLine.z());
