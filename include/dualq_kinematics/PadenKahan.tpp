@@ -278,14 +278,14 @@ void ThirdPadenKahanProblem<Scalar>::compute(const Quaternion& p_pointOnLine, co
     const Quaternion l_startMinusEnd(0.0, p_startPoint.x()-p_endPoint.x(), p_startPoint.y()-p_endPoint.y(), p_startPoint.z()-p_endPoint.z());
     const Scalar l_deltaProjSquared = std::pow(p_distanceToEnd, 2) - std::pow( DualQuaternion::quatMulScalarPart(p_axis, l_startMinusEnd), 2);
 
-    if(FirstPadenKahanProblem::compareFloatNum(DualQuaternion::quatMulScalarPart(p_axis, l_y), DualQuaternion::quatMulScalarPart(p_axis, l_x), FirstPadenKahanProblem::c_tolerance))
-    {
+    // if(FirstPadenKahanProblem::compareFloatNum(DualQuaternion::quatMulScalarPart(p_axis, l_y), DualQuaternion::quatMulScalarPart(p_axis, l_x), FirstPadenKahanProblem::c_tolerance))
+    // {
         m_theta0Problem.computeFromProjectedPoints(p_axis, l_xProjected, l_yProjected, false);
-    }
-    else
-    {
-        return;
-    }
+    // }
+    // else
+    // {
+    //     return;
+    // }
 
     //Check if first subproblem could be solved
     if(!m_theta0Problem.getResult().has_value())

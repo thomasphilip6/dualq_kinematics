@@ -159,7 +159,7 @@ typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK
             {
                 std::vector<Scalar> l_solutionSet = l_solutions.at(i);
                 l_solutionSet.at(5) = -l_q5Q6SecondPKProblem.getAngle1Result().at(j); // * (-1) as kinematic chain was inverted
-                l_solutionSet.at(6) = -l_q5Q6SecondPKProblem.getAngle2Result().at(j); // * (-1) as kinematic chain was inverted
+                l_solutionSet.at(4) = -l_q5Q6SecondPKProblem.getAngle2Result().at(j); // * (-1) as kinematic chain was inverted
                 l_solutions.push_back(l_solutionSet); 
             }
         }
@@ -169,8 +169,8 @@ typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK
 
     //todo something more elaborate to get this point
     const Quaternion l_pointOnFirstScrewOnly(0.0, m_screwCoordinates.value().getPositions().at(0)(0), m_screwCoordinates.value().getPositions().at(0)(1), m_screwCoordinates.value().getPositions().at(0)(2) - 0.3);
-
-    for(size_t i = 0; i < l_solutions.size(); i++)
+    size_t l_iterations = l_solutions.size();
+    for(size_t i = 0; i < l_iterations; i++)
     {
         const DualQuaternion l_rightHandSide = 
             ((m_screwCoordinatesDualQ.at(3)* (l_solutions.at(i).at(3) * 0.5)).dqExp()) *
@@ -211,8 +211,8 @@ typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK
 
     //todo something more elaborate to get this point
     const Quaternion l_pointNotOnFirstScrew(0.0, m_screwCoordinates.value().getPositions().at(0)(0), m_screwCoordinates.value().getPositions().at(0)(1)- 0.3, m_screwCoordinates.value().getPositions().at(0)(2) );
-    
-    for (size_t i = 0; i < l_solutions.size(); i++)
+    l_iterations = l_solutions.size();
+    for (size_t i = 0; i < l_iterations; i++)
     {
         const DualQuaternion l_rightHandSide = 
             ((m_screwCoordinatesDualQ.at(1)* (l_solutions.at(i).at(1) * 0.5)).dqExp()) *
@@ -233,10 +233,17 @@ typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK
 
         if(l_q1Problem.getResult().has_value())
         {
-            l_solutions.at(i).at(0) = l_q1Problem.getResult().value();
+            l_solutions.at(i).at(0) = -l_q1Problem.getResult().value();
     
         }
     }
+
+    //fill q7 for every set of solutions
+    for (auto &&l_solution : l_solutions)
+    {
+        l_solution.at(6) = p_q7;
+    }
+    
 
     return l_solutions; 
 
