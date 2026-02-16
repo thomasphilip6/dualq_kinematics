@@ -95,10 +95,17 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
 
     std::vector<std::vector<double>> l_allIKSolutions = l_frankaKin.compute6DOFIK(l_eeWantedForIK, l_jointValuesReady_rad.at(6));
     RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver IK returned " << l_allIKSolutions.size() << " solutions ");
+    if(l_allIKSolutions.size() <= 0)
+    {
+        EXPECT_TRUE(false);
+    }
     for (auto &&l_solution : l_allIKSolutions)
     {
         l_robotState->setJointGroupPositions(l_jointModelGroup, l_solution);
         EXPECT_TRUE(l_eeWantedForIK.isApprox(l_robotState->getGlobalLinkTransform("panda_link8"), c_tolerance)) << "IK returned wrong solutions";
+        Eigen::Isometry3d l_computedFK;
+        l_frankaKin.computeTipFK(l_solution, l_computedFK);
+        EXPECT_TRUE(l_computedFK.isApprox(l_robotState->getGlobalLinkTransform("panda_link8"), c_tolerance));
     }
     
 
