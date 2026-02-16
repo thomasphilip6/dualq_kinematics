@@ -105,8 +105,8 @@ typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK
 
     // First compute right-end side l_g = l_eeWanted * l_ee0^-1 * l_g7^-1
     //todo add error management (dualq inverse, paden kahan problems not returning)
-    DualQuaternion l_g = DualQuaternion(p_tip2BaseWanted) * m_tip2BaseInit.value().inverse(c_tolerance).value() * (m_screwCoordinatesDualQ.at(6)* (-p_q7 * 0.5)).dqExp();
-    
+    DualQuaternion l_g = DualQuaternion(p_tip2BaseWanted) * m_tip2BaseInit.value().inverse(c_tolerance).value() * ((m_screwCoordinatesDualQ.at(6)* (-p_q7 * 0.5)).dqExp());
+
     // Inverse Kinematic chain to get rid of spherical joint
     l_g.invert(c_tolerance);
 
@@ -117,9 +117,11 @@ typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK
     Vector3 l_wrist;
     computeWristPosition(p_tip2BaseWanted, p_q7, l_wrist);
     const Quaternion l_wristQuat(0.0, l_wrist(0), l_wrist(1), l_wrist(2));
-    const Scalar l_delta = (l_shoulderTransformed - l_wristQuat).norm();
+    Quaternion l_wristInTipFrame = l_g.getTransformedVector(l_wristQuat);
+    //Quaternion l_wristInTipFrame = l_g.getTransformedVector(l_wristQuat);
+    const Scalar l_delta = (l_shoulderTransformed - l_wristInTipFrame).norm();
     Quaternion l_pointOnlineQ4(0.0, m_screwCoordinates.value().getPositions().at(3)(0), m_screwCoordinates.value().getPositions().at(3)(1), m_screwCoordinates.value().getPositions().at(3)(2));
-    const ThirdPadenKahan l_q4ThirdPKProbem(l_pointOnlineQ4, m_screwCoordinatesDualQ.at(3).getRealPart(), l_shoulderQuat, l_wristQuat, l_delta);
+    const ThirdPadenKahan l_q4ThirdPKProbem(l_pointOnlineQ4, m_screwCoordinatesDualQ.at(3).getRealPart(), l_shoulderQuat, l_wristInTipFrame, l_delta);
 
     for (size_t i = 0; i < l_q4ThirdPKProbem.getResults().size(); i++)
     {
