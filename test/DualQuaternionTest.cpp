@@ -157,6 +157,16 @@ TEST(dualq_kinematics, invertTest)
     EXPECT_TRUE(l_result) << "Inverting dual quaternion fails";
     EXPECT_TRUE(l_comparison) << "Inverting dual quaternion fails";
     EXPECT_FALSE(l_dualqNullRealPart.invert(l_tolerance)) << "Inverting dual quaternion fails";
+
+    Eigen::Isometry3d l_testTf = Eigen::Isometry3d::Identity();
+    l_testTf.translation() << -0.348869, 0.46065, 0.947152;
+    l_testTf.linear() <<
+    -0.0703608,  0.662334,  -0.745898,
+    0.331076,   0.72087,    0.60888,
+    0.940977,  -0.204108,  -0.270004;
+    DualQuaternion l_testInv(l_testTf);
+    l_testInv.invert(l_tolerance);
+    EXPECT_TRUE(l_testTf.inverse().isApprox(l_testInv.getTransform(), l_tolerance));
 }
 
 TEST(dualq_kinematics, inverseTest)
