@@ -24,7 +24,7 @@ namespace dualq_kinematics
             using Vector3 = Eigen::Matrix<Scalar, 3, 1>;
             using DualQuaternion = dualq_kinematics::DualQuaternion<Scalar>;
             using ScrewCoordinates = dualq_kinematics::ScrewCoordinates<Scalar>;
-            static constexpr Scalar c_tolerance = 1e-2;
+            static constexpr Scalar c_tolerance = 1e-4;
 
             FirstPadenKahanProblem();
 
