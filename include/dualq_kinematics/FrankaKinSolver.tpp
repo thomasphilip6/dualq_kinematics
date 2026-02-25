@@ -123,6 +123,12 @@ typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK
     Quaternion l_pointOnlineQ4(0.0, m_screwCoordinates.value().getPositions().at(3)(0), m_screwCoordinates.value().getPositions().at(3)(1), m_screwCoordinates.value().getPositions().at(3)(2));
     const ThirdPadenKahan l_q4ThirdPKProbem(l_pointOnlineQ4, m_screwCoordinatesDualQ.at(3).getRealPart(), l_shoulderQuat, l_wristInTipFrame, l_delta);
 
+    if(l_q4ThirdPKProbem.getResults().size()==0)
+    {
+        //q4 problem doesn't have any solutions
+        return l_solutions;
+    }
+
     for (size_t i = 0; i < l_q4ThirdPKProbem.getResults().size(); i++)
     {
         std::vector<Scalar> l_solutionSet;
@@ -152,6 +158,11 @@ typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK
             l_solutions.at(i).at(5) = -l_q5Q6SecondPKProblem.getAngle1Result().at(0); // * (-1) as kinematic chain was inverted
             l_solutions.at(i).at(4) = -l_q5Q6SecondPKProblem.getAngle2Result().at(0); // * (-1) as kinematic chain was inverted
         }
+        else
+        {
+            //q5q6 problem could not be solved
+            continue;
+        }
 
         if(l_q5Q6SecondPKProblem.getAngle1Result().size() > 1)
         {
@@ -167,8 +178,9 @@ typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK
 
     // ------------------- Solve for q2, q3 ---------------- //
 
-    //todo something more elaborate to get this point
-    const Quaternion l_pointOnFirstScrewOnly(0.0, m_screwCoordinates.value().getPositions().at(0)(0), m_screwCoordinates.value().getPositions().at(0)(1), m_screwCoordinates.value().getPositions().at(0)(2) - 0.3);
+    const Quaternion l_pointOnFirstScrewOnly = 
+        Quaternion(0.0, m_screwCoordinates.value().getPositions().at(0)(0), m_screwCoordinates.value().getPositions().at(0)(1), m_screwCoordinates.value().getPositions().at(0)(2)) - 0.3*m_screwCoordinatesDualQ.at(0).getRealPart();
+
     size_t l_iterations = l_solutions.size();
     for(size_t i = 0; i < l_iterations; i++)
     {
@@ -194,6 +206,11 @@ typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK
             l_solutions.at(i).at(2) = -l_q2Q3SecondPKProblem.getAngle1Result().at(0); // * (-1) as kinematic chain was inverted
             l_solutions.at(i).at(1) = -l_q2Q3SecondPKProblem.getAngle2Result().at(0); // * (-1) as kinematic chain was inverted
         }
+        else
+        {
+            //q2q3 problem could not be solved
+            continue;
+        }
 
         if(l_q2Q3SecondPKProblem.getAngle1Result().size() > 1)
         {
@@ -209,8 +226,8 @@ typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK
 
     // ------------------- Solve for q1 ---------------- //
 
-    //todo something more elaborate to get this point
-    const Quaternion l_pointNotOnFirstScrew(0.0, m_screwCoordinates.value().getPositions().at(0)(0), m_screwCoordinates.value().getPositions().at(0)(1)- 0.3, m_screwCoordinates.value().getPositions().at(0)(2) );
+    const Quaternion l_pointNotOnFirstScrew = 
+        Quaternion(0.0, m_screwCoordinates.value().getPositions().at(0)(0), m_screwCoordinates.value().getPositions().at(0)(1), m_screwCoordinates.value().getPositions().at(0)(2)) - 0.3*m_screwCoordinatesDualQ.at(1).getRealPart();
     l_iterations = l_solutions.size();
     for (size_t i = 0; i < l_iterations; i++)
     {
@@ -235,6 +252,11 @@ typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK
         {
             l_solutions.at(i).at(0) = -l_q1Problem.getResult().value();
     
+        }
+        else
+        {
+            //q1 problem could not be solved
+            continue;
         }
     }
 

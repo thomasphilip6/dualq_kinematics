@@ -107,6 +107,7 @@ void SecondPadenKahanProblem<Scalar>::compute(const Quaternion& p_pointOnLines, 
             m_secondRotations.push_back( dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, p_axis2, p_startPoint, l_c));//sigma 2
             m_firstRotations.push_back( dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, p_axis1, l_c, p_endPoint));//sigma 1
 
+            //if either of subproblems 1 could not be solved, the whole solution is invalid
             if(m_firstRotations.at(i).getResult().has_value() && m_secondRotations.at(i).getResult().has_value())
             {
                 m_resultsAngle1_rad.push_back(m_firstRotations.at(i).getResult().value());
@@ -286,9 +287,14 @@ void ThirdPadenKahanProblem<Scalar>::compute(const Quaternion& p_pointOnLine, co
         return;
     }
 
-    const Scalar l_theta1 = std::acos(
-        ((l_xProjected.squaredNorm() + l_yProjected.squaredNorm() - l_deltaProjSquared ) / (2*l_xProjected.norm()*l_yProjected.norm()))
-    );
+    const Scalar l_cosineLaw = (l_xProjected.squaredNorm() + l_yProjected.squaredNorm() - l_deltaProjSquared ) / (2*l_xProjected.norm()*l_yProjected.norm());
+    if(l_cosineLaw >1 || l_cosineLaw < -1)
+    {
+        //It means that there is no solution
+        return;
+    }
+
+    const Scalar l_theta1 = std::acos(l_cosineLaw);
 
     if(l_theta1 != 0)
     {
