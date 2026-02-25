@@ -36,6 +36,20 @@ void printEigenIsometry(const Eigen::Isometry3d& p_transformationMatrix)
     RCLCPP_INFO_STREAM(LOGGER, "Rotation: \n" << p_transformationMatrix.rotation() << "\n");
 }
 
+void printJointVector(std::vector<double>& vector)
+{
+    RCLCPP_INFO_STREAM(LOGGER, 
+        " " << vector.at(0) <<
+        " " << vector.at(1) <<
+        " " << vector.at(2) <<
+        " " << vector.at(3) <<
+        " " << vector.at(4) <<
+        " " << vector.at(5) <<
+        " " << vector.at(6)
+        << "\n"
+    );
+}
+
 TEST(dualq_kinematics, FrankaKinSolverTest)
 {
     auto const node = std::make_shared<rclcpp::Node>(
@@ -147,6 +161,14 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     {
         l_robotState->setJointGroupPositions(l_jointModelGroup, l_solution);
         bool l_inBounds = l_robotState->satisfiesBounds();
+        std::vector<double> l_moveItJointValues_rad;
+        l_robotState->copyJointGroupPositions(l_jointModelGroup, l_moveItJointValues_rad);
+
+        RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver Solution is ");
+        printJointVector(l_solution);
+        RCLCPP_INFO_STREAM(LOGGER, "MoveIt current joints are " );
+        printJointVector(l_moveItJointValues_rad);
+        
         if(l_inBounds)
         {
             l_solutionsInBounds++;
