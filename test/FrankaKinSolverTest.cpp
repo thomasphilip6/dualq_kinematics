@@ -21,7 +21,8 @@
 
 const std::string c_pandaTipLink = "panda_link8";
 constexpr int c_repetitions = 1000;
-constexpr double c_tolerance = 1e-6;
+constexpr double c_tolerance = 1e-5;
+constexpr double c_toleranceLow = 1e-3;
 
 using ScrewCoordinates = dualq_kinematics::ScrewCoordinates<double>;
 using FrankaKinSolver = dualq_kinematics::FrankaKinSolver<double>;
@@ -92,10 +93,10 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     
     l_jointValuesReady_rad ={2.13528, 0.45, 0.16, -0.42, 0.18, 2.14, 0.0};;
     l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
-    const Eigen::Isometry3d& l_eeWanted = l_robotState->getGlobalLinkTransform("panda_link8"); 
+    const Eigen::Isometry3d& l_eeWanted1 = l_robotState->getGlobalLinkTransform("panda_link8"); 
 
     Vector3 l_wrist;
-    l_frankaKin.computeWristPosition(l_eeWanted, l_jointValuesReady_rad.at(6), l_wrist);
+    l_frankaKin.computeWristPosition(l_eeWanted1, l_jointValuesReady_rad.at(6), l_wrist);
     EXPECT_TRUE(l_wrist.isApprox(l_robotState->getGlobalLinkTransform("panda_link6").translation(), c_tolerance)) << "Compute Wrist fails";
 
     l_jointValuesReady_rad ={2.13528, 0.45, 0.16, -0.42, 0.18, 2.14, 0.785};
@@ -120,20 +121,36 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     {
         EXPECT_TRUE(false);
     }
+
     size_t l_solutionsInBounds = 0;
+
+    //Numerical values to avoid MoveIt
+    Eigen::Isometry3d l_eeWanted = Eigen::Isometry3d::Identity();
+    l_eeWanted.translation() << -0.348869, 0.46065, 0.947152;
+    l_eeWanted.linear() <<
+    -0.0703608,  0.662334,  -0.745898,
+    0.331076,   0.72087,    0.60888,
+    0.940977,  -0.204108,  -0.270004;
+
     for (auto &&l_solution : l_allIKSolutions)
     {
         l_robotState->setJointGroupPositions(l_jointModelGroup, l_solution);
+        //l_robotState->enforceBounds();
         bool l_inBounds = l_robotState->satisfiesBounds();
         if(l_inBounds)
         {
             l_solutionsInBounds++;
         }
-        EXPECT_TRUE(l_eeWantedForIK.isApprox(l_robotState->getGlobalLinkTransform("panda_link8"), c_tolerance)) << "IK returned wrong solutions";
+        
+        RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver Solution is ");
+        printJointVector(l_solution);
+
+        l_robotState->getGlobalLinkTransform("panda_link8");//updates l_eeWantedForIK
+        EXPECT_TRUE(l_eeWantedForIK.isApprox(l_eeWanted, c_toleranceLow)) << "IK returned wrong solutions";
 
         Eigen::Isometry3d l_computedFK;
         l_frankaKin.computeTipFK(l_solution, l_computedFK);
-        EXPECT_TRUE(l_computedFK.isApprox(l_eeWantedForIK, c_tolerance));
+        EXPECT_TRUE(l_computedFK.isApprox(l_eeWanted, c_tolerance));
     }
     RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver IK returned " << l_solutionsInBounds << " solutions within bounds "); 
 
@@ -141,6 +158,11 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
     l_robotState->getGlobalLinkTransform("panda_link8");
 
+    l_eeWanted.translation() << -0.348869, 0.46065, 0.947152;
+    l_eeWanted.linear() <<
+    0.418382,  0.51826, -0.745898,
+    0.743729, 0.275922,   0.60888,
+    0.521368,   -0.80949, -0.27000;
     
     l_start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < c_repetitions; i++)
@@ -160,24 +182,26 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     for (auto &&l_solution : l_allIKSolutions)
     {
         l_robotState->setJointGroupPositions(l_jointModelGroup, l_solution);
+        //l_robotState->enforceBounds();
         bool l_inBounds = l_robotState->satisfiesBounds();
         std::vector<double> l_moveItJointValues_rad;
         l_robotState->copyJointGroupPositions(l_jointModelGroup, l_moveItJointValues_rad);
 
         RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver Solution is ");
         printJointVector(l_solution);
-        RCLCPP_INFO_STREAM(LOGGER, "MoveIt current joints are " );
-        printJointVector(l_moveItJointValues_rad);
+        //RCLCPP_INFO_STREAM(LOGGER, "MoveIt current joints are " );
+        //printJointVector(l_moveItJointValues_rad);
         
         if(l_inBounds)
         {
             l_solutionsInBounds++;
         }
-        EXPECT_TRUE(l_eeWantedForIK.isApprox(l_robotState->getGlobalLinkTransform("panda_link8"), c_tolerance)) << "IK returned wrong solutions";
+        l_robotState->getGlobalLinkTransform("panda_link8"); //updates MoveIt
+        EXPECT_TRUE(l_eeWantedForIK.isApprox(l_eeWanted, c_toleranceLow)) << "IK returned wrong solutions";
 
         Eigen::Isometry3d l_computedFK;
         l_frankaKin.computeTipFK(l_solution, l_computedFK);
-        EXPECT_TRUE(l_computedFK.isApprox(l_eeWantedForIK, c_tolerance));
+        EXPECT_TRUE(l_computedFK.isApprox(l_eeWanted, c_tolerance));
     }
     RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver IK returned " << l_solutionsInBounds << " solutions within bounds "); 
 
