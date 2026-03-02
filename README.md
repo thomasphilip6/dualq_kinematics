@@ -27,17 +27,17 @@ where $`{\xi_n}`$ is a **twist** and $`\underline{\theta}`$ is a vector of joint
 **Screw axis** are characterized by the axis expressed in a frame and a position of a point on it, they can represent the joints of a robot. In this method, the screw axes information are used rather than the Denavit-Hartenberg parameters, no intermediate coordinate systems are needed
 
 When using dual quaternions in this context, it is needed to:
-- Define screw axes [1]
-- Apply motion to them using the **dual angle** [1]
+- Define screw axes[^1]
+- Apply motion to them using the **dual angle**[^1]
 - Use the product of exponentials
 
-Let's keep in mind that dual quaternions multiplication and exponential are defined in [1] and [2]
+Let's keep in mind that dual quaternions multiplication and exponential are defined in [^1] and [^2]
 
 ### **Inverse Kinematics** 
 
 Inverse kinematics can be computed by dividing the forward kinematics equation into so-called Paden-Kahan sub-problems: [Wikipedia](https://en.wikipedia.org/wiki/Paden%E2%80%93Kahan_subproblems). 
 
-Recent work by "**IKGeo**"[^6] shows that any analytically solvable robots can be decomposed into geometrical subproblems (not using dual quaternions). [5] shows good examples on how to use Paden Kahan subproblems to solve IK but highlights that many robot structures can't be solved by out of the box Paden Kahans. [8] presents generalization of paden kahan subproblems to solve a widely used 6DOF structure. GeoFIK[^7] shows excellent work on Franka robot using geometry insight, screw coordinates and the exponential map.
+Recent work by "**IKGeo**"[^6] shows that any analytically solvable robots can be decomposed into geometrical subproblems (not using dual quaternions). [^5] and [^4] show good examples on how to use Paden Kahan subproblems to solve IK but highlights that many robot structures can't be solved by out of the box Paden Kahans. [^8] presents generalization of paden kahan subproblems to solve a widely used 6DOF structure. GeoFIK[^7] shows excellent work on Franka robot using geometry insight, screw coordinates and the exponential map.
 
 This package shows how to solve IK for the **Franka Emika Panda robot** by combining the 3 original Paden-Kahan subproblems and using quaternions and dual quaternions.
 
@@ -197,14 +197,14 @@ screw_coordinates_node =  launch_ros.actions.Node(
 
 ### References
 
-- [^1] Dual Quaternions by Yan-Bin Jia
-- [^2] Practical Exponential Coordinates using Implicit Dual Quaternions by Neil T. Dantam
-- [^3] Robust and efﬁcient forward, differential, and inverse kinematics using dual quaternions by Neil T. Dantam
-- [^4] Analytical Solution for Inverse Kinematics Using Dual Quaternions by Ping-Feng Lin, Ming-Bao Huang, and Han-Pang Huang, Member, IEEE
-- [^5] EE106A Discussion 4: Inverse Kinematics {jaymonga16, amaysaxena, isabella.huang, valmik}@berkeley.edu
-- [^6] IK-Geo: Unified Robot Inverse Kinematics Using Subproblem Decomposition, Alexander J. Elias, Graduate Student Member, IEEE, and John T. Wen, Fellow, IEEE
-- [^7] GEOFIK: A FAST AND RELIABLE GEOMETRIC SOLVER FOR THE IK OF THE FRANKA ARM BASED ON SCREW THEORY ENABLING MULTIPLE REDUNDANCY PARAMETERS Pablo C. Lopez-Custodio, Yuhe Gong, and Luis F.C. Figueredo
-- [^8] Algorithmic approach to geometric solution of generalized Paden–Kahan subproblem and its extension Igor Dimovski, Mirjana Trompeska, Samoil Samak,Vladimir Dukovski 2 and Dijana Cvetkoska 
+[^1]: Dual Quaternions by Yan-Bin Jia
+[^2]: Practical Exponential Coordinates using Implicit Dual Quaternions by Neil T. Dantam
+[^3]: Robust and efﬁcient forward, differential, and inverse kinematics using dual quaternions by Neil T. Dantam
+[^4]: Analytical Solution for Inverse Kinematics Using Dual Quaternions by Ping-Feng Lin, Ming-Bao Huang, and Han-Pang Huang, Member, IEEE
+[^5]: EE106A Discussion 4: Inverse Kinematics {jaymonga16, amaysaxena, isabella.huang, valmik}@berkeley.edu
+[^6]: IK-Geo: Unified Robot Inverse Kinematics Using Subproblem Decomposition, Alexander J. Elias, Graduate Student Member, IEEE, and John T. Wen, Fellow, IEEE
+[^7]: GEOFIK: A FAST AND RELIABLE GEOMETRIC SOLVER FOR THE IK OF THE FRANKA ARM BASED ON SCREW THEORY ENABLING MULTIPLE REDUNDANCY PARAMETERS Pablo C. Lopez-Custodio, Yuhe Gong, and Luis F.C. Figueredo
+[^8]: Algorithmic approach to geometric solution of generalized Paden–Kahan subproblem and its extension Igor Dimovski, Mirjana Trompeska, Samoil Samak,Vladimir Dukovski 2 and Dijana Cvetkoska 
 
 
 ---
