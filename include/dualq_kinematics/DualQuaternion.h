@@ -229,25 +229,25 @@ namespace dualq_kinematics
     // ------------------ Eigen::Quaternion<Scalar> utils --------------- //
 
     template<typename Scalar>
-    Eigen::Quaternion<Scalar> operator*(const Scalar& p_scalar, const Eigen::Quaternion<Scalar>& p_q)
+    inline Eigen::Quaternion<Scalar> operator*(const Scalar& p_scalar, const Eigen::Quaternion<Scalar>& p_q)
     {
         return Eigen::Quaternion<Scalar>(p_q.coeffs() * p_scalar);
     }
 
     template<typename Scalar>
-    Eigen::Quaternion<Scalar> operator*(const Eigen::Quaternion<Scalar>& p_q, const Scalar& p_scalar)
+    inline Eigen::Quaternion<Scalar> operator*(const Eigen::Quaternion<Scalar>& p_q, const Scalar& p_scalar)
     {
         return Eigen::Quaternion<Scalar>(p_q.coeffs() * p_scalar);
     }
 
     template<typename Scalar>
-    Eigen::Quaternion<Scalar> operator+(const Eigen::Quaternion<Scalar>& p_q1, const Eigen::Quaternion<Scalar>& p_q2)
+    inline Eigen::Quaternion<Scalar> operator+(const Eigen::Quaternion<Scalar>& p_q1, const Eigen::Quaternion<Scalar>& p_q2)
     {
         return Eigen::Quaternion<Scalar>(p_q1.w() + p_q2.w(), p_q1.x() + p_q2.x(), p_q1.y() + p_q2.y(), p_q1.z() + p_q2.z());
     }
 
     template<typename Scalar>
-    Eigen::Quaternion<Scalar> operator-(const Eigen::Quaternion<Scalar>& p_q1, const Eigen::Quaternion<Scalar>& p_q2)
+    inline Eigen::Quaternion<Scalar> operator-(const Eigen::Quaternion<Scalar>& p_q1, const Eigen::Quaternion<Scalar>& p_q2)
     {
         return Eigen::Quaternion<Scalar>(p_q1.w() - p_q2.w(), p_q1.x() - p_q2.x(), p_q1.y() - p_q2.y(), p_q1.z() - p_q2.z());
     }

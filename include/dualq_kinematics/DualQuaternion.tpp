@@ -72,13 +72,13 @@ DualQuaternion<Scalar>::DualQuaternion(const Transform& p_transform)
 
 
 template<typename Scalar>
-DualQuaternion<Scalar> DualQuaternion<Scalar>::operator*(const DualQuaternion<Scalar>& p_other) const
+inline DualQuaternion<Scalar> DualQuaternion<Scalar>::operator*(const DualQuaternion<Scalar>& p_other) const
 {
     return DualQuaternion<Scalar>(m_realPart * p_other.m_realPart, (m_realPart * p_other.m_dualPart) + (m_dualPart * p_other.m_realPart));
 }
 
 template<typename Scalar>
-DualQuaternion<Scalar> DualQuaternion<Scalar>::operator*(const Scalar p_scalar) const noexcept
+inline DualQuaternion<Scalar> DualQuaternion<Scalar>::operator*(const Scalar p_scalar) const noexcept
 {
     Eigen::Matrix<Scalar,4,1> l_real = m_realPart.coeffs() * p_scalar;
     Eigen::Matrix<Scalar,4,1> l_dual = m_dualPart.coeffs() * p_scalar;
