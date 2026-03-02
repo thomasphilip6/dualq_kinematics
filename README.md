@@ -43,40 +43,41 @@ This package shows how to solve IK for the **Franka Emika Panda robot** by combi
 
 Using PoE with Paden Kahan is convenient as Paden-Kahan subproblems can be expressed with exponentials in SO(3). Starting with Poe for Franka robot:
 
-$$`T_{Tip}^0  = e^{({\xi_1} * {\theta}_{1})} * e^{({\xi_2} * {\theta}_{2})} *  * e^{({\xi_3} * {\theta}_{3})} *  e^{({\xi_4} * {\theta}_{4})} *  * e^{({\xi_5} * {\theta}_{5})} * e^{({\xi_6} * {\theta}_{6})} * e^{({\xi_7} * {\theta}_{7})} *  T_{Tip}^0 (0)`$$
+<p align="center">
 
-<center>
+$`T_{Tip}^0  = e^{({\xi_1} * {\theta}_{1})} * e^{({\xi_2} * {\theta}_{2})} *  * e^{({\xi_3} * {\theta}_{3})} *  e^{({\xi_4} * {\theta}_{4})} *  * e^{({\xi_5} * {\theta}_{5})} * e^{({\xi_6} * {\theta}_{6})} * e^{({\xi_7} * {\theta}_{7})} *  T_{Tip}^0 (0)`$
+
 
 Let's remind that **q7 is given a value** (fixed). Then we **revert the kinematic chain** as Franka robot has a **spherical joint at the shoulder** and not at the wrist:
 
-<center>
-<img src="images/spherical_shoulder.png" height="400">
-</center>
-
+<p align="center">
+<img src="images/spherical_shoulder.png"  height="400">
+</p>
 
 *Spherical Shoulder at the intersection of 3 screw*
 
 Let's rewrite $`e^{({\xi_n} * {\theta}_{n})}`$ by $`e^{n}`$
 
-$$`Inverse (T_{Tip}^0 * T_{0}^{Tip} (0) * e^{-7})  = e^{-6} * e^{-5} * e^{-4} *e^{-3} * e^{-2} * e^{-1}`$$
+$`Inverse (T_{Tip}^0 * T_{0}^{Tip} (0) * e^{-7})  = e^{-6} * e^{-5} * e^{-4} *e^{-3} * e^{-2} * e^{-1}`$
 
 Let's rewrite $`Inverse (T_{Tip}^0 * T_{0}^{Tip} (0) * e^{-7})`$ by $`g`$ which is a transformation expressed as a dual quaternion and $`g \otimes p`$ means point $`p`$ transformed by $`g`$
 
-**$$` g \otimes p  = e^{-6} * e^{-5} * e^{-4} *e^{-3} * e^{-2} * e^{-1} \otimes p`$$** where $`p`$ is the spherical shoulder simplifies to:
+**$` g \otimes p  = e^{-6} * e^{-5} * e^{-4} *e^{-3} * e^{-2} * e^{-1} \otimes p`$** where $`p`$ is the spherical shoulder simplifies to:
 
-**$$` g \otimes p  = e^{-6} * e^{-5} * e^{-4} \otimes p`$$** enables 
+**$` g \otimes p  = e^{-6} * e^{-5} * e^{-4} \otimes p`$** enables 
 
-**$$`|| g \otimes p - g \otimes w ||   = || e^{-4} \otimes p - w ||`$$** 
+**$`|| g \otimes p - g \otimes w ||   = || e^{-4} \otimes p - w ||`$** 
 where $`w`$ is the wrist, the intersection of joint 5 and 6. This is Paden Kahan Subrproblem 3. On the left hand side, both point have to be expressend in the same reference frame to form a distance. Once q4 is found: $`e^{({\xi_4} * {\theta}_{4})} = g(q_{4})`$ can be computed and used as a transformation
 
-**$$` g \otimes p  = e^{-6} * e^{-5} * g(-q_{4}) \otimes p`$$** 
+**$` g \otimes p  = e^{-6} * e^{-5} * g(-q_{4}) \otimes p`$** 
 can be written and solved as a second Paden Kahan subproblem, after which q6 and q5 are known
 
-**$$`g  = g(-q_{6}) * g(-q_{5}) * g(-q_{4}) *e^{-3} * e^{-2} * e^{-1}`$$**
+**$`g  = g(-q_{6}) * g(-q_{5}) * g(-q_{4}) *e^{-3} * e^{-2} * e^{-1}`$**
 
-**$$`g(q_{6}) * g(q_{5}) * g(q_{4}) * q = e^{-3} * e^{-2} * e^{-1} \otimes r ` $$** 
+**$`g(q_{6}) * g(q_{5}) * g(q_{4}) * q = e^{-3} * e^{-2} * e^{-1} \otimes r ` $** 
 can be written where $`r`$ is a point on the first screw axis only and is a Second Paden Kahan subproblem and then a point not on the first screw can be chosen to solve a first Paden Kahan subproblem
-</center>
+
+</p>
 
 
 ---
