@@ -109,6 +109,8 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     l_jointValuesReady_rad ={2.13528, 0.45, 0.16, -0.42, 0.18, 2.14, 0.0};
     l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
     l_robotState->getGlobalLinkTransform("panda_link8"); 
+
+    // ------------ compute6DOFIK Test ---------------- //
     
     auto l_start = std::chrono::high_resolution_clock::now();
     std::vector<std::vector<double>> l_allIKSolutions = l_frankaKin.compute6DOFIK(l_eeWantedForIK, 0.0);
@@ -135,7 +137,7 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     for (auto &&l_solution : l_allIKSolutions)
     {
         l_robotState->setJointGroupPositions(l_jointModelGroup, l_solution);
-        //l_robotState->enforceBounds();
+        //enforcing bounds will change MoveIt so it falls within bounds, thus the test cannot pass
         bool l_inBounds = l_robotState->satisfiesBounds();
         if(l_inBounds)
         {
@@ -182,6 +184,7 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     for (auto &&l_solution : l_allIKSolutions)
     {
         l_robotState->setJointGroupPositions(l_jointModelGroup, l_solution);
+        //enforcing bounds will change MoveIt so it falls within bounds, thus the test cannot pass
         //l_robotState->enforceBounds();
         bool l_inBounds = l_robotState->satisfiesBounds();
         std::vector<double> l_moveItJointValues_rad;

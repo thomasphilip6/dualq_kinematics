@@ -1,6 +1,7 @@
 #include "dualq_kinematics/DualQuaternion.h"
 #include "dualq_kinematics/ScrewCoordinates.h"
 #include "dualq_kinematics/PadenKahan.h"
+#include "dualq_kinematics/FrankaKinSolver.h"
 
 //ROS2
 #include <pluginlib/class_loader.hpp>
@@ -25,6 +26,7 @@ const std::string c_pandaTipLink = "panda_link8";
 constexpr double c_tolerance = 1e-6;
 using DualQuaternion = dualq_kinematics::DualQuaternion<double>;
 using ScrewCoordinates = dualq_kinematics::ScrewCoordinates<double>;
+using FrankaKinSolver = dualq_kinematics::FrankaKinSolver<double>;
 const std::string ROBOT_DESCRIPTION_PARAM = "robot_description";
 static const rclcpp::Logger LOGGER = rclcpp::get_logger("dualq_kinematics_demo");
 constexpr int c_repetitions = 1000;
@@ -49,10 +51,7 @@ void printScrewInfo(ScrewCoordinates& p_screwCoord)
     RCLCPP_INFO_STREAM(LOGGER, "Tip2BaseInit :  [" << p_screwCoord.getTip2BaseInit().matrix() << " ]");
 }
 
-/**
- * @brief Prints Eigen Isometry information as translation and rotation
- * @param p_screwCoord Eigen::Isometry instance to be printed
- */
+
 void printEigenIsometry(const Eigen::Isometry3d& p_transformationMatrix)
 {
     RCLCPP_INFO_STREAM(LOGGER, "Translation: \n" << p_transformationMatrix.translation() << "\n");
@@ -60,21 +59,21 @@ void printEigenIsometry(const Eigen::Isometry3d& p_transformationMatrix)
 }
 
 /**
- * @brief Computes the forward kinematics using dual quaternions
- * @param p_screwDQ ScrewCoordinates of the robot
- * @param p_tip2BaseInit Initial tip2Base transform (robot at rest)
- * @param p_jointValues_rad Joint Values to be applied to the joints
- * @param p_tip2BaseComputed The result of the forward kinematics computation as an Eigen Isometry
+ * @brief Prints a vector of joint values
+ * @param p_screwCoord vector to be printed
  */
-void dualQuaternionForwardKinematics(const std::vector<DualQuaternion>& p_screwDQ, const DualQuaternion& p_tip2BaseInit, std::vector<double>& p_jointValues_rad, Eigen::Isometry3d& p_tip2BaseComputed)
+void printJointVector(std::vector<double>& vector)
 {
-    DualQuaternion l_tip2BaseDQComputed = (p_screwDQ.at(0) * (p_jointValues_rad.at(0) * 0.5)).dqExp();
-    for (size_t i = 1; i < p_jointValues_rad.size(); i++)
-    {
-        l_tip2BaseDQComputed = l_tip2BaseDQComputed * (p_screwDQ.at(i)* (p_jointValues_rad.at(i) * 0.5)).dqExp();
-    }
-    l_tip2BaseDQComputed = l_tip2BaseDQComputed * p_tip2BaseInit;
-    p_tip2BaseComputed = l_tip2BaseDQComputed.getTransform();    
+    RCLCPP_INFO_STREAM(LOGGER, 
+        " " << vector.at(0) <<
+        " " << vector.at(1) <<
+        " " << vector.at(2) <<
+        " " << vector.at(3) <<
+        " " << vector.at(4) <<
+        " " << vector.at(5) <<
+        " " << vector.at(6)
+        << "\n"
+    );
 }
 
 int main(int argc, char** argv)
@@ -126,9 +125,11 @@ int main(int argc, char** argv)
     }
     
     DualQuaternion l_tip2BaseInit(l_screwCoord.getTip2BaseInit());
+    FrankaKinSolver l_frankaKin(l_screwCoord);
+
     l_stop = std::chrono::high_resolution_clock::now();
     l_ms = l_stop - l_start;
-    RCLCPP_INFO_STREAM(LOGGER, "Dual Quaternions constructions took " << l_ms.count() << " ms");
+    RCLCPP_INFO_STREAM(LOGGER, "Dual Quaternions constructions & FrankaKinSolver took " << l_ms.count() << " ms");
 
     //Constructing Robot State
     moveit::core::RobotStatePtr l_robotState(new moveit::core::RobotState(l_robotModel));
@@ -147,9 +148,11 @@ int main(int argc, char** argv)
     RCLCPP_INFO(LOGGER, "MoveIt FK Returned : ");
     printEigenIsometry(l_eeStateMoveIt);
 
+    // ------------------------- FK Demo ----------------------- //
+
     Eigen::Isometry3d l_eeStateDQ;
     l_start = std::chrono::high_resolution_clock::now();
-    dualQuaternionForwardKinematics(l_screwDQ, l_tip2BaseInit, l_jointValues_rad, l_eeStateDQ);
+    l_frankaKin.computeTipFK(l_jointValues_rad, l_eeStateDQ);
     l_stop = std::chrono::high_resolution_clock::now();
     l_ms = l_stop - l_start;
     RCLCPP_INFO_STREAM(LOGGER, "Dual Quaternions FK took " << l_ms.count() << " ms. And result is: ");
@@ -159,20 +162,52 @@ int main(int argc, char** argv)
     //Second Try to make sure twists were not damaged
     l_robotState->setToRandomPositions(l_jointModelGroup);
     l_robotState->copyJointGroupPositions(l_jointModelGroup, l_jointValues_rad);
-    const Eigen::Isometry3d& l_eeStateMoveIt2 = l_robotState->getGlobalLinkTransform("panda_link8");
+    l_robotState->getGlobalLinkTransform("panda_link8");
     RCLCPP_INFO(LOGGER, "MoveIt FK Returned : ");
-    printEigenIsometry(l_eeStateMoveIt2);
+    printEigenIsometry(l_eeStateMoveIt);
 
     l_start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < c_repetitions; i++)
     {
-        dualQuaternionForwardKinematics(l_screwDQ, l_tip2BaseInit, l_jointValues_rad, l_eeStateDQ);
+        l_frankaKin.computeTipFK(l_jointValues_rad, l_eeStateDQ);
     }
     l_stop = std::chrono::high_resolution_clock::now();
     double l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
     RCLCPP_INFO_STREAM(LOGGER, "Dual Quaternions FK took (over 1000 tries) " << l_micros/c_repetitions << " us. And result is: ");
     printEigenIsometry(l_eeStateDQ);
-    RCLCPP_INFO_STREAM(LOGGER, "Dual Quaternions FK and MoveIt FK match: " << l_eeStateDQ.isApprox(l_eeStateMoveIt2, c_tolerance));
+    RCLCPP_INFO_STREAM(LOGGER, "Dual Quaternions FK and MoveIt FK match: " << l_eeStateDQ.isApprox(l_eeStateMoveIt, c_tolerance));
+
+    // ------------------------- IK Demo ----------------------- //
+
+    l_jointValuesReady_rad = {2.13528, 0.49, 0.16, -0.42, 0.18, 2.14, 0.785};
+    l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
+    l_robotState->getGlobalLinkTransform("panda_link8");
+    const Eigen::Isometry3d l_eeWanted = l_eeStateMoveIt;
+
+    std::vector<std::vector<double>> l_IKSolutions = l_frankaKin.compute6DOFIK(l_eeStateMoveIt, l_jointValuesReady_rad.at(6));
+
+    for (auto &&l_solution : l_IKSolutions)
+    {
+        bool l_inBounds = l_jointModelGroup->satisfiesPositionBounds(l_solution.data(), 0.0);
+        printJointVector(l_solution);
+        if(l_inBounds)
+        {
+            l_robotState->setJointGroupPositions(l_jointModelGroup, l_solution);
+            l_robotState->getGlobalLinkTransform("panda_link8");
+            RCLCPP_INFO_STREAM(LOGGER, "IK solution match wanted one: " << l_eeWanted.isApprox(l_eeStateMoveIt, c_tolerance));
+        }
+    }
+
+    // ------------------------- IK Performance Demo ----------------------- //
+    
+    l_start = std::chrono::high_resolution_clock::now();
+    for (size_t i = 0; i < c_repetitions; i++)
+    {
+        l_IKSolutions = l_frankaKin.compute6DOFIK(l_eeStateMoveIt, l_jointValuesReady_rad.at(6));
+    }
+    l_stop = std::chrono::high_resolution_clock::now();
+    l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
+    RCLCPP_INFO_STREAM(LOGGER, "IK took (over 1000 tries) " << l_micros/c_repetitions << " us. And result is: ");
 
     rclcpp::shutdown();
     return 0; 

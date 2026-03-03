@@ -4,7 +4,7 @@ This repository is a ROS2 C++ package aiming to become a MoveIt2 kinematics plug
 
 However, modern approaches use the **product of exponential** and dual quaternions can be used in this context as they can represent homogeneous transformation and screw displacements. [Wikipedia link on Screw Axis](https://en.wikipedia.org/wiki/Screw_axis)
 
-This second approach requires fewer arithmetic operations and is therefore faster. For example, this is particularly usefull when forward kinematics is used in an optimization problem needing a huge number of forward kinematics computations to converge. Also dual quaternions are more compact than a transformation matrix. Computations of the forward kinematics of the Franka Emika robot (7DOF) are **under the microsecond**.
+This second approach requires fewer arithmetic operations and is therefore faster. For example, this is particularly usefull when forward kinematics is used in an optimization problem needing a huge number of forward kinematics computations to converge. Also dual quaternions are more compact than a transformation matrix. Computations of the **forward kinematics of the Franka Emika robot (7DOF) are under the microsecond** and **analytical inverse kinematics with $`q_{7}`$ fixed is around 10ms**  (Ryzen 5 R5-3550H).
 
 The package is based on ROS2 Humble. In this repository, the dual quaternions is built using Eigen library, to ensure compatbility with MoveIt and others. It means that the dual quaternion class has 2 `Eigen::Quaternion` as members and that the constructors take Eigen types as inputs. The `DualQuaternion` and `ScrewCoordinates` classes are templates to follow Eigen's logic. 
 
@@ -18,7 +18,7 @@ A dual quaternion is composed of two quaternions, one is called the real part an
 
 Generally, the product of exponential states that
 
-$$`T_{Tip}^0  = ({\Pi}_{0}^n \  e^{({\xi_n} * {\theta}_{n})}) * T_{Tip}^0 (0)`$$
+$`T_{Tip}^0  = ({\Pi}_{0}^n \  e^{({\xi_n} * {\theta}_{n})}) * T_{Tip}^0 (0)`$
 
 where $`{\xi_n}`$ is a **twist** and $`\underline{\theta}`$ is a vector of joint angles and  $`T_{Tip}^0(0)`$ is **tip2Base** transform when the manipulator is at rest
 
