@@ -18,6 +18,8 @@
   <depend>moveit_core</depend>
   <depend>moveit_msgs</depend>
   <depend>robot_model_loader</depend> <!-- RobotModelLoader -->
+  <depend>moveit_ros_planning_interface</depend>
+  <depend>moveit_visual_tools</depend>
 
   <exec_depend>ros2launch</exec_depend>
 

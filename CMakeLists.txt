@@ -16,6 +16,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(moveit_visual_tools REQUIRED)
+find_package(moveit_ros_planning_interface REQUIRED)
 
 #MoveIt
 find_package(moveit_core REQUIRED)
@@ -50,6 +52,8 @@ add_executable(dualq_kinematics_demo
 ament_target_dependencies(dualq_kinematics_demo
   rclcpp
   moveit_core
+  moveit_visual_tools
+  moveit_ros_planning_interface
 )
 
 target_link_libraries(dualq_kinematics_demo

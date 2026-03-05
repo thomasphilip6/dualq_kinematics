@@ -6,7 +6,7 @@ from moveit_configs_utils import MoveItConfigsBuilder
 def generate_launch_description():
     moveit_config = MoveItConfigsBuilder("moveit_resources_panda").to_moveit_configs()
 
-    tutorial_node = Node(
+    dualq_kinematics_node = Node(
         package="dualq_kinematics",
         executable="dualq_kinematics_demo",
         output="screen",
@@ -17,4 +17,4 @@ def generate_launch_description():
         ],
     )
 
-    return LaunchDescription([tutorial_node])
+    return LaunchDescription([dualq_kinematics_node])

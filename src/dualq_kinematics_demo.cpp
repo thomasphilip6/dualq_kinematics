@@ -6,18 +6,22 @@
 //ROS2
 #include <pluginlib/class_loader.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <moveit_visual_tools/moveit_visual_tools.h>
 
 // MoveIt
 #include <moveit/kinematics_base/kinematics_base.h>
 #include <moveit/rdf_loader/rdf_loader.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit/utils/robot_model_test_utils.h>
+#include <moveit/move_group_interface/move_group_interface.h>
+#include <moveit/planning_scene_interface/planning_scene_interface.h>
 
 //C++
 #include <map>
 #include <string>
 #include <memory>
 #include <chrono>
+#include <thread> 
 
 //link of the robot considered the tip of the kinematic chain
 const std::string c_pandaTipLink = "panda_link8";
@@ -28,6 +32,7 @@ using DualQuaternion = dualq_kinematics::DualQuaternion<double>;
 using ScrewCoordinates = dualq_kinematics::ScrewCoordinates<double>;
 using FrankaKinSolver = dualq_kinematics::FrankaKinSolver<double>;
 const std::string ROBOT_DESCRIPTION_PARAM = "robot_description";
+static const std::string PLANNING_GROUP = "panda_arm";
 static const rclcpp::Logger LOGGER = rclcpp::get_logger("dualq_kinematics_demo");
 constexpr int c_repetitions = 1000;
 
@@ -84,9 +89,41 @@ int main(int argc, char** argv)
         rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)
     );
 
+    //adds executor for moveItVisualTools
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_node(node);
+    auto spinner = std::thread([&executor]() { executor.spin(); });
+
     //Loading robot and constructing screw coordinates
-    rdf_loader::RDFLoader rdf_loader(node, ROBOT_DESCRIPTION_PARAM);
-    moveit::core::RobotModelPtr l_robotModel = std::make_shared<moveit::core::RobotModel>(rdf_loader.getURDF(), rdf_loader.getSRDF());
+    //rdf_loader::RDFLoader rdf_loader(node, ROBOT_DESCRIPTION_PARAM);
+    //moveit::core::RobotModelPtr l_robotModel = std::make_shared<moveit::core::RobotModel>(rdf_loader.getURDF(), rdf_loader.getSRDF());
+
+    moveit::planning_interface::MoveGroupInterface move_group(node, PLANNING_GROUP);
+    moveit::core::RobotModelConstPtr l_robotModel = move_group.getRobotModel();
+
+    moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+
+    const moveit::core::JointModelGroup* l_jointModelGroup = l_robotModel->getJointModelGroup(PLANNING_GROUP);
+
+    auto moveit_visual_tools = moveit_visual_tools::MoveItVisualTools{node, "panda_link0", rviz_visual_tools::RVIZ_MARKER_TOPIC, l_robotModel};
+    moveit_visual_tools.deleteAllMarkers();
+    moveit_visual_tools.loadRemoteControl();
+
+    Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
+    text_pose.translation().z() = 1.0;
+    moveit_visual_tools.publishText(text_pose, "Dual_Quaternions_Demo", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+
+    // Create a closures for visualization
+    auto const draw_title = [&moveit_visual_tools](auto text) {
+        auto const text_pose = [] {
+            auto msg = Eigen::Isometry3d::Identity();
+            msg.translation().z() = 1.0;
+            return msg;
+        }();
+        moveit_visual_tools.publishText(text_pose, text, rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+    };
+    auto const prompt = [&moveit_visual_tools](auto text) {moveit_visual_tools.prompt(text);};
+    moveit_visual_tools.trigger();
     
     RCLCPP_INFO_STREAM(LOGGER, "Starting Screw Coordinates construction");
     auto l_start = std::chrono::high_resolution_clock::now();
@@ -135,7 +172,6 @@ int main(int argc, char** argv)
     moveit::core::RobotStatePtr l_robotState(new moveit::core::RobotState(l_robotModel));
     l_robotState->enforceBounds();
     l_robotState->setToDefaultValues();
-    const moveit::core::JointModelGroup* l_jointModelGroup = l_robotModel->getJointModelGroup("panda_arm");
     //const std::vector<std::string>& l_jointNames = l_jointModelGroup->getVariableNames();
 
     //First Try, apply joint values, compute and compare FK
@@ -149,6 +185,10 @@ int main(int argc, char** argv)
     printEigenIsometry(l_eeStateMoveIt);
 
     // ------------------------- FK Demo ----------------------- //
+
+    prompt("Press 'Next' in the RvizVisualToolsGui window to execute FK computations");
+    draw_title("Forward Kinematics");
+    moveit_visual_tools.trigger();
 
     Eigen::Isometry3d l_eeStateDQ;
     l_start = std::chrono::high_resolution_clock::now();
@@ -183,6 +223,12 @@ int main(int argc, char** argv)
     l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
     l_robotState->getGlobalLinkTransform("panda_link8");
     const Eigen::Isometry3d l_eeWanted = l_eeStateMoveIt;
+  
+    draw_title("Inverse Kinematics");
+    moveit_visual_tools.publishAxisLabeled(l_eeWanted, "pose wanted");
+    moveit_visual_tools.publishText(text_pose, "Pose_Goal", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+    moveit_visual_tools.trigger();
+    prompt("Press 'Next' in the RvizVisualToolsGui window to execute IK computations");
 
     std::vector<std::vector<double>> l_IKSolutions = l_frankaKin.compute6DOFIK(l_eeStateMoveIt, l_jointValuesReady_rad.at(6));
 
@@ -194,11 +240,28 @@ int main(int argc, char** argv)
         {
             l_robotState->setJointGroupPositions(l_jointModelGroup, l_solution);
             l_robotState->getGlobalLinkTransform("panda_link8");
-            RCLCPP_INFO_STREAM(LOGGER, "IK solution match wanted one: " << l_eeWanted.isApprox(l_eeStateMoveIt, c_tolerance));
+            RCLCPP_INFO_STREAM(LOGGER, "IK solution within bounds match wanted one: " << l_eeWanted.isApprox(l_eeStateMoveIt, c_tolerance));
+            move_group.setJointValueTarget(l_solution);
+            moveit::planning_interface::MoveGroupInterface::Plan l_plan;
+            bool l_planSuccess = (move_group.plan(l_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+            if(l_planSuccess)
+            {
+                move_group.execute(l_plan);
+            }
+            else
+            {
+                RCLCPP_ERROR(LOGGER, "Planing failed!");
+            }
+
+
         }
     }
 
     // ------------------------- IK Performance Demo ----------------------- //
+
+    prompt("Press 'Next' in the RvizVisualToolsGui window to execute performance IK computations");
+    draw_title("Inverse Kinematics Performance");
+    moveit_visual_tools.trigger();
     
     l_start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < c_repetitions; i++)
@@ -210,6 +273,7 @@ int main(int argc, char** argv)
     RCLCPP_INFO_STREAM(LOGGER, "IK took (over 1000 tries) " << l_micros/c_repetitions << " us. And result is: ");
 
     rclcpp::shutdown();
+    spinner.join();
     return 0; 
 
 }
