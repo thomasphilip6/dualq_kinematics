@@ -105,24 +105,13 @@ int main(int argc, char** argv)
 
     const moveit::core::JointModelGroup* l_jointModelGroup = l_robotModel->getJointModelGroup(PLANNING_GROUP);
 
-    auto moveit_visual_tools = moveit_visual_tools::MoveItVisualTools{node, "panda_link0", rviz_visual_tools::RVIZ_MARKER_TOPIC, l_robotModel};
+    auto moveit_visual_tools = moveit_visual_tools::MoveItVisualTools{node, "panda_link0", "dual_quaternions_demo", l_robotModel};
     moveit_visual_tools.deleteAllMarkers();
     moveit_visual_tools.loadRemoteControl();
 
     Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
     text_pose.translation().z() = 1.0;
     moveit_visual_tools.publishText(text_pose, "Dual_Quaternions_Demo", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-
-    // Create a closures for visualization
-    auto const draw_title = [&moveit_visual_tools](auto text) {
-        auto const text_pose = [] {
-            auto msg = Eigen::Isometry3d::Identity();
-            msg.translation().z() = 1.0;
-            return msg;
-        }();
-        moveit_visual_tools.publishText(text_pose, text, rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-    };
-    auto const prompt = [&moveit_visual_tools](auto text) {moveit_visual_tools.prompt(text);};
     moveit_visual_tools.trigger();
     
     RCLCPP_INFO_STREAM(LOGGER, "Starting Screw Coordinates construction");
@@ -186,8 +175,8 @@ int main(int argc, char** argv)
 
     // ------------------------- FK Demo ----------------------- //
 
-    prompt("Press 'Next' in the RvizVisualToolsGui window to execute FK computations");
-    draw_title("Forward Kinematics");
+    moveit_visual_tools.prompt("Press 'Next' in the RvizVisualToolsGui window to begin demo");
+    moveit_visual_tools.publishText(text_pose, "Forward_Kinematics", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
     moveit_visual_tools.trigger();
 
     Eigen::Isometry3d l_eeStateDQ;
@@ -206,6 +195,19 @@ int main(int argc, char** argv)
     RCLCPP_INFO(LOGGER, "MoveIt FK Returned : ");
     printEigenIsometry(l_eeStateMoveIt);
 
+    //Make Robot Move
+    move_group.setJointValueTarget(l_jointValues_rad);
+    moveit::planning_interface::MoveGroupInterface::Plan l_plan;
+    bool l_planSuccess = (move_group.plan(l_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+    if(l_planSuccess)
+    {
+        move_group.execute(l_plan);
+    }
+
+    moveit_visual_tools.prompt("Press 'Next' in the RvizVisualToolsGui window to see pose that FK computed");
+    moveit_visual_tools.trigger();
+
+
     l_start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < c_repetitions; i++)
     {
@@ -217,6 +219,9 @@ int main(int argc, char** argv)
     printEigenIsometry(l_eeStateDQ);
     RCLCPP_INFO_STREAM(LOGGER, "Dual Quaternions FK and MoveIt FK match: " << l_eeStateDQ.isApprox(l_eeStateMoveIt, c_tolerance));
 
+    moveit_visual_tools.publishAxisLabeled(l_eeStateDQ, "Pose_obtained");
+    moveit_visual_tools.trigger();
+
     // ------------------------- IK Demo ----------------------- //
 
     l_jointValuesReady_rad = {2.13528, 0.49, 0.16, -0.42, 0.18, 2.14, 0.785};
@@ -224,11 +229,11 @@ int main(int argc, char** argv)
     l_robotState->getGlobalLinkTransform("panda_link8");
     const Eigen::Isometry3d l_eeWanted = l_eeStateMoveIt;
   
-    draw_title("Inverse Kinematics");
-    moveit_visual_tools.publishAxisLabeled(l_eeWanted, "pose wanted");
-    moveit_visual_tools.publishText(text_pose, "Pose_Goal", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+    moveit_visual_tools.publishText(text_pose, "Inverse_Kinematics", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
     moveit_visual_tools.trigger();
-    prompt("Press 'Next' in the RvizVisualToolsGui window to execute IK computations");
+    moveit_visual_tools.prompt("Press 'Next' in the RvizVisualToolsGui window to execute IK computations");
+    moveit_visual_tools.publishAxisLabeled(l_eeWanted, "Pose_wanted");
+    moveit_visual_tools.trigger();
 
     std::vector<std::vector<double>> l_IKSolutions = l_frankaKin.compute6DOFIK(l_eeStateMoveIt, l_jointValuesReady_rad.at(6));
 
@@ -242,7 +247,6 @@ int main(int argc, char** argv)
             l_robotState->getGlobalLinkTransform("panda_link8");
             RCLCPP_INFO_STREAM(LOGGER, "IK solution within bounds match wanted one: " << l_eeWanted.isApprox(l_eeStateMoveIt, c_tolerance));
             move_group.setJointValueTarget(l_solution);
-            moveit::planning_interface::MoveGroupInterface::Plan l_plan;
             bool l_planSuccess = (move_group.plan(l_plan) == moveit::core::MoveItErrorCode::SUCCESS);
             if(l_planSuccess)
             {
@@ -259,8 +263,8 @@ int main(int argc, char** argv)
 
     // ------------------------- IK Performance Demo ----------------------- //
 
-    prompt("Press 'Next' in the RvizVisualToolsGui window to execute performance IK computations");
-    draw_title("Inverse Kinematics Performance");
+    moveit_visual_tools.prompt("Press 'Next' in the RvizVisualToolsGui window to execute performance IK computations");
+    moveit_visual_tools.publishText(text_pose, "Inverse_Kinematics_Performance", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
     moveit_visual_tools.trigger();
     
     l_start = std::chrono::high_resolution_clock::now();
