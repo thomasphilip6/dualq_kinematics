@@ -305,6 +305,20 @@ void ThirdPadenKahanProblem<Scalar>::compute(const Quaternion& p_pointOnLine, co
     {
         m_results.push_back(m_theta0Problem.getResult().value());
     }
+
+    //ensure result is primary value
+    for (auto &&l_angle : m_results)
+    {
+        if(l_angle > M_PI )
+        {
+            l_angle = 2*M_PI - l_angle;
+        }
+        else if(l_angle < -M_PI)
+        {
+            l_angle = 2*M_PI + l_angle;
+        }
+    }
+    
 }
 
 template<typename Scalar>
