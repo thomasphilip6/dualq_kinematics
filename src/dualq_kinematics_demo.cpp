@@ -220,44 +220,56 @@ int main(int argc, char** argv)
     RCLCPP_INFO_STREAM(LOGGER, "Dual Quaternions FK and MoveIt FK match: " << l_eeStateDQ.isApprox(l_eeStateMoveIt, c_tolerance));
 
     moveit_visual_tools.publishAxisLabeled(l_eeStateDQ, "Pose_obtained");
-    moveit_visual_tools.trigger();
 
     // ------------------------- IK Demo ----------------------- //
 
-    l_jointValuesReady_rad = {2.13528, 0.49, 0.16, -0.42, 0.18, 2.14, 0.785};
-    l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
-    l_robotState->getGlobalLinkTransform("panda_link8");
-    const Eigen::Isometry3d l_eeWanted = l_eeStateMoveIt;
-  
-    moveit_visual_tools.publishText(text_pose, "Inverse_Kinematics", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-    moveit_visual_tools.trigger();
-    moveit_visual_tools.prompt("Press 'Next' in the RvizVisualToolsGui window to execute IK computations");
-    moveit_visual_tools.publishAxisLabeled(l_eeWanted, "Pose_wanted");
-    moveit_visual_tools.trigger();
-
-    std::vector<std::vector<double>> l_IKSolutions = l_frankaKin.compute6DOFIK(l_eeStateMoveIt, l_jointValuesReady_rad.at(6));
-
-    for (auto &&l_solution : l_IKSolutions)
+    std::vector<std::vector<double>> l_jointTargets_rad = 
+    { 
+        {0.7, 0.43, 2.1, -1.7, 2.1, 2.5, 1.0},
+        {-0.7, 1.45, 0.7, -1.7, 1.7, 3.1, 0.42},
+        {2.13528, 0.49, 0.16, -0.42, 0.18, 2.14, 0.785},
+        {1.2, 0.49, 2.1, -2.5, 1.3, 0.7, -1.8}
+    };
+    for (auto &&l_jointTarget : l_jointTargets_rad)
     {
-        bool l_inBounds = l_jointModelGroup->satisfiesPositionBounds(l_solution.data(), 0.0);
-        printJointVector(l_solution);
-        if(l_inBounds)
+        
+    
+    
+        l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointTarget);
+        l_robotState->getGlobalLinkTransform("panda_link8");
+        const Eigen::Isometry3d l_eeWanted = l_eeStateMoveIt;
+    
+        moveit_visual_tools.publishText(text_pose, "Inverse_Kinematics", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+        moveit_visual_tools.trigger();
+        moveit_visual_tools.deleteAllMarkers();
+        moveit_visual_tools.prompt("Press 'Next' in the RvizVisualToolsGui window to execute IK computations");
+        moveit_visual_tools.publishAxisLabeled(l_eeWanted, "Pose_wanted");
+        moveit_visual_tools.trigger();
+
+        std::vector<std::vector<double>> l_IKSolutions = l_frankaKin.compute6DOFIK(l_eeStateMoveIt, l_jointTarget.at(6));
+
+        for (auto &&l_solution : l_IKSolutions)
         {
-            l_robotState->setJointGroupPositions(l_jointModelGroup, l_solution);
-            l_robotState->getGlobalLinkTransform("panda_link8");
-            RCLCPP_INFO_STREAM(LOGGER, "IK solution within bounds match wanted one: " << l_eeWanted.isApprox(l_eeStateMoveIt, c_tolerance));
-            move_group.setJointValueTarget(l_solution);
-            bool l_planSuccess = (move_group.plan(l_plan) == moveit::core::MoveItErrorCode::SUCCESS);
-            if(l_planSuccess)
+            bool l_inBounds = l_jointModelGroup->satisfiesPositionBounds(l_solution.data(), 0.0);
+            printJointVector(l_solution);
+            if(l_inBounds)
             {
-                move_group.execute(l_plan);
-            }
-            else
-            {
-                RCLCPP_ERROR(LOGGER, "Planing failed!");
-            }
+                l_robotState->setJointGroupPositions(l_jointModelGroup, l_solution);
+                l_robotState->getGlobalLinkTransform("panda_link8");
+                RCLCPP_INFO_STREAM(LOGGER, "IK solution within bounds match wanted one: " << l_eeWanted.isApprox(l_eeStateMoveIt, c_tolerance));
+                move_group.setJointValueTarget(l_solution);
+                bool l_planSuccess = (move_group.plan(l_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+                if(l_planSuccess)
+                {
+                    move_group.execute(l_plan);
+                }
+                else
+                {
+                    RCLCPP_ERROR(LOGGER, "Planing failed!");
+                }
 
 
+            }
         }
     }
 
@@ -266,11 +278,13 @@ int main(int argc, char** argv)
     moveit_visual_tools.prompt("Press 'Next' in the RvizVisualToolsGui window to execute performance IK computations");
     moveit_visual_tools.publishText(text_pose, "Inverse_Kinematics_Performance", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
     moveit_visual_tools.trigger();
+
+    std::vector<std::vector<double>> l_IKSolutionsPerf;
     
     l_start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < c_repetitions; i++)
     {
-        l_IKSolutions = l_frankaKin.compute6DOFIK(l_eeStateMoveIt, l_jointValuesReady_rad.at(6));
+        l_IKSolutionsPerf = l_frankaKin.compute6DOFIK(l_eeStateMoveIt, l_jointTargets_rad.at(3).at(6));
     }
     l_stop = std::chrono::high_resolution_clock::now();
     l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
