@@ -190,7 +190,7 @@ namespace dualq_kinematics
              * @param p_quaternion Quaternion which exponential is needed
              * @return Exponential of Quaternion
              */
-            static Quaternion quaternionExp(const Eigen::Quaternion<Scalar>& p_quaternion);
+            inline static Quaternion quaternionExp(const Eigen::Quaternion<Scalar>& p_quaternion);
 
             /**
              * @brief Returns the scalar part of quaternion multiplication, when pure quaternions are multiplied, the "scalar part" is the scalar product of vector parts
@@ -203,7 +203,7 @@ namespace dualq_kinematics
             /**
              * @brief Returns the exponential of a dual quaternion
              */
-            DualQuaternion dqExp() const;
+            inline DualQuaternion dqExp() const;
 
             Quaternion getIntersectionOfLines(DualQuaternion& p_line2);
 

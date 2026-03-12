@@ -14,7 +14,7 @@ FirstPadenKahanProblem<Scalar>::FirstPadenKahanProblem(const Quaternion& p_point
 }
 
 template<typename Scalar>
-void FirstPadenKahanProblem<Scalar>::compute(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint)
+inline void FirstPadenKahanProblem<Scalar>::compute(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint)
 {
     const Quaternion l_x(0.0, p_startPoint.x()-p_pointOnLine.x(), p_startPoint.y()-p_pointOnLine.y(), p_startPoint.z()-p_pointOnLine.z());
     const Quaternion l_y(0.0, p_endPoint.x()-p_pointOnLine.x(), p_endPoint.y()-p_pointOnLine.y(), p_endPoint.z()-p_pointOnLine.z());
@@ -40,7 +40,7 @@ void FirstPadenKahanProblem<Scalar>::compute(const Quaternion& p_pointOnLine, co
 }
 
 template<typename Scalar>
-void FirstPadenKahanProblem<Scalar>::computeFromProjectedPoints(const Quaternion& p_axis, const Quaternion& p_xProjected, const Quaternion& p_yProjected, bool p_checkConditions)
+inline void FirstPadenKahanProblem<Scalar>::computeFromProjectedPoints(const Quaternion& p_axis, const Quaternion& p_xProjected, const Quaternion& p_yProjected, bool p_checkConditions)
 {
     //Checking the conditions for finite solution
     if(

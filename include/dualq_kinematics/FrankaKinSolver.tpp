@@ -110,6 +110,16 @@ typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK
     // Inverse Kinematic chain to get rid of spherical joint
     l_g.invert(c_tolerance);
 
+    // For q2q3 solve later
+    const Quaternion l_pointOnFirstScrewOnly = 
+        Quaternion(0.0, m_screwCoordinates.value().getPositions().at(0)(0), m_screwCoordinates.value().getPositions().at(0)(1), m_screwCoordinates.value().getPositions().at(0)(2)) - 0.3*m_screwCoordinatesDualQ.at(0).getRealPart();
+
+    Quaternion l_pointOnLinesQ2Q3(0.0, m_screwCoordinates.value().getPositions().at(1)(0), m_screwCoordinates.value().getPositions().at(1)(1), m_screwCoordinates.value().getPositions().at(1)(2));
+     
+    //For q1 later
+    const Quaternion l_pointNotOnFirstScrew = 
+        Quaternion(0.0, m_screwCoordinates.value().getPositions().at(0)(0), m_screwCoordinates.value().getPositions().at(0)(1), m_screwCoordinates.value().getPositions().at(0)(2)) - 0.3*m_screwCoordinatesDualQ.at(1).getRealPart();
+    
     // ------------------- Solve for q4 ---------------- //
     const Quaternion l_shoulderQuat(0.0, m_screwCoordinates.value().getPositions().at(0)(0), m_screwCoordinates.value().getPositions().at(0)(1), m_screwCoordinates.value().getPositions().at(0)(2));
     Quaternion l_shoulderTransformed = l_g.getTransformedVector(l_shoulderQuat);
@@ -134,130 +144,80 @@ typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK
         std::vector<Scalar> l_solutionSet;
         l_solutionSet.resize(7);
         l_solutionSet.at(3) = l_q4ThirdPKProbem.getResults().at(i) * (-1); // * (-1) as kinematic chain was inverted
-        l_solutions.push_back(l_solutionSet);
-    }
+        
+        DualQuaternion l_g4 = ((m_screwCoordinatesDualQ.at(3)* (l_solutionSet.at(3) * 0.5)).dqExp());
 
-    // ------------------- Solve for q5, q6 ---------------- //
-
-    // Remember that l_shoulderQuatCopy  = l_g^-1 * l_shoulder
-
-    for(size_t i = 0; i < l_q4ThirdPKProbem.getResults().size(); i++)
-    {
+        // ------------------- Solve for q5, q6 ---------------- //
         Quaternion l_pointOnLinesQ5Q6(0.0, m_screwCoordinates.value().getPositions().at(5)(0), m_screwCoordinates.value().getPositions().at(5)(1), m_screwCoordinates.value().getPositions().at(5)(2));
         const SecondPadenKahan l_q5Q6SecondPKProblem(
             l_pointOnLinesQ5Q6,
             m_screwCoordinatesDualQ.at(5).getRealPart(),
             m_screwCoordinatesDualQ.at(4).getRealPart(),
-            ((m_screwCoordinatesDualQ.at(3)* (l_solutions.at(i).at(3) * -0.5)).dqExp()).getTransformedVector(l_shoulderQuat),
+            l_g4.inverse(c_tolerance).value().getTransformedVector(l_shoulderQuat),
             l_shoulderTransformed
         );
 
-        if(l_q5Q6SecondPKProblem.getAngle1Result().size() > 0)
+        if(l_q5Q6SecondPKProblem.getAngle1Result().size() == 0)
         {
-            //add to current solution set 
-            l_solutions.at(i).at(5) = -l_q5Q6SecondPKProblem.getAngle1Result().at(0); // * (-1) as kinematic chain was inverted
-            l_solutions.at(i).at(4) = -l_q5Q6SecondPKProblem.getAngle2Result().at(0); // * (-1) as kinematic chain was inverted
-        }
-        else
-        {
-            //q5q6 problem could not be solved
             continue;
         }
 
-        if(l_q5Q6SecondPKProblem.getAngle1Result().size() > 1)
+        for(size_t j = 0; j < l_q5Q6SecondPKProblem.getAngle1Result().size(); j++)
         {
-            for(size_t j = 1; j < l_q5Q6SecondPKProblem.getAngle1Result().size(); j++)
+            l_solutionSet.at(5) = -l_q5Q6SecondPKProblem.getAngle1Result().at(j); // * (-1) as kinematic chain was inverted
+            l_solutionSet.at(4) = -l_q5Q6SecondPKProblem.getAngle2Result().at(j); // * (-1) as kinematic chain was inverted
+            DualQuaternion l_g5 = ((m_screwCoordinatesDualQ.at(4)* (l_solutionSet.at(4) * 0.5)).dqExp());
+            DualQuaternion l_g6 = ((m_screwCoordinatesDualQ.at(5)* (l_solutionSet.at(5) * 0.5)).dqExp());
+
+            // ------------------- Solve for q2, q3 ---------------- //
+
+            const DualQuaternion l_rightHandSide = l_g4 * l_g5 * l_g6 * l_g;
+
+            const Quaternion l_endPoint = l_rightHandSide.getTransformedVector(l_pointOnFirstScrewOnly);
+            
+            const SecondPadenKahan l_q2Q3SecondPKProblem(
+                l_pointOnLinesQ2Q3,
+                m_screwCoordinatesDualQ.at(2).getRealPart(),
+                m_screwCoordinatesDualQ.at(1).getRealPart(),
+                l_pointOnFirstScrewOnly,
+                l_endPoint
+            );
+
+            if(l_q2Q3SecondPKProblem.getAngle1Result().size() == 0)
             {
-                std::vector<Scalar> l_solutionSet = l_solutions.at(i);
-                l_solutionSet.at(5) = -l_q5Q6SecondPKProblem.getAngle1Result().at(j); // * (-1) as kinematic chain was inverted
-                l_solutionSet.at(4) = -l_q5Q6SecondPKProblem.getAngle2Result().at(j); // * (-1) as kinematic chain was inverted
-                l_solutions.push_back(l_solutionSet); 
+                continue;
             }
-        }
-    }
-
-    // ------------------- Solve for q2, q3 ---------------- //
-
-    const Quaternion l_pointOnFirstScrewOnly = 
-        Quaternion(0.0, m_screwCoordinates.value().getPositions().at(0)(0), m_screwCoordinates.value().getPositions().at(0)(1), m_screwCoordinates.value().getPositions().at(0)(2)) - 0.3*m_screwCoordinatesDualQ.at(0).getRealPart();
-
-    size_t l_iterations = l_solutions.size();
-    for(size_t i = 0; i < l_iterations; i++)
-    {
-        const DualQuaternion l_rightHandSide = 
-            ((m_screwCoordinatesDualQ.at(3)* (l_solutions.at(i).at(3) * 0.5)).dqExp()) *
-            ((m_screwCoordinatesDualQ.at(4)* (l_solutions.at(i).at(4) * 0.5)).dqExp()) *
-            ((m_screwCoordinatesDualQ.at(5)* (l_solutions.at(i).at(5) * 0.5)).dqExp()) *
-            l_g;
-
-        const Quaternion l_endPoint = l_rightHandSide.getTransformedVector(l_pointOnFirstScrewOnly);
-        Quaternion l_pointOnLinesQ2Q3(0.0, m_screwCoordinates.value().getPositions().at(1)(0), m_screwCoordinates.value().getPositions().at(1)(1), m_screwCoordinates.value().getPositions().at(1)(2));
-        const SecondPadenKahan l_q2Q3SecondPKProblem(
-            l_pointOnLinesQ2Q3,
-            m_screwCoordinatesDualQ.at(2).getRealPart(),
-            m_screwCoordinatesDualQ.at(1).getRealPart(),
-            l_pointOnFirstScrewOnly,
-            l_endPoint
-        );
-
-        if(l_q2Q3SecondPKProblem.getAngle1Result().size() > 0)
-        {
-            //add to current solution set 
-            l_solutions.at(i).at(2) = -l_q2Q3SecondPKProblem.getAngle1Result().at(0); // * (-1) as kinematic chain was inverted
-            l_solutions.at(i).at(1) = -l_q2Q3SecondPKProblem.getAngle2Result().at(0); // * (-1) as kinematic chain was inverted
-        }
-        else
-        {
-            //q2q3 problem could not be solved
-            continue;
-        }
-
-        if(l_q2Q3SecondPKProblem.getAngle1Result().size() > 1)
-        {
-            for(size_t j = 1; j < l_q2Q3SecondPKProblem.getAngle1Result().size(); j++)
+            
+            for(size_t k = 0; k < l_q2Q3SecondPKProblem.getAngle1Result().size(); k++)
             {
-                std::vector<Scalar> l_solutionSet = l_solutions.at(i);
-                l_solutionSet.at(2) = -l_q2Q3SecondPKProblem.getAngle1Result().at(j); // * (-1) as kinematic chain was inverted
-                l_solutionSet.at(1) = -l_q2Q3SecondPKProblem.getAngle2Result().at(j); // * (-1) as kinematic chain was inverted
-                l_solutions.push_back(l_solutionSet); 
+            
+                l_solutionSet.at(2) = -l_q2Q3SecondPKProblem.getAngle1Result().at(k); // * (-1) as kinematic chain was inverted
+                l_solutionSet.at(1) = -l_q2Q3SecondPKProblem.getAngle2Result().at(k); // * (-1) as kinematic chain was inverted
+                DualQuaternion l_g2 = ((m_screwCoordinatesDualQ.at(1)* (l_solutionSet.at(1) * 0.5)).dqExp());
+                DualQuaternion l_g3 = ((m_screwCoordinatesDualQ.at(2)* (l_solutionSet.at(2) * 0.5)).dqExp());
+
+                // ------------------- Solve for q1 ---------------- //
+
+                const DualQuaternion l_rightHandSide = l_g2 * l_g3 * l_g4 * l_g5 * l_g6 * l_g;
+            
+                const Quaternion l_endPointQ1 = l_rightHandSide.getTransformedVector(l_pointNotOnFirstScrew);
+                Quaternion l_pointOnLineQ1(0.0, m_screwCoordinates.value().getPositions().at(0)(0), m_screwCoordinates.value().getPositions().at(0)(1), m_screwCoordinates.value().getPositions().at(0)(2));
+                const FirstPadenKahan l_q1Problem(
+                    l_pointOnLineQ1,
+                    m_screwCoordinatesDualQ.at(0).getRealPart(),
+                    l_pointNotOnFirstScrew,
+                    l_endPointQ1
+                );
+
+                if(l_q1Problem.getResult().has_value())
+                {
+                    l_solutionSet.at(0) = -l_q1Problem.getResult().value();
+                    l_solutions.push_back(l_solutionSet);
+                }
             }
-        }
-    }
 
-    // ------------------- Solve for q1 ---------------- //
-
-    const Quaternion l_pointNotOnFirstScrew = 
-        Quaternion(0.0, m_screwCoordinates.value().getPositions().at(0)(0), m_screwCoordinates.value().getPositions().at(0)(1), m_screwCoordinates.value().getPositions().at(0)(2)) - 0.3*m_screwCoordinatesDualQ.at(1).getRealPart();
-    l_iterations = l_solutions.size();
-    for (size_t i = 0; i < l_iterations; i++)
-    {
-        const DualQuaternion l_rightHandSide = 
-            ((m_screwCoordinatesDualQ.at(1)* (l_solutions.at(i).at(1) * 0.5)).dqExp()) *
-            ((m_screwCoordinatesDualQ.at(2)* (l_solutions.at(i).at(2) * 0.5)).dqExp()) *
-            ((m_screwCoordinatesDualQ.at(3)* (l_solutions.at(i).at(3) * 0.5)).dqExp()) *
-            ((m_screwCoordinatesDualQ.at(4)* (l_solutions.at(i).at(4) * 0.5)).dqExp()) *
-            ((m_screwCoordinatesDualQ.at(5)* (l_solutions.at(i).at(5) * 0.5)).dqExp()) *
-            l_g;
-        
-        const Quaternion l_endPoint = l_rightHandSide.getTransformedVector(l_pointNotOnFirstScrew);
-        Quaternion l_pointOnLineQ1(0.0, m_screwCoordinates.value().getPositions().at(0)(0), m_screwCoordinates.value().getPositions().at(0)(1), m_screwCoordinates.value().getPositions().at(0)(2));
-        const FirstPadenKahan l_q1Problem(
-            l_pointOnLineQ1,
-            m_screwCoordinatesDualQ.at(0).getRealPart(),
-            l_pointNotOnFirstScrew,
-            l_endPoint
-        );
-
-        if(l_q1Problem.getResult().has_value())
-        {
-            l_solutions.at(i).at(0) = -l_q1Problem.getResult().value();
-    
         }
-        else
-        {
-            //q1 problem could not be solved
-            continue;
-        }
+
     }
 
     //fill q7 for every set of solutions
@@ -266,7 +226,6 @@ typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK
         l_solution.at(6) = p_q7;
     }
     
-
     return l_solutions; 
 
 }

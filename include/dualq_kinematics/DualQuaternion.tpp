@@ -220,7 +220,7 @@ typename DualQuaternion<Scalar>::Transform DualQuaternion<Scalar>::getTransform(
 }
 
 template<typename Scalar>
-typename DualQuaternion<Scalar>::Quaternion DualQuaternion<Scalar>::quaternionExp(const Eigen::Quaternion<Scalar>& p_quaternion)
+inline typename DualQuaternion<Scalar>::Quaternion DualQuaternion<Scalar>::quaternionExp(const Eigen::Quaternion<Scalar>& p_quaternion)
 {
     const Scalar l_alpha = p_quaternion.vec().norm();
     Scalar l_factor = 0;
@@ -243,7 +243,7 @@ Scalar DualQuaternion<Scalar>::quatMulScalarPart(const Eigen::Quaternion<Scalar>
 }
 
 template<typename Scalar>
-typename DualQuaternion<Scalar>::DualQuaternion DualQuaternion<Scalar>::dqExp() const
+inline typename DualQuaternion<Scalar>::DualQuaternion DualQuaternion<Scalar>::dqExp() const
 {
     const Scalar l_psi = m_realPart.vec().norm();
     const Quaternion l_realPartExp = quaternionExp(m_realPart);
