@@ -237,7 +237,7 @@ inline typename DualQuaternion<Scalar>::Quaternion DualQuaternion<Scalar>::quate
 }
 
 template<typename Scalar>
-Scalar DualQuaternion<Scalar>::quatMulScalarPart(const Eigen::Quaternion<Scalar>& p_quaternion1, const Eigen::Quaternion<Scalar>& p_quaternion2)
+inline Scalar DualQuaternion<Scalar>::quatMulScalarPart(const Eigen::Quaternion<Scalar>& p_quaternion1, const Eigen::Quaternion<Scalar>& p_quaternion2)
 {
     return (p_quaternion1.x()*p_quaternion2.x() + p_quaternion1.y()*p_quaternion2.y() + p_quaternion1.z()*p_quaternion2.z());
 }

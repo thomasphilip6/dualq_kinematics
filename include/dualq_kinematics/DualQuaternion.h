@@ -198,7 +198,7 @@ namespace dualq_kinematics
              * @param p_quaternion2
              * @return scalar product of vector parts of the two quaternions
              */
-            static Scalar quatMulScalarPart(const Eigen::Quaternion<Scalar>& p_quaternion1, const Eigen::Quaternion<Scalar>& p_quaternion2);
+            inline static Scalar quatMulScalarPart(const Eigen::Quaternion<Scalar>& p_quaternion1, const Eigen::Quaternion<Scalar>& p_quaternion2);
 
             /**
              * @brief Returns the exponential of a dual quaternion

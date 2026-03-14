@@ -19,21 +19,24 @@ inline void FirstPadenKahanProblem<Scalar>::compute(const Quaternion& p_pointOnL
     const Quaternion l_x(0.0, p_startPoint.x()-p_pointOnLine.x(), p_startPoint.y()-p_pointOnLine.y(), p_startPoint.z()-p_pointOnLine.z());
     const Quaternion l_y(0.0, p_endPoint.x()-p_pointOnLine.x(), p_endPoint.y()-p_pointOnLine.y(), p_endPoint.z()-p_pointOnLine.z());
 
+    const Scalar l_axisXScalarProduct =  DualQuaternion::quatMulScalarPart(p_axis, l_x);
+    const Scalar l_axisYScalarProduct = DualQuaternion::quatMulScalarPart(p_axis, l_y);
+
     const Quaternion l_xProjected(
         0.0,
-        l_x.x() - DualQuaternion::quatMulScalarPart(p_axis, l_x)*p_axis.x(),
-        l_x.y() - DualQuaternion::quatMulScalarPart(p_axis, l_x)*p_axis.y(),
-        l_x.z() - DualQuaternion::quatMulScalarPart(p_axis, l_x)*p_axis.z()
+        l_x.x() - l_axisXScalarProduct*p_axis.x(),
+        l_x.y() - l_axisXScalarProduct*p_axis.y(),
+        l_x.z() - l_axisXScalarProduct*p_axis.z()
     );
 
     const Quaternion l_yProjected(
         0.0,
-        l_y.x() - DualQuaternion::quatMulScalarPart(p_axis, l_y)*p_axis.x(),
-        l_y.y() - DualQuaternion::quatMulScalarPart(p_axis, l_y)*p_axis.y(),
-        l_y.z() - DualQuaternion::quatMulScalarPart(p_axis, l_y)*p_axis.z()
+        l_y.x() - l_axisYScalarProduct*p_axis.x(),
+        l_y.y() - l_axisYScalarProduct*p_axis.y(),
+        l_y.z() - l_axisYScalarProduct*p_axis.z()
     );
 
-    if(compareFloatNum(DualQuaternion::quatMulScalarPart(p_axis, l_y), DualQuaternion::quatMulScalarPart(p_axis, l_x), c_tolerance))
+    if(compareFloatNum(l_axisYScalarProduct, l_axisYScalarProduct, c_tolerance))
     {
         computeFromProjectedPoints(p_axis, l_xProjected, l_yProjected, true);
     }
@@ -43,6 +46,7 @@ template<typename Scalar>
 inline void FirstPadenKahanProblem<Scalar>::computeFromProjectedPoints(const Quaternion& p_axis, const Quaternion& p_xProjected, const Quaternion& p_yProjected, bool p_checkConditions)
 {
     //Checking the conditions for finite solution
+    m_resultAngle_rad.reset();
     if(
         (compareFloatNum(p_yProjected.norm(),p_xProjected.norm(), c_tolerance) && 
         !compareFloatNum(0.0, p_xProjected.norm(), c_tolerance) && 
@@ -131,7 +135,7 @@ const typename std::vector<Scalar>&  SecondPadenKahanProblem<Scalar>::getAngle2R
 }
 
 template<typename Scalar>
-typename std::vector<Eigen::Quaternion<Scalar>> SecondPadenKahanProblem<Scalar>::computeIntersection(const Quaternion& p_axis1, const Quaternion& p_axis2, Quaternion& p_x, Quaternion& p_y)
+inline typename std::vector<Eigen::Quaternion<Scalar>> SecondPadenKahanProblem<Scalar>::computeIntersection(const Quaternion& p_axis1, const Quaternion& p_axis2, Quaternion& p_x, Quaternion& p_y)
 {
     std::vector<Quaternion> l_results;
     const Scalar l_l2XScalar = DualQuaternion::quatMulScalarPart(p_axis2, p_x);
@@ -262,18 +266,21 @@ void ThirdPadenKahanProblem<Scalar>::compute(const Quaternion& p_pointOnLine, co
     const Quaternion l_x(0.0, p_startPoint.x()-p_pointOnLine.x(), p_startPoint.y()-p_pointOnLine.y(), p_startPoint.z()-p_pointOnLine.z());
     const Quaternion l_y(0.0, p_endPoint.x()-p_pointOnLine.x(), p_endPoint.y()-p_pointOnLine.y(), p_endPoint.z()-p_pointOnLine.z());
 
+    const Scalar l_axisXScalarProduct =  DualQuaternion::quatMulScalarPart(p_axis, l_x);
+    const Scalar l_axisYScalarProduct = DualQuaternion::quatMulScalarPart(p_axis, l_y);
+
     const Quaternion l_xProjected(
         0.0,
-        l_x.x() - DualQuaternion::quatMulScalarPart(p_axis, l_x)*p_axis.x(),
-        l_x.y() - DualQuaternion::quatMulScalarPart(p_axis, l_x)*p_axis.y(),
-        l_x.z() - DualQuaternion::quatMulScalarPart(p_axis, l_x)*p_axis.z()
+        l_x.x() - l_axisXScalarProduct*p_axis.x(),
+        l_x.y() - l_axisXScalarProduct*p_axis.y(),
+        l_x.z() - l_axisXScalarProduct*p_axis.z()
     );
 
     const Quaternion l_yProjected(
         0.0,
-        l_y.x() - DualQuaternion::quatMulScalarPart(p_axis, l_y)*p_axis.x(),
-        l_y.y() - DualQuaternion::quatMulScalarPart(p_axis, l_y)*p_axis.y(),
-        l_y.z() - DualQuaternion::quatMulScalarPart(p_axis, l_y)*p_axis.z()
+        l_y.x() - l_axisYScalarProduct*p_axis.x(),
+        l_y.y() - l_axisYScalarProduct*p_axis.y(),
+        l_y.z() - l_axisYScalarProduct*p_axis.z()
     );
 
     const Quaternion l_startMinusEnd(0.0, p_startPoint.x()-p_endPoint.x(), p_startPoint.y()-p_endPoint.y(), p_startPoint.z()-p_endPoint.z());
