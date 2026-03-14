@@ -4,7 +4,7 @@ This repository is a ROS2 C++ package aiming to become a MoveIt2 kinematics plug
 
 However, modern approaches use the **product of exponential** and dual quaternions can be used in this context as they can represent homogeneous transformation and screw displacements. [Wikipedia link on Screw Axis](https://en.wikipedia.org/wiki/Screw_axis)
 
-This second approach requires fewer arithmetic operations and is therefore faster. For example, this is particularly usefull when forward kinematics is used in an optimization problem needing a huge number of forward kinematics computations to converge. Also dual quaternions are more compact than a transformation matrix. Computations of the **forward kinematics of the Franka Emika robot (7DOF) are under the microsecond** and **analytical inverse kinematics with $`q_{7}`$ fixed is around 10ms**  (Ryzen 5 R5-3550H).
+This second approach requires fewer arithmetic operations and is therefore faster. For example, this is particularly usefull when forward kinematics is used in an optimization problem needing a huge number of forward kinematics computations to converge. Also dual quaternions are more compact than a transformation matrix. Computations of the **forward kinematics of the Franka Emika robot (7DOF) are under the microsecond** and **analytical inverse kinematics with $`q_{7}`$ fixed is around 6-7micros for 8 solutions**  (Ryzen 5 R5-3550H). On this CPU, in this package : GeoFIK[^7] is around 2.5micros  and this dualquaternion solver at 3.5micros for 4 solutions.
 
 The package is based on ROS2 Humble. In this repository, the dual quaternions is built using Eigen library, to ensure compatbility with MoveIt and others. It means that the dual quaternion class has 2 `Eigen::Quaternion` as members and that the constructors take Eigen types as inputs. The `DualQuaternion` and `ScrewCoordinates` classes are templates to follow Eigen's logic. 
 
@@ -43,10 +43,7 @@ This package shows how to solve IK for the **Franka Emika Panda robot** by combi
 
 Using PoE with Paden Kahan is convenient as Paden-Kahan subproblems can be expressed with exponentials in SO(3). Starting with Poe for Franka robot:
 
-<p align="center">
-
-$`T_{Tip}^0  = e^{({\xi_1} * {\theta}_{1})} * e^{({\xi_2} * {\theta}_{2})} *  * e^{({\xi_3} * {\theta}_{3})} *  e^{({\xi_4} * {\theta}_{4})} *  * e^{({\xi_5} * {\theta}_{5})} * e^{({\xi_6} * {\theta}_{6})} * e^{({\xi_7} * {\theta}_{7})} *  T_{Tip}^0 (0)`$
-
+$`T_{Tip}^0  = e^{({\xi_1} * {\theta}_{1})} * e^{({\xi_2} * {\theta}_{2})} *  * e^{({\xi_3} * {\theta}_{3})} *  e^{({\xi_4} * {\theta}_{4})} *  * e^{({\xi_5} * {\theta}_{5})} * e^{({\xi_6} * {\theta}_{6})} * e^{({\xi_7} * {\theta}_{7})} *  T_{Tip}^0 (0)`$<br>
 
 Let's remind that **q7 is given a value** (fixed). Then we **revert the kinematic chain** as Franka robot has a **spherical joint at the shoulder** and not at the wrist:
 
@@ -54,29 +51,38 @@ Let's remind that **q7 is given a value** (fixed). Then we **revert the kinemati
 <img src="images/spherical_shoulder.png"  height="400">
 </p>
 
-*Spherical Shoulder at the intersection of 3 screw*
+<p align="center">
+Spherical Shoulder at the intersection of 3 screw
+</p>
 
-Let's rewrite $`e^{({\xi_n} * {\theta}_{n})}`$ by $`e^{n}`$
 
-$`Inverse (T_{Tip}^0 * T_{0}^{Tip} (0) * e^{-7})  = e^{-6} * e^{-5} * e^{-4} *e^{-3} * e^{-2} * e^{-1}`$
+Let's rewrite $`e^{({\xi_n} * {\theta}_{n})}`$ by $`e^{n}`$<br>
 
-Let's rewrite $`Inverse (T_{Tip}^0 * T_{0}^{Tip} (0) * e^{-7})`$ by $`g`$ which is a transformation expressed as a dual quaternion and $`g \otimes p`$ means point $`p`$ transformed by $`g`$
+$`Inverse (T_{Tip}^0 * T_{0}^{Tip} (0) * e^{-7})  = e^{-6} * e^{-5} * e^{-4} *e^{-3} * e^{-2} * e^{-1}`$<br>
 
-**$` g \otimes p  = e^{-6} * e^{-5} * e^{-4} *e^{-3} * e^{-2} * e^{-1} \otimes p`$** where $`p`$ is the spherical shoulder simplifies to:
+Let's rewrite $`Inverse (T_{Tip}^0 * T_{0}^{Tip} (0) * e^{-7})`$ by $`g`$ which is a transformation expressed as a dual quaternion and $`g \otimes p`$ means point $`p`$ transformed by $`g`$<br>
 
-**$` g \otimes p  = e^{-6} * e^{-5} * e^{-4} \otimes p`$** enables 
+**$` g \otimes p  = e^{-6} * e^{-5} * e^{-4} *e^{-3} * e^{-2} * e^{-1} \otimes p`$** <br>
 
-**$`|| g \otimes p - g \otimes w ||   = || e^{-4} \otimes p - w ||`$** 
-where $`w`$ is the wrist, the intersection of joint 5 and 6. This is Paden Kahan Subrproblem 3. On the left hand side, both point have to be expressend in the same reference frame to form a distance. Once q4 is found: $`e^{({\xi_4} * {\theta}_{4})} = g(q_{4})`$ can be computed and used as a transformation
+where $`p`$ is the spherical shoulder simplifies to:<br>
 
-**$` g \otimes p  = e^{-6} * e^{-5} * g(-q_{4}) \otimes p`$** 
-can be written and solved as a second Paden Kahan subproblem, after which q6 and q5 are known
+**$` g \otimes p  = e^{-6} * e^{-5} * e^{-4} \otimes p`$** <br>
 
-**$`g  = g(-q_{6}) * g(-q_{5}) * g(-q_{4}) *e^{-3} * e^{-2} * e^{-1}`$**
+enables<br>
 
-**$`g(q_{6}) * g(q_{5}) * g(q_{4}) * q = e^{-3} * e^{-2} * e^{-1} \otimes r `$** 
-can be written where $`r`$ is a point on the first screw axis only and is a Second Paden Kahan subproblem and then a point not on the first screw can be chosen to solve a first Paden Kahan subproblem
+**$`|| g \otimes p - g \otimes w ||   = || e^{-4} \otimes p - w ||`$**<br>
 
+where $`w`$ is the wrist, the intersection of joint 5 and 6. This is Paden Kahan Subrproblem 3. On the left hand side, both point have to be expressend in the same reference frame to form a distance. Once q4 is found: $`e^{({\xi_4} * {\theta}_{4})} = g(q_{4})`$ can be computed and used as a transformation<br>
+
+**$` g \otimes p  = e^{-6} * e^{-5} * g(-q_{4}) \otimes p`$**<br>
+
+can be written and solved as a second Paden Kahan subproblem, after which $`q_{4}`$ and $`q_{5}`$ are known<br>
+
+**$`g  = g(-q_{6}) * g(-q_{5}) * g(-q_{4}) *e^{-3} * e^{-2} * e^{-1}`$**<br>
+
+**$`g(q_{4}) * g(q_{5}) * g(q_{6}) * g \otimes r = e^{-3} * e^{-2} * e^{-1} \otimes r `$**<br>
+
+can be written where $`r`$ is a point on the first screw axis only and is a Second Paden Kahan subproblem and then a point not on the first screw can be chosen to solve a first Paden Kahan subproblem<br>
 </p>
 
 
@@ -120,6 +126,19 @@ The demo can then be launched:
 ```bash
 ros2 launch dualq_kinematics dualq_kinematics_demo.launch.py
 ``` 
+
+And then launch moveit and rviz to see the visual and customize your Rviz config as needed, you can then interact with the Next button
+```bash
+ros2 launch moveit2_tutorials demo.launch.py
+``` 
+
+<p align="center">
+<img src="images/poseWanted.png"  height="400">
+</p>
+
+<p align="center">
+<img src="images/poseObtained.png"  height="400">
+</p>
 
 And in the output, you can see the forward kinematics being computed correctly:
 ```bash
