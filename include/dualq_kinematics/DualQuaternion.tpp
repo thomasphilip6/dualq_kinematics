@@ -262,12 +262,12 @@ inline typename DualQuaternion<Scalar>::DualQuaternion DualQuaternion<Scalar>::d
         l_A = 1.0 - pow(l_psi, 2.0)/6.0 + pow(l_psi, 4.0)/120.0;
         l_B =  -1.0/3.0 + pow(l_psi, 2.0)/30.0 - pow(l_psi, 4.0)/840.0; 
     }
-
+    const Scalar l_realPartWExp = exp(m_realPart.w());
     const Quaternion l_dualPartExp(
-        exp(m_realPart.w())*(-l_A)*l_gamma + m_dualPart.w()*l_realPartExp.w(),
-        exp(m_realPart.w())*(l_A*m_dualPart.x() + l_B*m_realPart.x()*l_gamma) + m_dualPart.w()*l_realPartExp.x(),
-        exp(m_realPart.w())*(l_A*m_dualPart.y() + l_B*m_realPart.y()*l_gamma) + m_dualPart.w()*l_realPartExp.y(),
-        exp(m_realPart.w())*(l_A*m_dualPart.z() + l_B*m_realPart.z()*l_gamma) + m_dualPart.w()*l_realPartExp.z()
+        l_realPartWExp*(-l_A)*l_gamma + m_dualPart.w()*l_realPartExp.w(),
+        l_realPartWExp*(l_A*m_dualPart.x() + l_B*m_realPart.x()*l_gamma) + m_dualPart.w()*l_realPartExp.x(),
+        l_realPartWExp*(l_A*m_dualPart.y() + l_B*m_realPart.y()*l_gamma) + m_dualPart.w()*l_realPartExp.y(),
+        l_realPartWExp*(l_A*m_dualPart.z() + l_B*m_realPart.z()*l_gamma) + m_dualPart.w()*l_realPartExp.z()
     );
     return DualQuaternion(l_realPartExp, l_dualPartExp);
 }

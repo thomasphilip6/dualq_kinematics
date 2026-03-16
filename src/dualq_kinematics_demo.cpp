@@ -246,7 +246,9 @@ int main(int argc, char** argv)
         moveit_visual_tools.publishAxisLabeled(l_eeWanted, "Pose_wanted");
         moveit_visual_tools.trigger();
 
-        std::vector<std::vector<double>> l_IKSolutions = l_frankaKin.compute6DOFIK(l_eeStateMoveIt, l_jointTarget.at(6));
+        std::vector<std::vector<double>> l_IKSolutions; 
+        l_IKSolutions.reserve(8);
+        l_frankaKin.compute6DOFIK(l_eeStateMoveIt, l_jointTarget.at(6), l_IKSolutions);
 
         for (auto &&l_solution : l_IKSolutions)
         {
@@ -280,11 +282,12 @@ int main(int argc, char** argv)
     moveit_visual_tools.trigger();
 
     std::vector<std::vector<double>> l_IKSolutionsPerf;
+    l_IKSolutionsPerf.reserve(8);
     
     l_start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < c_repetitions; i++)
     {
-        l_IKSolutionsPerf = l_frankaKin.compute6DOFIK(l_eeStateMoveIt, l_jointTargets_rad.at(3).at(6));
+        l_frankaKin.compute6DOFIK(l_eeStateMoveIt, l_jointTargets_rad.at(3).at(6), l_IKSolutionsPerf);
     }
     l_stop = std::chrono::high_resolution_clock::now();
     l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();

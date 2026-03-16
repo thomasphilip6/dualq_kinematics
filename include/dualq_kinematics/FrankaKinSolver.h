@@ -51,7 +51,7 @@ namespace dualq_kinematics
 
             void computeWristPosition(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7, Vector3& p_wrist) const;
 
-            std::vector<std::vector<Scalar>> compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7) const;
+            void compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7, std::vector<std::vector<Scalar>>& p_solutions) const;
         
         private:
 

@@ -99,10 +99,9 @@ void FrankaKinSolver<Scalar>::computeWristPosition(const Eigen::Isometry3d& p_ti
 
 //todo use the fact that e(-twist) = (e(twist))^-1
 template<typename Scalar>
-typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7) const
+void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7, std::vector<std::vector<Scalar>>& p_solutions) const
 {
-    std::vector<std::vector<Scalar>> l_solutions;
-
+    p_solutions.clear();
     // First compute right-end side l_g = l_eeWanted * l_ee0^-1 * l_g7^-1
     //todo add error management (dualq inverse, paden kahan problems not returning)
     DualQuaternion l_g = DualQuaternion(p_tip2BaseWanted) * m_tip2BaseInit.value().inverse(c_tolerance).value() * ((m_screwCoordinatesDualQ.at(6)* (-p_q7 * 0.5)).dqExp());
@@ -139,7 +138,7 @@ typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK
     if(l_q4ThirdPKProbem.getResults().size()==0)
     {
         //q4 problem doesn't have any solutions
-        return l_solutions;
+        return;
     }
 
     for (size_t i = 0; i < l_q4ThirdPKProbem.getResults().size(); i++)
@@ -213,7 +212,7 @@ typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK
                 if(l_q1Problem.getResult().has_value())
                 {
                     l_solutionSet.at(0) = -l_q1Problem.getResult().value();
-                    l_solutions.push_back(l_solutionSet);
+                    p_solutions.push_back(l_solutionSet);
                 }
             }
 
@@ -222,12 +221,12 @@ typename std::vector<std::vector<Scalar>> FrankaKinSolver<Scalar>::compute6DOFIK
     }
 
     //fill q7 for every set of solutions
-    for (auto &&l_solution : l_solutions)
+    for (auto &&l_solution : p_solutions)
     {
         l_solution.at(6) = p_q7;
     }
     
-    return l_solutions; 
+    return; 
 
 }
 

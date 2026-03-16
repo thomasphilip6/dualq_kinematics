@@ -67,7 +67,7 @@ namespace dualq_kinematics
 
             const std::vector<Scalar>& getAngle2Result() const;
 
-            inline static std::vector<Quaternion> computeIntersection(const Quaternion& p_axis1, const Quaternion& p_axis2, Quaternion& p_x, Quaternion& p_y);
+            inline static void computeIntersection(const Quaternion& p_axis1, const Quaternion& p_axis2, Quaternion& p_x, Quaternion& p_y, std::vector<Quaternion>& p_intersections);
         
         private:
 
