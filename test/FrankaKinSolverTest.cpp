@@ -19,6 +19,9 @@
 #include <string>
 #include <memory>
 
+//GeoFIK
+//#include "dualq_kinematics/geofik.h"
+
 const std::string c_pandaTipLink = "panda_link8";
 constexpr int c_repetitions = 1000;
 constexpr double c_tolerance = 1e-5;
@@ -65,8 +68,9 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     ASSERT_TRUE(bool(l_robotModel)) << "Failed to load robot model";
 
     ScrewCoordinates l_screwCoord(*l_robotModel, c_pandaTipLink);
+    const ScrewCoordinates* l_screwCoordPtr = &l_screwCoord;
 
-    FrankaKinSolver l_frankaKin(l_screwCoord);
+    FrankaKinSolver l_frankaKin(l_screwCoordPtr);
 
     //Constructing Robot State
     moveit::core::RobotStatePtr l_robotState(new moveit::core::RobotState(l_robotModel));
@@ -86,7 +90,15 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
 
     l_jointValuesReady_rad ={0.14, -0.0, 0, -2.356, 0, 1.421, 0.785};
     l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
-    l_frankaKin.computeTipFK(l_jointValuesReady_rad, l_computedResult);
+    auto l_start = std::chrono::high_resolution_clock::now();
+    for (size_t i = 0; i < c_repetitions; i++)
+    {
+        l_frankaKin.computeTipFK(l_jointValuesReady_rad, l_computedResult);
+    }
+    auto l_stop = std::chrono::high_resolution_clock::now();
+    double l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count() / c_repetitions;
+    RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver FK took (over 1000 repetitions) " << l_micros << " us.");
+    
     EXPECT_EQ(l_robotState->getGlobalLinkTransform("panda_link8").isApprox(l_computedResult, c_tolerance), 1) << "FK fails";
 
     // ------------ computeWristPosition Test ---------------- //
@@ -112,10 +124,13 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
 
     // ------------ compute6DOFIK Test ---------------- //
     
-    auto l_start = std::chrono::high_resolution_clock::now();
-    std::vector<std::vector<double>> l_allIKSolutions = l_frankaKin.compute6DOFIK(l_eeWantedForIK, 0.0);
-    auto l_stop = std::chrono::high_resolution_clock::now();
-    double l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
+    
+    std::vector<std::vector<double>> l_allIKSolutions;
+    l_allIKSolutions.reserve(8);
+    l_start = std::chrono::high_resolution_clock::now();
+    l_frankaKin.compute6DOFIK(l_eeWantedForIK, 0.0, l_allIKSolutions);
+    l_stop = std::chrono::high_resolution_clock::now();
+    l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
     RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver IK took (singe call) " << l_micros << " us.");
 
     RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver IK returned " << l_allIKSolutions.size() << " solutions ");
@@ -169,7 +184,7 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     l_start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < c_repetitions; i++)
     {
-        l_allIKSolutions = l_frankaKin.compute6DOFIK(l_eeWantedForIK, 0.785);
+        l_frankaKin.compute6DOFIK(l_eeWantedForIK, 0.785, l_allIKSolutions);
     }
     l_stop = std::chrono::high_resolution_clock::now();
     l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
@@ -207,6 +222,52 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
         EXPECT_TRUE(l_computedFK.isApprox(l_eeWanted, c_tolerance));
     }
     RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver IK returned " << l_solutionsInBounds << " solutions within bounds "); 
+
+
+    // benchmark with GEOFIK //
+    // std::array<double, 9> ROE = { -0.189536, 0.0420467, -0.980973,
+    //     0.404078, -0.907217, -0.116958,
+    //    -0.894873, -0.418557, 0.15496 };
+    // std::array<double, 3> r = { 0.23189, -0.0815989, 0.607269 };
+    // double q7 = 0.771925;
+    // std::array<std::array<double, 7>, 8> qsols;
+    // unsigned int nsols;
+    // const double q1_sing = 3.14 / 2.0;
+    
+    // l_start = std::chrono::high_resolution_clock::now();
+    // nsols = franka_ik_q7(r, ROE, q7, qsols, q1_sing);
+    // l_stop = std::chrono::high_resolution_clock::now();
+    // l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
+    // RCLCPP_INFO_STREAM(LOGGER, "GeoFIK took (single call) " << l_micros << " us." << " nb of solutions " << nsols);
+
+    // r = {0.61674948,0.32278029,0.56790512};
+    // ROE = {0.6688331000000003,0.3170534383478098,0.6724130000000006,-0.6398146000000005,-0.2150772409286401,0.7378204999999999,0.3785492999999998,-0.9236984268883508,0.05900459999999996};
+    // q7 = -0.37218362471412003 ;
+
+    // l_start = std::chrono::high_resolution_clock::now();
+    // for (size_t i = 0; i < c_repetitions; i++)
+    // {
+    //     nsols = franka_ik_q7(r, ROE, q7, qsols, q1_sing);
+    // }
+    // l_stop = std::chrono::high_resolution_clock::now();
+    // l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
+    // RCLCPP_INFO_STREAM(LOGGER, "GeoFIK took (over 1000 tries) " << l_micros/c_repetitions << " us.");
+    // RCLCPP_INFO_STREAM(LOGGER, "GeoFIK returned (over 1000 tries) " << nsols << " solutions");
+
+    // l_jointValuesReady_rad = {-1.74, 0.36, 1.79, -1.81, 0.06, -0.006, 0.77};
+    // l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
+    // l_robotState->getGlobalLinkTransform("panda_link8");
+
+    // // test Franka solver on same input
+    // std::vector<std::vector<double>> l_allIKSolutions2;
+    // l_allIKSolutions2.reserve(8);
+
+    // l_start = std::chrono::high_resolution_clock::now();
+    // l_frankaKin.compute6DOFIK(l_eeWantedForIK, l_jointValuesReady_rad.at(6), l_allIKSolutions2);
+    // l_stop = std::chrono::high_resolution_clock::now();
+    // l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
+    // RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver IK took (singe call) " << l_micros << " us.");
+    // RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver IK returned " << l_allIKSolutions.size() << " solutions ");
 
 }
 

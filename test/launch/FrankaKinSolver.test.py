@@ -21,7 +21,7 @@ def generate_test_description():
                 executable="dualq_kinematics_FrankaKinSolverTest",
 
                 #Uncomment following line to debug with gdb, gdbserver is used as this is an integration test
-                prefix=['gdbserver localhost:3000'],
+                #prefix=['gdbserver localhost:3000'],
                 parameters=[
                     moveit_config.robot_description,
                     moveit_config.robot_description_semantic,

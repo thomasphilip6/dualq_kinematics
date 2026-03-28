@@ -1,3 +1,4 @@
+//Isn't compiled anymore but can be usefull to see numerical results
 #include <gtest/gtest.h>
 #include "dualq_kinematics/DualQuaternion.h"
 #include "dualq_kinematics/ScrewCoordinates.h"
