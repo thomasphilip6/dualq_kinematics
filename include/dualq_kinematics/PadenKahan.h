@@ -32,6 +32,9 @@ namespace dualq_kinematics
 
             inline void compute(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint);
 
+            // to prepare a new version of compute to be compared for speed effiency
+            static inline void compute(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint, Scalar& p_result);
+
             inline void computeFromProjectedPoints(const Quaternion& p_axis, const Quaternion& p_xProjected, const Quaternion& p_yProjected, bool p_checkConditions);
 
             const std::optional<Scalar>& getResult() const;

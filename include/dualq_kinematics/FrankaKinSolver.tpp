@@ -2,13 +2,13 @@ namespace dualq_kinematics
 {
     
 template<typename Scalar>
-FrankaKinSolver<Scalar>::FrankaKinSolver(const ScrewCoordinates& p_screwCoordinates)
+FrankaKinSolver<Scalar>::FrankaKinSolver(const ScrewCoordinates* p_screwCoordinatesPtr)
 {
-    m_screwCoordinates = p_screwCoordinates;
+    m_screwCoordinatesPtr = std::make_shared<ScrewCoordinates>(*p_screwCoordinatesPtr);
 
-    for (size_t i = 0; i < m_screwCoordinates.value().getJointsNames().size(); i++)
+    for (size_t i = 0; i < m_screwCoordinatesPtr->getJointsNames().size(); i++)
     {
-        m_screwCoordinatesDualQ.push_back(DualQuaternion( m_screwCoordinates.value().getScrewAxes().at(i), m_screwCoordinates.value().getPositions().at(i) ));
+        m_screwCoordinatesDualQ.push_back(DualQuaternion( m_screwCoordinatesPtr->getScrewAxes().at(i), m_screwCoordinatesPtr->getPositions().at(i) ));
     }
 
     //Check that all dual quaternions are unit dual quaternions
@@ -30,22 +30,8 @@ FrankaKinSolver<Scalar>::FrankaKinSolver(const ScrewCoordinates& p_screwCoordina
         
     // }
 
-    m_tip2BaseInit = DualQuaternion(m_screwCoordinates.value().getTip2BaseInit());
+    m_tip2BaseInitPtr = std::make_shared<DualQuaternion>(DualQuaternion(m_screwCoordinatesPtr->getTip2BaseInit()));
 
-}
-
-template<typename Scalar>
-FrankaKinSolver<Scalar>::FrankaKinSolver(const std::vector<Vector3> p_screwAxes, const std::vector<Vector3> p_positions, const Eigen::Isometry3d p_tip2BaseInit)
-{
-    m_screwAxes = p_screwAxes;
-    m_positionsOnScrew = p_positions;
-    for (size_t i = 0; i < m_screwAxes.size(); i++)
-    {
-        m_screwCoordinatesDualQ.push_back(DualQuaternion(m_screwAxes.at(i), m_positionsOnScrew.at(i)));
-    }
-    
-    m_tip2BaseInit = DualQuaternion(p_tip2BaseInit);
-    m_tip2BaseInitTf = p_tip2BaseInit;
 }
 
 template<typename Scalar>
@@ -56,7 +42,7 @@ void FrankaKinSolver<Scalar>::computeTipFK(std::vector<double>& p_jointValues_ra
     {
         l_tip2BaseDQComputed = l_tip2BaseDQComputed * (m_screwCoordinatesDualQ.at(i)* (p_jointValues_rad.at(i) * 0.5)).dqExp();
     }
-    l_tip2BaseDQComputed = l_tip2BaseDQComputed * m_tip2BaseInit.value();
+    l_tip2BaseDQComputed = l_tip2BaseDQComputed * *m_tip2BaseInitPtr;
     p_tip2BaseComputed = l_tip2BaseDQComputed.getTransform();    
 }
 
@@ -66,15 +52,15 @@ void FrankaKinSolver<Scalar>::computeWristPosition(const Eigen::Isometry3d& p_ti
     Scalar l_a7;
     // r7 = eeWanted.translation - df * eeWanted.z()
     Vector3 l_r7;
-    if(m_screwCoordinates.has_value())
+    if(m_screwCoordinatesPtr != nullptr)
     {
-        l_a7 = m_screwCoordinates.value().getPositions().at(6)(0);
-        l_r7 = p_tip2BaseWanted.translation() - (m_screwCoordinates.value().getPositions().at(6)(2) - m_screwCoordinates.value().getTip2BaseInit().translation().z())*p_tip2BaseWanted.rotation().col(2);
+        l_a7 = m_screwCoordinatesPtr->getPositions().at(6)(0);
+        l_r7 = p_tip2BaseWanted.translation() - (m_screwCoordinatesPtr->getPositions().at(6)(2) - m_screwCoordinatesPtr->getTip2BaseInit().translation().z())*p_tip2BaseWanted.rotation().col(2);
     }
     else
     {
-        l_a7 = m_positionsOnScrew.at(6)(0);
-        Scalar l_df = m_positionsOnScrew.at(6)(2) - m_tip2BaseInitTf.translation().z();
+        l_a7 = m_screwCoordinatesPtr->getPositions().at(6)(0);
+        Scalar l_df = m_screwCoordinatesPtr->getPositions().at(6)(2) - m_tip2BaseInitPtr->getTransform().translation().z();
         l_r7 = p_tip2BaseWanted.translation() - l_df*p_tip2BaseWanted.rotation().col(2);
     }
 
@@ -104,26 +90,26 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
     p_solutions.clear();
     // First compute right-end side l_g = l_eeWanted * l_ee0^-1 * l_g7^-1
     //todo add error management (dualq inverse, paden kahan problems not returning)
-    DualQuaternion l_g = DualQuaternion(p_tip2BaseWanted) * m_tip2BaseInit.value().inverse(c_tolerance).value() * ((m_screwCoordinatesDualQ.at(6)* (-p_q7 * 0.5)).dqExp());
+    DualQuaternion l_g = DualQuaternion(p_tip2BaseWanted) * m_tip2BaseInitPtr->inverse(c_tolerance).value() * ((m_screwCoordinatesDualQ.at(6)* (-p_q7 * 0.5)).dqExp());
 
     // Inverse Kinematic chain to get rid of spherical joint
     l_g.invert(c_tolerance);
 
     // For q2q3 solve later
     const Quaternion l_pointOnFirstScrewOnly = 
-        Quaternion(0.0, m_screwCoordinates.value().getPositions().at(0)(0), m_screwCoordinates.value().getPositions().at(0)(1), m_screwCoordinates.value().getPositions().at(0)(2)) - 0.3*m_screwCoordinatesDualQ.at(0).getRealPart();
+        Quaternion(0.0, m_screwCoordinatesPtr->getPositions().at(0)(0), m_screwCoordinatesPtr->getPositions().at(0)(1), m_screwCoordinatesPtr->getPositions().at(0)(2)) - 0.3*m_screwCoordinatesDualQ.at(0).getRealPart();
 
-    Quaternion l_pointOnLinesQ2Q3(0.0, m_screwCoordinates.value().getPositions().at(1)(0), m_screwCoordinates.value().getPositions().at(1)(1), m_screwCoordinates.value().getPositions().at(1)(2));
+    Quaternion l_pointOnLinesQ2Q3(0.0, m_screwCoordinatesPtr->getPositions().at(1)(0), m_screwCoordinatesPtr->getPositions().at(1)(1), m_screwCoordinatesPtr->getPositions().at(1)(2));
      
     //For q1 later
     const Quaternion l_pointNotOnFirstScrew = 
-        Quaternion(0.0, m_screwCoordinates.value().getPositions().at(0)(0), m_screwCoordinates.value().getPositions().at(0)(1), m_screwCoordinates.value().getPositions().at(0)(2)) - 0.3*m_screwCoordinatesDualQ.at(1).getRealPart();
+        Quaternion(0.0, m_screwCoordinatesPtr->getPositions().at(0)(0), m_screwCoordinatesPtr->getPositions().at(0)(1), m_screwCoordinatesPtr->getPositions().at(0)(2)) - 0.3*m_screwCoordinatesDualQ.at(1).getRealPart();
     
-    const Quaternion l_pointOnLineQ1(0.0, m_screwCoordinates.value().getPositions().at(0)(0), m_screwCoordinates.value().getPositions().at(0)(1), m_screwCoordinates.value().getPositions().at(0)(2));    
-    const Quaternion l_pointOnLinesQ5Q6(0.0, m_screwCoordinates.value().getPositions().at(5)(0), m_screwCoordinates.value().getPositions().at(5)(1), m_screwCoordinates.value().getPositions().at(5)(2));
+    const Quaternion l_pointOnLineQ1(0.0, m_screwCoordinatesPtr->getPositions().at(0)(0), m_screwCoordinatesPtr->getPositions().at(0)(1), m_screwCoordinatesPtr->getPositions().at(0)(2));    
+    const Quaternion l_pointOnLinesQ5Q6(0.0, m_screwCoordinatesPtr->getPositions().at(5)(0), m_screwCoordinatesPtr->getPositions().at(5)(1), m_screwCoordinatesPtr->getPositions().at(5)(2));
 
     // ------------------- Solve for q4 ---------------- //
-    const Quaternion l_shoulderQuat(0.0, m_screwCoordinates.value().getPositions().at(0)(0), m_screwCoordinates.value().getPositions().at(0)(1), m_screwCoordinates.value().getPositions().at(0)(2));
+    const Quaternion l_shoulderQuat(0.0, m_screwCoordinatesPtr->getPositions().at(0)(0), m_screwCoordinatesPtr->getPositions().at(0)(1), m_screwCoordinatesPtr->getPositions().at(0)(2));
     Quaternion l_shoulderTransformed = l_g.getTransformedVector(l_shoulderQuat);
     
     Vector3 l_wrist;
@@ -132,7 +118,7 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
     Quaternion l_wristInTipFrame = l_g.getTransformedVector(l_wristQuat);
 
     const Scalar l_delta = (l_shoulderTransformed - l_wristInTipFrame).norm();
-    Quaternion l_pointOnlineQ4(0.0, m_screwCoordinates.value().getPositions().at(3)(0), m_screwCoordinates.value().getPositions().at(3)(1), m_screwCoordinates.value().getPositions().at(3)(2));
+    Quaternion l_pointOnlineQ4(0.0, m_screwCoordinatesPtr->getPositions().at(3)(0), m_screwCoordinatesPtr->getPositions().at(3)(1), m_screwCoordinatesPtr->getPositions().at(3)(2));
     const ThirdPadenKahan l_q4ThirdPKProbem(l_pointOnlineQ4, m_screwCoordinatesDualQ.at(3).getRealPart(), l_shoulderQuat, l_wristInTipFrame, l_delta);
 
     if(l_q4ThirdPKProbem.getResults().size()==0)

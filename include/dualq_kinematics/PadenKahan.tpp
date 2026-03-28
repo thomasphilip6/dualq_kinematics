@@ -43,6 +43,47 @@ inline void FirstPadenKahanProblem<Scalar>::compute(const Quaternion& p_pointOnL
 }
 
 template<typename Scalar>
+inline void FirstPadenKahanProblem<Scalar>::compute(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint, Scalar& p_result)
+{
+    const Quaternion l_x(0.0, p_startPoint.x()-p_pointOnLine.x(), p_startPoint.y()-p_pointOnLine.y(), p_startPoint.z()-p_pointOnLine.z());
+    const Quaternion l_y(0.0, p_endPoint.x()-p_pointOnLine.x(), p_endPoint.y()-p_pointOnLine.y(), p_endPoint.z()-p_pointOnLine.z());
+
+    const Scalar l_axisXScalarProduct =  DualQuaternion::quatMulScalarPart(p_axis, l_x);
+    const Scalar l_axisYScalarProduct = DualQuaternion::quatMulScalarPart(p_axis, l_y);
+
+    const Quaternion l_xProjected(
+        0.0,
+        l_x.x() - l_axisXScalarProduct*p_axis.x(),
+        l_x.y() - l_axisXScalarProduct*p_axis.y(),
+        l_x.z() - l_axisXScalarProduct*p_axis.z()
+    );
+
+    const Quaternion l_yProjected(
+        0.0,
+        l_y.x() - l_axisYScalarProduct*p_axis.x(),
+        l_y.y() - l_axisYScalarProduct*p_axis.y(),
+        l_y.z() - l_axisYScalarProduct*p_axis.z()
+    );
+
+    if(compareFloatNum(l_axisYScalarProduct, l_axisYScalarProduct, c_tolerance))
+    {
+        if(
+            (compareFloatNum(l_yProjected.norm(),l_xProjected.norm(), c_tolerance) && 
+            !compareFloatNum(0.0, l_xProjected.norm(), c_tolerance) && 
+            !(l_yProjected.isApprox(l_xProjected, c_tolerance)))  
+        )
+        {
+            p_result = std::atan2(
+                DualQuaternion::quatMulScalarPart(p_axis, l_xProjected*l_yProjected),
+                DualQuaternion::quatMulScalarPart(l_xProjected, l_yProjected)
+            );
+            return;
+        }  
+    }
+    p_result = std::nan("") ;
+}
+
+template<typename Scalar>
 inline void FirstPadenKahanProblem<Scalar>::computeFromProjectedPoints(const Quaternion& p_axis, const Quaternion& p_xProjected, const Quaternion& p_yProjected, bool p_checkConditions)
 {
     //Checking the conditions for finite solution

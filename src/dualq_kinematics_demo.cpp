@@ -150,8 +150,9 @@ int main(int argc, char** argv)
         
     }
     
-    DualQuaternion l_tip2BaseInit(l_screwCoord.getTip2BaseInit());
-    FrankaKinSolver l_frankaKin(l_screwCoord);
+    //DualQuaternion l_tip2BaseInit(l_screwCoord.getTip2BaseInit());
+    const ScrewCoordinates* l_screwCoordPtr = &l_screwCoord;
+    FrankaKinSolver l_frankaKin(l_screwCoordPtr);
 
     l_stop = std::chrono::high_resolution_clock::now();
     l_ms = l_stop - l_start;

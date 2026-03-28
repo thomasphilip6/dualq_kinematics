@@ -23,10 +23,41 @@ TEST(dualq_kinematics, FirstPadenKahanProblemTest)
     Eigen::Quaterniond l_positionOnLine(0.0, 0.0, 0.0, l_d1);
     Eigen::Quaterniond l_startPoint(0.0, l_a7, 0.0, l_d1+l_d3+l_d5-l_df);
     Eigen::Quaterniond l_endPoint(0.0, 0.0621879, 0.0622628, 0.926);
+    
+    //Variables creation for time measurements
+    auto l_start = std::chrono::high_resolution_clock::now();
+    auto l_stop = std::chrono::high_resolution_clock::now();
+    double l_micros;
 
+    // Performance Benchmark //
+    double l_resultStatic;
+    l_start = std::chrono::high_resolution_clock::now();
+    FirstPadenKahan::compute(l_positionOnLine,  l_jointScrewAxis, l_startPoint, l_endPoint, l_resultStatic);
+    l_stop = std::chrono::high_resolution_clock::now();
+    l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
+    std::cout << "PK1 static took (micros) " << l_micros << std::endl;
+
+    l_start = std::chrono::high_resolution_clock::now();
     FirstPadenKahan l_testResultFinite(l_positionOnLine,  l_jointScrewAxis, l_startPoint, l_endPoint);
+    l_stop = std::chrono::high_resolution_clock::now();
+    l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
+    std::cout << "PK1 with object took (micros) " << l_micros << std::endl;
+
+    l_start = std::chrono::high_resolution_clock::now();
+    FirstPadenKahan::compute(l_positionOnLine,  l_jointScrewAxis, l_startPoint, l_endPoint, l_resultStatic);
+    l_stop = std::chrono::high_resolution_clock::now();
+    l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
+    std::cout << "PK1 static took (micros) " << l_micros << std::endl;
+
+    l_start = std::chrono::high_resolution_clock::now();
+    FirstPadenKahan l_testResultFinite2(l_positionOnLine,  l_jointScrewAxis, l_startPoint, l_endPoint);
+    l_stop = std::chrono::high_resolution_clock::now();
+    l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
+    std::cout << "PK1 with object took (micros) " << l_micros << std::endl;
+
     EXPECT_TRUE(l_testResultFinite.getResult().has_value()) << "Input on Paden Kahan 1st Problem should return a finite number";
     EXPECT_TRUE(FirstPadenKahan::compareFloatNum(0.786, l_testResultFinite.getResult().value(), c_tolerance)) << "Result of Paden Kahan Problem is Wrong";
+    EXPECT_TRUE(FirstPadenKahan::compareFloatNum(0.786, l_resultStatic, c_tolerance)) << "Result of Paden Kahan Problem (static) is Wrong";
     std::cout << "Result computed " << l_testResultFinite.getResult().value() << " rad" << std::endl;
 
     Eigen::Quaterniond l_startPointOnLine(0.0, 0.0, 0.0, l_d1+l_d3+l_d5-l_df);

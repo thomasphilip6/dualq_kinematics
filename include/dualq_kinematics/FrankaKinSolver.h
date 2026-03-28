@@ -43,9 +43,7 @@ namespace dualq_kinematics
 
             static constexpr Scalar c_tolerance = 1e-6;
 
-            FrankaKinSolver(const ScrewCoordinates& p_screwCoordinates);
-
-            FrankaKinSolver(const std::vector<Vector3> p_screwAxes, const std::vector<Vector3> p_positions, const Eigen::Isometry3d p_tip2BaseInit);
+            FrankaKinSolver(const ScrewCoordinates* p_screwCoordinatesPtr);
 
             void computeTipFK(std::vector<double>& p_jointValues_rad, Eigen::Isometry3d& p_tip2BaseComputed) const;
 
@@ -55,14 +53,9 @@ namespace dualq_kinematics
         
         private:
 
-            std::optional<ScrewCoordinates> m_screwCoordinates;
-            std::optional<DualQuaternion> m_tip2BaseInit;
+            std::shared_ptr<ScrewCoordinates> m_screwCoordinatesPtr;
+            std::shared_ptr<DualQuaternion> m_tip2BaseInitPtr;
             std::vector<DualQuaternion> m_screwCoordinatesDualQ;
-
-            //depreciated, useful for unit test
-            std::vector<Vector3> m_screwAxes;
-            std::vector<Vector3> m_positionsOnScrew; 
-            Eigen::Isometry3d m_tip2BaseInitTf;
     };
 }
 

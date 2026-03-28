@@ -28,7 +28,10 @@ find_package(moveit_ros_planning REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 
-add_library(${PROJECT_NAME} SHARED src/dualq_kinematics.cpp)
+add_library(${PROJECT_NAME} SHARED 
+  src/dualq_kinematics.cpp
+  #src/geofik.cpp for benchmark
+)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -89,7 +92,6 @@ ament_export_dependencies(
   moveit_ros_planning
 )
 
-
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
@@ -118,15 +120,6 @@ if(BUILD_TESTING)
     $<INSTALL_INTERFACE:include>
   )
   target_link_libraries(${PROJECT_NAME}_PadenKahanTest
-    ${PROJECT_NAME} 
-  )
-
-  ament_add_gtest(${PROJECT_NAME}_FrankaKinSolverUnitTest test/FrankaKinSolverUnitTest.cpp)
-  target_include_directories(${PROJECT_NAME}_FrankaKinSolverUnitTest PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
-  )
-  target_link_libraries(${PROJECT_NAME}_FrankaKinSolverUnitTest
     ${PROJECT_NAME} 
   )
 
