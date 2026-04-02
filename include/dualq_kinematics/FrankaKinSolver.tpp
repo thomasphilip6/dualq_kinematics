@@ -35,7 +35,7 @@ FrankaKinSolver<Scalar>::FrankaKinSolver(const ScrewCoordinates* p_screwCoordina
 }
 
 template<typename Scalar>
-void FrankaKinSolver<Scalar>::computeTipFK(std::vector<double>& p_jointValues_rad, Eigen::Isometry3d& p_tip2BaseComputed) const
+void FrankaKinSolver<Scalar>::computeTipFK(std::vector<double>& p_jointValues_rad, Eigen::Isometry3d& p_tip2BaseComputed) const noexcept
 {
     DualQuaternion l_tip2BaseDQComputed = (m_screwCoordinatesDualQ.at(0) * (p_jointValues_rad.at(0) * 0.5)).dqExp();
     for (size_t i = 1; i < p_jointValues_rad.size(); i++)
@@ -47,22 +47,14 @@ void FrankaKinSolver<Scalar>::computeTipFK(std::vector<double>& p_jointValues_ra
 }
 
 template<typename Scalar>
-void FrankaKinSolver<Scalar>::computeWristPosition(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7, Vector3& p_wrist) const
+void FrankaKinSolver<Scalar>::computeWristPosition(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7, Vector3& p_wrist) const noexcept
 {
     Scalar l_a7;
     // r7 = eeWanted.translation - df * eeWanted.z()
     Vector3 l_r7;
-    if(m_screwCoordinatesPtr != nullptr)
-    {
-        l_a7 = m_screwCoordinatesPtr->getPositions().at(6)(0);
-        l_r7 = p_tip2BaseWanted.translation() - (m_screwCoordinatesPtr->getPositions().at(6)(2) - m_screwCoordinatesPtr->getTip2BaseInit().translation().z())*p_tip2BaseWanted.rotation().col(2);
-    }
-    else
-    {
-        l_a7 = m_screwCoordinatesPtr->getPositions().at(6)(0);
-        Scalar l_df = m_screwCoordinatesPtr->getPositions().at(6)(2) - m_tip2BaseInitPtr->getTransform().translation().z();
-        l_r7 = p_tip2BaseWanted.translation() - l_df*p_tip2BaseWanted.rotation().col(2);
-    }
+
+    l_a7 = m_screwCoordinatesPtr->getPositions().at(6)(0);
+    l_r7 = p_tip2BaseWanted.translation() - (m_screwCoordinatesPtr->getPositions().at(6)(2) - m_screwCoordinatesPtr->getTip2BaseInit().translation().z())*p_tip2BaseWanted.rotation().col(2);
 
     Quaternion l_eeY(0.0, p_tip2BaseWanted.rotation().col(1)(0), p_tip2BaseWanted.rotation().col(1)(1), p_tip2BaseWanted.rotation().col(1)(2));
     Quaternion l_s7(0.0, p_tip2BaseWanted.rotation().col(2)(0), p_tip2BaseWanted.rotation().col(2)(1), p_tip2BaseWanted.rotation().col(2)(2));
@@ -85,7 +77,7 @@ void FrankaKinSolver<Scalar>::computeWristPosition(const Eigen::Isometry3d& p_ti
 
 //todo use the fact that e(-twist) = (e(twist))^-1
 template<typename Scalar>
-void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7, std::vector<std::vector<Scalar>>& p_solutions) const
+void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7, std::vector<std::vector<Scalar>>& p_solutions) const noexcept
 {
     p_solutions.clear();
     // First compute right-end side l_g = l_eeWanted * l_ee0^-1 * l_g7^-1
@@ -121,12 +113,13 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
     Quaternion l_pointOnlineQ4(0.0, m_screwCoordinatesPtr->getPositions().at(3)(0), m_screwCoordinatesPtr->getPositions().at(3)(1), m_screwCoordinatesPtr->getPositions().at(3)(2));
     const ThirdPadenKahan l_q4ThirdPKProbem(l_pointOnlineQ4, m_screwCoordinatesDualQ.at(3).getRealPart(), l_shoulderQuat, l_wristInTipFrame, l_delta);
 
-    if(l_q4ThirdPKProbem.getResults().size()==0)
+    if(unlikely(l_q4ThirdPKProbem.getResults().size()==0))
     {
         //q4 problem doesn't have any solutions
         return;
     }
 
+    SecondPadenKahan l_q5Q6SecondPKProblem;
     for (size_t i = 0; i < l_q4ThirdPKProbem.getResults().size(); i++)
     {
         std::vector<Scalar> l_solutionSet;
@@ -136,7 +129,7 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
         const DualQuaternion l_g4 = ((m_screwCoordinatesDualQ.at(3)* (l_solutionSet.at(3) * 0.5)).dqExp());
 
         // ------------------- Solve for q5, q6 ---------------- //
-        const SecondPadenKahan l_q5Q6SecondPKProblem(
+        l_q5Q6SecondPKProblem.compute(
             l_pointOnLinesQ5Q6,
             m_screwCoordinatesDualQ.at(5).getRealPart(),
             m_screwCoordinatesDualQ.at(4).getRealPart(),
@@ -144,11 +137,12 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
             l_shoulderTransformed
         );
 
-        if(l_q5Q6SecondPKProblem.getAngle1Result().size() == 0)
+        if(unlikely(l_q5Q6SecondPKProblem.getAngle1Result().size() == 0))
         {
             continue;
         }
 
+        SecondPadenKahan l_q2Q3SecondPKProblem;
         for(size_t j = 0; j < l_q5Q6SecondPKProblem.getAngle1Result().size(); j++)
         {
             l_solutionSet.at(5) = -l_q5Q6SecondPKProblem.getAngle1Result().at(j); // * (-1) as kinematic chain was inverted
@@ -162,7 +156,7 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
 
             const Quaternion l_endPoint = l_rightHandSide.getTransformedVector(l_pointOnFirstScrewOnly);
             
-            const SecondPadenKahan l_q2Q3SecondPKProblem(
+            l_q2Q3SecondPKProblem.compute(
                 l_pointOnLinesQ2Q3,
                 m_screwCoordinatesDualQ.at(2).getRealPart(),
                 m_screwCoordinatesDualQ.at(1).getRealPart(),
@@ -170,11 +164,12 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
                 l_endPoint
             );
 
-            if(l_q2Q3SecondPKProblem.getAngle1Result().size() == 0)
+            if(unlikely(l_q2Q3SecondPKProblem.getAngle1Result().size() == 0))
             {
                 continue;
             }
-            
+
+            FirstPadenKahan l_q1Problem;
             for(size_t k = 0; k < l_q2Q3SecondPKProblem.getAngle1Result().size(); k++)
             {
             
@@ -188,7 +183,7 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
                 const DualQuaternion l_rightHandSide = l_g2 * l_g3 * l_g4 * l_g5 * l_g6 * l_g;
             
                 const Quaternion l_endPointQ1 = l_rightHandSide.getTransformedVector(l_pointNotOnFirstScrew);
-                const FirstPadenKahan l_q1Problem(
+                l_q1Problem.compute(
                     l_pointOnLineQ1,
                     m_screwCoordinatesDualQ.at(0).getRealPart(),
                     l_pointNotOnFirstScrew,

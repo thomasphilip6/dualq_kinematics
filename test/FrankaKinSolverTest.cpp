@@ -23,7 +23,7 @@
 //#include "dualq_kinematics/geofik.h"
 
 const std::string c_pandaTipLink = "panda_link8";
-constexpr int c_repetitions = 1000;
+constexpr int c_repetitions = 1;
 constexpr double c_tolerance = 1e-5;
 constexpr double c_toleranceLow = 1e-3;
 
@@ -128,7 +128,7 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     std::vector<std::vector<double>> l_allIKSolutions;
     l_allIKSolutions.reserve(8);
     l_start = std::chrono::high_resolution_clock::now();
-    l_frankaKin.compute6DOFIK(l_eeWantedForIK, 0.0, l_allIKSolutions);
+    l_frankaKin.compute6DOFIK(l_eeWantedForIK, l_jointValuesReady_rad.at(6), l_allIKSolutions);
     l_stop = std::chrono::high_resolution_clock::now();
     l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
     RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver IK took (singe call) " << l_micros << " us.");
@@ -254,7 +254,7 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     // RCLCPP_INFO_STREAM(LOGGER, "GeoFIK took (over 1000 tries) " << l_micros/c_repetitions << " us.");
     // RCLCPP_INFO_STREAM(LOGGER, "GeoFIK returned (over 1000 tries) " << nsols << " solutions");
 
-    // l_jointValuesReady_rad = {-1.74, 0.36, 1.79, -1.81, 0.06, -0.006, 0.77};
+    // l_jointValuesReady_rad = {qsols.at(0).at(0), qsols.at(0).at(1), qsols.at(0).at(2), qsols.at(0).at(3), qsols.at(0).at(4), qsols.at(0).at(5) ,qsols.at(0).at(6)};
     // l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
     // l_robotState->getGlobalLinkTransform("panda_link8");
 

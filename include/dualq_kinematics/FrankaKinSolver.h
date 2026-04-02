@@ -45,11 +45,11 @@ namespace dualq_kinematics
 
             FrankaKinSolver(const ScrewCoordinates* p_screwCoordinatesPtr);
 
-            void computeTipFK(std::vector<double>& p_jointValues_rad, Eigen::Isometry3d& p_tip2BaseComputed) const;
+            void computeTipFK(std::vector<double>& p_jointValues_rad, Eigen::Isometry3d& p_tip2BaseComputed) const noexcept;
 
-            void computeWristPosition(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7, Vector3& p_wrist) const;
+            void computeWristPosition(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7, Vector3& p_wrist) const noexcept;
 
-            void compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7, std::vector<std::vector<Scalar>>& p_solutions) const;
+            void compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7, std::vector<std::vector<Scalar>>& p_solutions) const noexcept;
         
         private:
 

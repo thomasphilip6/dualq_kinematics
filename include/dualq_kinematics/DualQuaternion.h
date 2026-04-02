@@ -103,7 +103,7 @@ namespace dualq_kinematics
              * @param p_other the dualq that multiplies the instance
              * @return the result of the multiplication
              */
-            DualQuaternion operator*(const DualQuaternion& p_other) const;
+            DualQuaternion operator*(const DualQuaternion& p_other) const noexcept;
 
             /**
              * @brief Returns the multiplication of the dual Quaternion with a scalar value
@@ -144,14 +144,14 @@ namespace dualq_kinematics
              * @param p_tolerance tolerance used
              * @return True if inversion was a success 
              */
-            bool invert(const Scalar p_tolerance);
+            bool invert(const Scalar p_tolerance) noexcept;
 
             /**
              * @brief Returns the inverse of the dual quaternion if it exists, not optimized because of copies
              * @param p_tolerance tolerance used
              * @return The inverted dualq if inversion was a successs
              */
-            std::optional<DualQuaternion> inverse(const Scalar p_tolerance) const;
+            std::optional<DualQuaternion> inverse(const Scalar p_tolerance) const noexcept;
 
             /**
              * @brief Returns real part of dual quaternion
@@ -190,7 +190,7 @@ namespace dualq_kinematics
              * @param p_quaternion Quaternion which exponential is needed
              * @return Exponential of Quaternion
              */
-            inline static Quaternion quaternionExp(const Eigen::Quaternion<Scalar>& p_quaternion);
+            inline static Quaternion quaternionExp(const Eigen::Quaternion<Scalar>& p_quaternion) noexcept;
 
             /**
              * @brief Returns the scalar part of quaternion multiplication, when pure quaternions are multiplied, the "scalar part" is the scalar product of vector parts
@@ -198,12 +198,12 @@ namespace dualq_kinematics
              * @param p_quaternion2
              * @return scalar product of vector parts of the two quaternions
              */
-            inline static Scalar quatMulScalarPart(const Eigen::Quaternion<Scalar>& p_quaternion1, const Eigen::Quaternion<Scalar>& p_quaternion2);
+            inline static Scalar quatMulScalarPart(const Eigen::Quaternion<Scalar>& p_quaternion1, const Eigen::Quaternion<Scalar>& p_quaternion2) noexcept;
 
             /**
              * @brief Returns the exponential of a dual quaternion
              */
-            inline DualQuaternion dqExp() const;
+            inline DualQuaternion dqExp() const noexcept;
 
             Quaternion getIntersectionOfLines(DualQuaternion& p_line2);
 
@@ -229,25 +229,25 @@ namespace dualq_kinematics
     // ------------------ Eigen::Quaternion<Scalar> utils --------------- //
 
     template<typename Scalar>
-    inline Eigen::Quaternion<Scalar> operator*(const Scalar& p_scalar, const Eigen::Quaternion<Scalar>& p_q)
+    inline Eigen::Quaternion<Scalar> operator*(const Scalar& p_scalar, const Eigen::Quaternion<Scalar>& p_q) noexcept
     {
         return Eigen::Quaternion<Scalar>(p_q.coeffs() * p_scalar);
     }
 
     template<typename Scalar>
-    inline Eigen::Quaternion<Scalar> operator*(const Eigen::Quaternion<Scalar>& p_q, const Scalar& p_scalar)
+    inline Eigen::Quaternion<Scalar> operator*(const Eigen::Quaternion<Scalar>& p_q, const Scalar& p_scalar) noexcept
     {
         return Eigen::Quaternion<Scalar>(p_q.coeffs() * p_scalar);
     }
 
     template<typename Scalar>
-    inline Eigen::Quaternion<Scalar> operator+(const Eigen::Quaternion<Scalar>& p_q1, const Eigen::Quaternion<Scalar>& p_q2)
+    inline Eigen::Quaternion<Scalar> operator+(const Eigen::Quaternion<Scalar>& p_q1, const Eigen::Quaternion<Scalar>& p_q2) noexcept
     {
         return Eigen::Quaternion<Scalar>(p_q1.w() + p_q2.w(), p_q1.x() + p_q2.x(), p_q1.y() + p_q2.y(), p_q1.z() + p_q2.z());
     }
 
     template<typename Scalar>
-    inline Eigen::Quaternion<Scalar> operator-(const Eigen::Quaternion<Scalar>& p_q1, const Eigen::Quaternion<Scalar>& p_q2)
+    inline Eigen::Quaternion<Scalar> operator-(const Eigen::Quaternion<Scalar>& p_q1, const Eigen::Quaternion<Scalar>& p_q2) noexcept
     {
         return Eigen::Quaternion<Scalar>(p_q1.w() - p_q2.w(), p_q1.x() - p_q2.x(), p_q1.y() - p_q2.y(), p_q1.z() - p_q2.z());
     }

@@ -28,9 +28,10 @@ find_package(moveit_ros_planning REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 
-add_library(${PROJECT_NAME} SHARED 
+add_library(${PROJECT_NAME} STATIC 
   src/dualq_kinematics.cpp
-  #src/geofik.cpp for benchmark
+  #for benchmark
+  #src/geofik.cpp 
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC

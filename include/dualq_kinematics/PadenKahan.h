@@ -1,5 +1,8 @@
 #pragma once
 
+#define likely(x)       __builtin_expect(!!(x), 1)
+#define unlikely(x)     __builtin_expect(!!(x), 0)
+
 #include "dualq_kinematics/DualQuaternion.h"
 #include "dualq_kinematics/ScrewCoordinates.h"
 
@@ -30,16 +33,16 @@ namespace dualq_kinematics
 
             FirstPadenKahanProblem(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint);
 
-            inline void compute(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint);
+            inline void compute(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint) noexcept;
 
             // to prepare a new version of compute to be compared for speed effiency
-            static inline void compute(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint, Scalar& p_result);
+            static inline void compute(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint, Scalar& p_result) noexcept;
 
-            inline void computeFromProjectedPoints(const Quaternion& p_axis, const Quaternion& p_xProjected, const Quaternion& p_yProjected, bool p_checkConditions);
+            inline void computeFromProjectedPoints(const Quaternion& p_axis, const Quaternion& p_xProjected, const Quaternion& p_yProjected) noexcept;
 
             const std::optional<Scalar>& getResult() const;
 
-            static bool compareFloatNum(Scalar p_a, Scalar p_b, Scalar p_tolerance);
+            static bool compareFloatNum(Scalar p_a, Scalar p_b, Scalar p_tolerance) noexcept;
         
         private:
 
@@ -64,13 +67,13 @@ namespace dualq_kinematics
 
             SecondPadenKahanProblem(const Quaternion& p_pointOnLines, const Quaternion& p_axis1, const Quaternion& p_axis2, const Quaternion& p_startPoint, const Quaternion& p_endPoint);
 
-            void compute(const Quaternion& p_pointOnLines, const Quaternion& p_axis1, const Quaternion& p_axis2, const Quaternion& p_startPoint, const Quaternion& p_endPoint);
+            void compute(const Quaternion& p_pointOnLines, const Quaternion& p_axis1, const Quaternion& p_axis2, const Quaternion& p_startPoint, const Quaternion& p_endPoint) noexcept;
 
             const std::vector<Scalar>& getAngle1Result() const;
 
             const std::vector<Scalar>& getAngle2Result() const;
 
-            inline static void computeIntersection(const Quaternion& p_axis1, const Quaternion& p_axis2, Quaternion& p_x, Quaternion& p_y, std::vector<Quaternion>& p_intersections);
+            inline static void computeIntersection(const Quaternion& p_axis1, const Quaternion& p_axis2, Quaternion& p_x, Quaternion& p_y, std::vector<Quaternion>& p_intersections) noexcept;
         
         private:
 
@@ -136,7 +139,7 @@ namespace dualq_kinematics
 
             ThirdPadenKahanProblem(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint, const Scalar p_distanceToEnd);
 
-            void compute(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint, const Scalar p_distanceToEnd);
+            void compute(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint, const Scalar p_distanceToEnd) noexcept;
 
             const std::vector<Scalar>& getResults() const;
         

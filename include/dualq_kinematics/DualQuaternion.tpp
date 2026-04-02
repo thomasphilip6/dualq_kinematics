@@ -72,7 +72,7 @@ DualQuaternion<Scalar>::DualQuaternion(const Transform& p_transform)
 
 
 template<typename Scalar>
-inline DualQuaternion<Scalar> DualQuaternion<Scalar>::operator*(const DualQuaternion<Scalar>& p_other) const
+inline DualQuaternion<Scalar> DualQuaternion<Scalar>::operator*(const DualQuaternion<Scalar>& p_other) const noexcept
 {
     return DualQuaternion<Scalar>(m_realPart * p_other.m_realPart, (m_realPart * p_other.m_dualPart) + (m_dualPart * p_other.m_realPart));
 }
@@ -139,7 +139,7 @@ bool DualQuaternion<Scalar>::isUnit(const Scalar p_tolerance) const
 }
 
 template<typename Scalar>
-bool DualQuaternion<Scalar>::invert(const Scalar p_tolerance)
+bool DualQuaternion<Scalar>::invert(const Scalar p_tolerance) noexcept
 {
     //check if real part is all zeroes
     if(m_realPart.isApprox(Quaternion(0.0,0.0,0.0,0.0),p_tolerance))
@@ -165,7 +165,7 @@ bool DualQuaternion<Scalar>::invert(const Scalar p_tolerance)
 }
 
 template<typename Scalar>
-std::optional<DualQuaternion<Scalar>> DualQuaternion<Scalar>::inverse(const Scalar p_tolerance) const
+std::optional<DualQuaternion<Scalar>> DualQuaternion<Scalar>::inverse(const Scalar p_tolerance) const noexcept
 {
     DualQuaternion<Scalar> l_dualQuaternionCopy = *this;
     const bool l_result = l_dualQuaternionCopy.invert(p_tolerance);
@@ -220,7 +220,7 @@ typename DualQuaternion<Scalar>::Transform DualQuaternion<Scalar>::getTransform(
 }
 
 template<typename Scalar>
-inline typename DualQuaternion<Scalar>::Quaternion DualQuaternion<Scalar>::quaternionExp(const Eigen::Quaternion<Scalar>& p_quaternion)
+inline typename DualQuaternion<Scalar>::Quaternion DualQuaternion<Scalar>::quaternionExp(const Eigen::Quaternion<Scalar>& p_quaternion) noexcept
 {
     const Scalar l_alpha = p_quaternion.vec().norm();
     Scalar l_factor = 0;
@@ -231,19 +231,19 @@ inline typename DualQuaternion<Scalar>::Quaternion DualQuaternion<Scalar>::quate
     else 
     {
         //Avoiding division by zero by using Taylor Serie of (sin a) / a
-        l_factor = 1.0 - pow(l_alpha, 2.0)/6.0 + pow(l_alpha, 4.0)/120.0;
+        l_factor = 1.0 - (l_alpha*l_alpha)/6.0 + (l_alpha*l_alpha*l_alpha*l_alpha)/120.0;
     }
     return Eigen::Quaternion<Scalar>(exp(p_quaternion.w())*cos(l_alpha), p_quaternion.x()*l_factor, p_quaternion.y()*l_factor, p_quaternion.z()*l_factor);
 }
 
 template<typename Scalar>
-inline Scalar DualQuaternion<Scalar>::quatMulScalarPart(const Eigen::Quaternion<Scalar>& p_quaternion1, const Eigen::Quaternion<Scalar>& p_quaternion2)
+inline Scalar DualQuaternion<Scalar>::quatMulScalarPart(const Eigen::Quaternion<Scalar>& p_quaternion1, const Eigen::Quaternion<Scalar>& p_quaternion2) noexcept
 {
     return (p_quaternion1.x()*p_quaternion2.x() + p_quaternion1.y()*p_quaternion2.y() + p_quaternion1.z()*p_quaternion2.z());
 }
 
 template<typename Scalar>
-inline typename DualQuaternion<Scalar>::DualQuaternion DualQuaternion<Scalar>::dqExp() const
+inline typename DualQuaternion<Scalar>::DualQuaternion DualQuaternion<Scalar>::dqExp() const noexcept
 {
     const Scalar l_psi = m_realPart.vec().norm();
     const Quaternion l_realPartExp = quaternionExp(m_realPart);
@@ -254,13 +254,13 @@ inline typename DualQuaternion<Scalar>::DualQuaternion DualQuaternion<Scalar>::d
     if (l_psi > 0.001)
     {
         l_A = sin(l_psi) / l_psi;
-        l_B = (cos(l_psi) - l_A) / pow(l_psi, 2.0); 
+        l_B = (cos(l_psi) - l_A) / (l_psi*l_psi); 
     }
     else 
     {
         //Avoiding division by zero using Taylor Series
-        l_A = 1.0 - pow(l_psi, 2.0)/6.0 + pow(l_psi, 4.0)/120.0;
-        l_B =  -1.0/3.0 + pow(l_psi, 2.0)/30.0 - pow(l_psi, 4.0)/840.0; 
+        l_A = 1.0 - (l_psi*l_psi)/6.0 + (l_psi*l_psi*l_psi*l_psi)/120.0;
+        l_B =  -1.0/3.0 + (l_psi*l_psi)/30.0 - (l_psi*l_psi*l_psi*l_psi)/840.0; 
     }
     const Scalar l_realPartWExp = exp(m_realPart.w());
     const Quaternion l_dualPartExp(
