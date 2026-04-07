@@ -129,17 +129,37 @@ SecondPadenKahanProblem<Scalar>::SecondPadenKahanProblem()
 }
 
 template<typename Scalar>
-SecondPadenKahanProblem<Scalar>::SecondPadenKahanProblem(const Quaternion& p_pointOnLines, const Quaternion& p_axis1, const Quaternion& p_axis2, const Quaternion& p_startPoint, const Quaternion& p_endPoint)
+SecondPadenKahanProblem<Scalar>::SecondPadenKahanProblem(
+    const Quaternion& p_pointOnLines, 
+    const Quaternion& p_axis1, 
+    const Quaternion& p_axis2, 
+    const Quaternion& p_startPoint, 
+    const Quaternion& p_endPoint,
+    const double p_minValue1_rad,
+    const double p_maxValue1_rad,
+    const double p_minValue2_rad,
+    const double p_maxValue2_rad
+)
 {
     m_resultsAngle1_rad.reserve(2);
     m_resultsAngle2_rad.reserve(2);
     m_firstRotations.reserve(2);
     m_secondRotations.reserve(2);
-    compute(p_pointOnLines, p_axis1, p_axis2, p_startPoint, p_endPoint);
+    compute(p_pointOnLines, p_axis1, p_axis2, p_startPoint, p_endPoint, p_minValue1_rad, p_maxValue1_rad, p_minValue2_rad, p_maxValue2_rad);
 }
 
 template<typename Scalar>
-void SecondPadenKahanProblem<Scalar>::compute(const Quaternion& p_pointOnLines, const Quaternion& p_axis1, const Quaternion& p_axis2, const Quaternion& p_startPoint, const Quaternion& p_endPoint) noexcept
+void SecondPadenKahanProblem<Scalar>::compute(
+    const Quaternion& p_pointOnLines, 
+    const Quaternion& p_axis1, 
+    const Quaternion& p_axis2, 
+    const Quaternion& p_startPoint, 
+    const Quaternion& p_endPoint,
+    const double p_minValue1_rad,
+    const double p_maxValue1_rad,
+    const double p_minValue2_rad,
+    const double p_maxValue2_rad
+) noexcept
 {
     m_resultsAngle1_rad.clear();
     m_resultsAngle2_rad.clear();
@@ -162,12 +182,18 @@ void SecondPadenKahanProblem<Scalar>::compute(const Quaternion& p_pointOnLines, 
         m_firstRotations.push_back( dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, p_axis1, l_c, p_endPoint));//sigma 1
 
         //if either of subproblems 1 could not be solved, the whole solution is invalid
-        if(m_firstRotations.at(i).getResult().has_value() && m_secondRotations.at(i).getResult().has_value())
+        //likewise if out of bounds
+        if(
+            m_firstRotations.at(i).getResult().has_value() 
+            && m_secondRotations.at(i).getResult().has_value()
+            && !(-m_firstRotations.at(i).getResult().value() > p_maxValue1_rad || -m_firstRotations.at(i).getResult().value() < p_minValue1_rad)
+            && !(-m_secondRotations.at(i).getResult().value() > p_maxValue2_rad || -m_secondRotations.at(i).getResult().value() < p_minValue2_rad)
+        )
         {
             m_resultsAngle1_rad.push_back(m_firstRotations.at(i).getResult().value());
             m_resultsAngle2_rad.push_back(m_secondRotations.at(i).getResult().value());
         }
-    }   
+    }    
 
 }
 
@@ -306,14 +332,30 @@ ThirdPadenKahanProblem<Scalar>::ThirdPadenKahanProblem()
 }
 
 template<typename Scalar>
-ThirdPadenKahanProblem<Scalar>::ThirdPadenKahanProblem(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint, const Scalar p_distanceToEnd)
+ThirdPadenKahanProblem<Scalar>::ThirdPadenKahanProblem(
+    const Quaternion& p_pointOnLine, 
+    const Quaternion& p_axis, 
+    const Quaternion& p_startPoint, 
+    const Quaternion& p_endPoint, 
+    const Scalar p_distanceToEnd,
+    const double p_minValue_rad,
+    const double p_maxValue_rad
+)
 {
     m_results.reserve(2);
-    compute(p_pointOnLine, p_axis, p_startPoint, p_endPoint, p_distanceToEnd);
+    compute(p_pointOnLine, p_axis, p_startPoint, p_endPoint, p_distanceToEnd, p_minValue_rad, p_maxValue_rad);
 }
 
 template<typename Scalar>
-void ThirdPadenKahanProblem<Scalar>::compute(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint, const Scalar p_distanceToEnd) noexcept
+void ThirdPadenKahanProblem<Scalar>::compute(
+    const Quaternion& p_pointOnLine, 
+    const Quaternion& p_axis, 
+    const Quaternion& p_startPoint, 
+    const Quaternion& p_endPoint, 
+    const Scalar p_distanceToEnd,
+    const double p_minValue_rad,
+    const double p_maxValue_rad
+) noexcept
 {
     m_results.clear();
 
@@ -376,6 +418,15 @@ void ThirdPadenKahanProblem<Scalar>::compute(const Quaternion& p_pointOnLine, co
         {
             l_angle = 2*M_PI + l_angle;
         }
+    }
+
+    //Check if solution is in bound
+    for (auto it = m_results.begin(); it != m_results.end();)
+    {
+        if (-(*it) > p_maxValue_rad || -(*it) < p_minValue_rad)
+            it = m_results.erase(it);
+        else
+            ++it;
     }
     
 }

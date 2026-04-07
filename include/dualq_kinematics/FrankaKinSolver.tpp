@@ -35,7 +35,7 @@ FrankaKinSolver<Scalar>::FrankaKinSolver(const ScrewCoordinates* p_screwCoordina
 }
 
 template<typename Scalar>
-void FrankaKinSolver<Scalar>::computeTipFK(std::vector<double>& p_jointValues_rad, Eigen::Isometry3d& p_tip2BaseComputed) const noexcept
+void FrankaKinSolver<Scalar>::computeTipFK(const std::vector<double>& p_jointValues_rad, Eigen::Isometry3d& p_tip2BaseComputed) const noexcept
 {
     DualQuaternion l_tip2BaseDQComputed = (m_screwCoordinatesDualQ.at(0) * (p_jointValues_rad.at(0) * 0.5)).dqExp();
     for (size_t i = 1; i < p_jointValues_rad.size(); i++)
@@ -47,7 +47,7 @@ void FrankaKinSolver<Scalar>::computeTipFK(std::vector<double>& p_jointValues_ra
 }
 
 template<typename Scalar>
-void FrankaKinSolver<Scalar>::computeWristPosition(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7, Vector3& p_wrist) const noexcept
+void FrankaKinSolver<Scalar>::computeWristPosition(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar& p_q7, Vector3& p_wrist) const noexcept
 {
     Scalar l_a7;
     // r7 = eeWanted.translation - df * eeWanted.z()
@@ -77,7 +77,7 @@ void FrankaKinSolver<Scalar>::computeWristPosition(const Eigen::Isometry3d& p_ti
 
 //todo use the fact that e(-twist) = (e(twist))^-1
 template<typename Scalar>
-void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar p_q7, std::vector<std::vector<Scalar>>& p_solutions) const noexcept
+void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar& p_q7, std::vector<std::vector<Scalar>>& p_solutions) const noexcept
 {
     p_solutions.clear();
     // First compute right-end side l_g = l_eeWanted * l_ee0^-1 * l_g7^-1
@@ -111,13 +111,15 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
 
     const Scalar l_delta = (l_shoulderTransformed - l_wristInTipFrame).norm();
     Quaternion l_pointOnlineQ4(0.0, m_screwCoordinatesPtr->getPositions().at(3)(0), m_screwCoordinatesPtr->getPositions().at(3)(1), m_screwCoordinatesPtr->getPositions().at(3)(2));
-    const ThirdPadenKahan l_q4ThirdPKProbem(l_pointOnlineQ4, m_screwCoordinatesDualQ.at(3).getRealPart(), l_shoulderQuat, l_wristInTipFrame, l_delta);
-
-    if(unlikely(l_q4ThirdPKProbem.getResults().size()==0))
-    {
-        //q4 problem doesn't have any solutions
-        return;
-    }
+    const ThirdPadenKahan l_q4ThirdPKProbem(
+        l_pointOnlineQ4,
+        m_screwCoordinatesDualQ.at(3).getRealPart(), 
+        l_shoulderQuat, 
+        l_wristInTipFrame, 
+        l_delta,
+        m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(3)).min_position_,
+        m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(3)).max_position_
+    );
 
     SecondPadenKahan l_q5Q6SecondPKProblem;
     for (size_t i = 0; i < l_q4ThirdPKProbem.getResults().size(); i++)
@@ -134,13 +136,12 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
             m_screwCoordinatesDualQ.at(5).getRealPart(),
             m_screwCoordinatesDualQ.at(4).getRealPart(),
             l_g4.inverse(c_tolerance).value().getTransformedVector(l_shoulderQuat),
-            l_shoulderTransformed
+            l_shoulderTransformed,
+            m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(5)).min_position_,
+            m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(5)).max_position_,
+            m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(4)).min_position_,
+            m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(4)).max_position_
         );
-
-        if(unlikely(l_q5Q6SecondPKProblem.getAngle1Result().size() == 0))
-        {
-            continue;
-        }
 
         SecondPadenKahan l_q2Q3SecondPKProblem;
         for(size_t j = 0; j < l_q5Q6SecondPKProblem.getAngle1Result().size(); j++)
@@ -161,13 +162,12 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
                 m_screwCoordinatesDualQ.at(2).getRealPart(),
                 m_screwCoordinatesDualQ.at(1).getRealPart(),
                 l_pointOnFirstScrewOnly,
-                l_endPoint
+                l_endPoint,
+                m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(2)).min_position_,
+                m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(2)).max_position_,
+                m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(1)).min_position_,
+                m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(1)).max_position_
             );
-
-            if(unlikely(l_q2Q3SecondPKProblem.getAngle1Result().size() == 0))
-            {
-                continue;
-            }
 
             FirstPadenKahan l_q1Problem;
             for(size_t k = 0; k < l_q2Q3SecondPKProblem.getAngle1Result().size(); k++)

@@ -116,7 +116,7 @@ int main(int argc, char** argv)
     
     RCLCPP_INFO_STREAM(LOGGER, "Starting Screw Coordinates construction");
     auto l_start = std::chrono::high_resolution_clock::now();
-    ScrewCoordinates l_screwCoord(*l_robotModel, c_pandaTipLink);
+    ScrewCoordinates l_screwCoord(l_robotModel, c_pandaTipLink);
     auto l_stop = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> l_ms = l_stop - l_start;
     RCLCPP_INFO_STREAM(LOGGER, "Screw Coordinates constructed in " << l_ms.count() << " ms");

@@ -78,7 +78,7 @@ TEST(dualq_kinematics, ScrewCoordinatesConstructionTest)
     //robot_model_loader::RobotModelLoader loader(node);
 
     //Test construction 
-    ScrewCoordinates l_screwCoord(*l_robotModel, "panda_link8");
+    ScrewCoordinates l_screwCoord(l_robotModel, "panda_link8");
 
     //Test if vector sizes matches number of DOF
     auto l_positions = l_screwCoord.getPositions();

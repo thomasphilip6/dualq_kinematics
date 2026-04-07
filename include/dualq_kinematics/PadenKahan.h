@@ -65,9 +65,29 @@ namespace dualq_kinematics
 
             SecondPadenKahanProblem();
 
-            SecondPadenKahanProblem(const Quaternion& p_pointOnLines, const Quaternion& p_axis1, const Quaternion& p_axis2, const Quaternion& p_startPoint, const Quaternion& p_endPoint);
+            SecondPadenKahanProblem(
+                const Quaternion& p_pointOnLines, 
+                const Quaternion& p_axis1, 
+                const Quaternion& p_axis2, 
+                const Quaternion& p_startPoint, 
+                const Quaternion& p_endPoint,
+                const double p_minValue1_rad,
+                const double p_maxValue1_rad,
+                const double p_minValue2_rad,
+                const double p_maxValue2_rad
+            );
 
-            void compute(const Quaternion& p_pointOnLines, const Quaternion& p_axis1, const Quaternion& p_axis2, const Quaternion& p_startPoint, const Quaternion& p_endPoint) noexcept;
+            void compute(
+                const Quaternion& p_pointOnLines, 
+                const Quaternion& p_axis1, 
+                const Quaternion& p_axis2, 
+                const Quaternion& p_startPoint, 
+                const Quaternion& p_endPoint,
+                const double p_minValue1_rad,
+                const double p_maxValue1_rad,
+                const double p_minValue2_rad,
+                const double p_maxValue2_rad
+            ) noexcept;
 
             const std::vector<Scalar>& getAngle1Result() const;
 
@@ -137,9 +157,25 @@ namespace dualq_kinematics
 
             ThirdPadenKahanProblem();
 
-            ThirdPadenKahanProblem(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint, const Scalar p_distanceToEnd);
+            ThirdPadenKahanProblem(
+                const Quaternion& p_pointOnLine, 
+                const Quaternion& p_axis, 
+                const Quaternion& p_startPoint, 
+                const Quaternion& p_endPoint, 
+                const Scalar p_distanceToEnd,
+                const double p_minValue_rad,
+                const double p_maxValue_rad
+            );
 
-            void compute(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint, const Scalar p_distanceToEnd) noexcept;
+            void compute(
+                const Quaternion& p_pointOnLine, 
+                const Quaternion& p_axis, 
+                const Quaternion& p_startPoint, 
+                const Quaternion& p_endPoint, 
+                const Scalar p_distanceToEnd,
+                const double p_minValue_rad,
+                const double p_maxValue_rad
+            ) noexcept;
 
             const std::vector<Scalar>& getResults() const;
         

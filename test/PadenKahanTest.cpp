@@ -88,7 +88,17 @@ TEST(dualq_kinematics, SecondPadenKahanProblemTest)
     Eigen::Quaterniond l_endPoint(0.0, -0.151662, -0.0553609, 0.910345);
     Eigen::Quaterniond l_intersectionPoint(0.0, 0.0, 0.0, l_d1);
 
-    SecondPadenKahan l_testResultFinite(l_intersectionPoint, l_joint1ScrewAxis, l_joint2ScrewAxis, l_startPoint, l_endPoint);
+    SecondPadenKahan l_testResultFinite(
+        l_intersectionPoint, 
+        l_joint1ScrewAxis, 
+        l_joint2ScrewAxis, 
+        l_startPoint, 
+        l_endPoint,
+        -M_PI,
+        M_PI,
+        -M_PI,
+        M_PI
+    );
 
     EXPECT_EQ(l_testResultFinite.getAngle1Result().size(), l_expectedSigma1.size());
     EXPECT_EQ(l_testResultFinite.getAngle2Result().size(), l_expectedSigma1.size());
@@ -161,7 +171,7 @@ TEST(dualq_kinematics, ThirdPadenKahanTest)
 
     const std::vector<double> l_expectedResults = {2.13528, 0.784};
 
-    ThirdPadenKahan l_testResultFinite(l_positionOnLine,  l_jointScrewAxis, l_startPoint, l_endPoint, l_delta);
+    ThirdPadenKahan l_testResultFinite(l_positionOnLine,  l_jointScrewAxis, l_startPoint, l_endPoint, l_delta, -M_PI, M_PI);
     EXPECT_EQ(l_testResultFinite.getResults().size(), 2) << "3rd Paden Kahan SubProblem should return 2 solutions in this case";
     
     std::cout << "Third SubProbem results size : " << l_testResultFinite.getResults().size() << std::endl;

@@ -2,10 +2,11 @@ namespace dualq_kinematics
 {
 
 template<typename Scalar>
-ScrewCoordinates<Scalar>::ScrewCoordinates(const moveit::core::RobotModel& p_robotModel, std::string p_tipLinkName)
+ScrewCoordinates<Scalar>::ScrewCoordinates(const moveit::core::RobotModelConstPtr p_robotModel, std::string p_tipLinkName)
 {
+    m_robotModelPtr = p_robotModel;
     m_tipLinkName = p_tipLinkName;
-    const urdf::ModelInterfaceSharedPtr l_urdf = p_robotModel.getURDF();
+    const urdf::ModelInterfaceSharedPtr l_urdf = p_robotModel->getURDF();
     std::map<std::string, urdf::JointSharedPtr> l_jointMap = retrieveKinChainJoints(p_robotModel);
     const size_t l_jointsNumber = l_jointMap.size();
     for (auto it = l_jointMap.begin(); it != l_jointMap.end(); ++it)
@@ -60,16 +61,16 @@ const typename ScrewCoordinates<Scalar>::Transform& ScrewCoordinates<Scalar>::ge
 
 
 template<typename Scalar>
-std::map<std::string, urdf::JointSharedPtr> ScrewCoordinates<Scalar>::retrieveKinChainJoints(const moveit::core::RobotModel& p_robotModel){
-    const auto& l_initialJoints = p_robotModel.getURDF()->joints_;
+std::map<std::string, urdf::JointSharedPtr> ScrewCoordinates<Scalar>::retrieveKinChainJoints(const moveit::core::RobotModelConstPtr p_robotModel){
+    const auto& l_initialJoints = p_robotModel->getURDF()->joints_;
     std::map<std::string, urdf::JointSharedPtr> l_finalJoints;
 
     std::vector<std::string> l_eeJoints;
-    for (size_t j=0; j < p_robotModel.getEndEffectors().size(); j++)
+    for (size_t j=0; j < p_robotModel->getEndEffectors().size(); j++)
     {
-        for (size_t i = 0; i < p_robotModel.getEndEffectors().at(j)->getJointModels().size(); i++)
+        for (size_t i = 0; i < p_robotModel->getEndEffectors().at(j)->getJointModels().size(); i++)
         {
-            l_eeJoints.push_back(p_robotModel.getEndEffectors().at(j)->getJointModels().at(i)->getName());
+            l_eeJoints.push_back(p_robotModel->getEndEffectors().at(j)->getJointModels().at(i)->getName());
         }
     }
     std::unordered_set<std::string> l_eeSet(l_eeJoints.begin(), l_eeJoints.end());
@@ -103,7 +104,7 @@ std::map<std::string, urdf::JointSharedPtr> ScrewCoordinates<Scalar>::retrieveKi
 }
 
 template<typename Scalar>
-void ScrewCoordinates<Scalar>::transformToScrewCoordinates(std::vector<urdf::Pose>& p_jnt2ParentPoses, const moveit::core::RobotModel& p_robotModel)
+void ScrewCoordinates<Scalar>::transformToScrewCoordinates(std::vector<urdf::Pose>& p_jnt2ParentPoses, const moveit::core::RobotModelConstPtr p_robotModel)
 {
     std::vector<Transform> l_jnt2ParentTransforms;
     l_jnt2ParentTransforms.resize(p_jnt2ParentPoses.size());
@@ -142,7 +143,7 @@ void ScrewCoordinates<Scalar>::transformToScrewCoordinates(std::vector<urdf::Pos
     }
 
     //Deal with tip2BaseInit
-    urdf::Pose l_tip2Parent = p_robotModel.getURDF()->getLink(m_tipLinkName)->parent_joint->parent_to_joint_origin_transform;
+    urdf::Pose l_tip2Parent = p_robotModel->getURDF()->getLink(m_tipLinkName)->parent_joint->parent_to_joint_origin_transform;
     auto const l_tip2ParentQuat = [l_tip2Parent]{
         Quaternion l_quaternion;
         l_tip2Parent.rotation.getQuaternion(l_quaternion.x(), l_quaternion.y(), l_quaternion.z(), l_quaternion.w());
