@@ -31,14 +31,34 @@ namespace dualq_kinematics
 
             FirstPadenKahanProblem();
 
-            FirstPadenKahanProblem(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint);
+            FirstPadenKahanProblem(
+                const Quaternion& p_pointOnLine, 
+                const Quaternion& p_axis, 
+                const Quaternion& p_startPoint, 
+                const Quaternion& p_endPoint,
+                const double& p_minValue_rad,
+                const double& p_maxValue_rad
+            );
 
-            inline void compute(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint) noexcept;
+            inline void compute(
+                const Quaternion& p_pointOnLine, 
+                const Quaternion& p_axis, 
+                const Quaternion& p_startPoint, 
+                const Quaternion& p_endPoint,
+                const double& p_minValue_rad,
+                const double& p_maxValue_rad
+            ) noexcept;
 
             // to prepare a new version of compute to be compared for speed effiency
             static inline void compute(const Quaternion& p_pointOnLine, const Quaternion& p_axis, const Quaternion& p_startPoint, const Quaternion& p_endPoint, Scalar& p_result) noexcept;
 
-            inline void computeFromProjectedPoints(const Quaternion& p_axis, const Quaternion& p_xProjected, const Quaternion& p_yProjected) noexcept;
+            inline void computeFromProjectedPoints(
+                const Quaternion& p_axis, 
+                const Quaternion& p_xProjected, 
+                const Quaternion& p_yProjected,
+                const double& p_minValue_rad,
+                const double& p_maxValue_rad
+            ) noexcept;
 
             const std::optional<Scalar>& getResult() const;
 
@@ -71,10 +91,10 @@ namespace dualq_kinematics
                 const Quaternion& p_axis2, 
                 const Quaternion& p_startPoint, 
                 const Quaternion& p_endPoint,
-                const double p_minValue1_rad,
-                const double p_maxValue1_rad,
-                const double p_minValue2_rad,
-                const double p_maxValue2_rad
+                const double& p_minValue1_rad,
+                const double& p_maxValue1_rad,
+                const double& p_minValue2_rad,
+                const double& p_maxValue2_rad
             );
 
             void compute(
@@ -83,10 +103,10 @@ namespace dualq_kinematics
                 const Quaternion& p_axis2, 
                 const Quaternion& p_startPoint, 
                 const Quaternion& p_endPoint,
-                const double p_minValue1_rad,
-                const double p_maxValue1_rad,
-                const double p_minValue2_rad,
-                const double p_maxValue2_rad
+                const double& p_minValue1_rad,
+                const double& p_maxValue1_rad,
+                const double& p_minValue2_rad,
+                const double& p_maxValue2_rad
             ) noexcept;
 
             const std::vector<Scalar>& getAngle1Result() const;
@@ -163,8 +183,8 @@ namespace dualq_kinematics
                 const Quaternion& p_startPoint, 
                 const Quaternion& p_endPoint, 
                 const Scalar p_distanceToEnd,
-                const double p_minValue_rad,
-                const double p_maxValue_rad
+                const double& p_minValue_rad,
+                const double& p_maxValue_rad
             );
 
             void compute(
@@ -173,8 +193,8 @@ namespace dualq_kinematics
                 const Quaternion& p_startPoint, 
                 const Quaternion& p_endPoint, 
                 const Scalar p_distanceToEnd,
-                const double p_minValue_rad,
-                const double p_maxValue_rad
+                const double& p_minValue_rad,
+                const double& p_maxValue_rad
             ) noexcept;
 
             const std::vector<Scalar>& getResults() const;

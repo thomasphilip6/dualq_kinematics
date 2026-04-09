@@ -117,8 +117,8 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
         l_shoulderQuat, 
         l_wristInTipFrame, 
         l_delta,
-        m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(3)).min_position_,
-        m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(3)).max_position_
+        -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(3)).max_position_,
+        -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(3)).min_position_
     );
 
     SecondPadenKahan l_q5Q6SecondPKProblem;
@@ -137,10 +137,10 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
             m_screwCoordinatesDualQ.at(4).getRealPart(),
             l_g4.inverse(c_tolerance).value().getTransformedVector(l_shoulderQuat),
             l_shoulderTransformed,
-            m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(5)).min_position_,
-            m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(5)).max_position_,
-            m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(4)).min_position_,
-            m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(4)).max_position_
+            -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(5)).max_position_,
+            -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(5)).min_position_,
+            -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(4)).max_position_,
+            -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(4)).min_position_
         );
 
         SecondPadenKahan l_q2Q3SecondPKProblem;
@@ -163,10 +163,10 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
                 m_screwCoordinatesDualQ.at(1).getRealPart(),
                 l_pointOnFirstScrewOnly,
                 l_endPoint,
-                m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(2)).min_position_,
-                m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(2)).max_position_,
-                m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(1)).min_position_,
-                m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(1)).max_position_
+                -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(2)).max_position_,
+                -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(2)).min_position_,
+                -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(1)).max_position_,
+                -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(1)).min_position_
             );
 
             FirstPadenKahan l_q1Problem;
@@ -187,7 +187,9 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
                     l_pointOnLineQ1,
                     m_screwCoordinatesDualQ.at(0).getRealPart(),
                     l_pointNotOnFirstScrew,
-                    l_endPointQ1
+                    l_endPointQ1,
+                    -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(0)).max_position_,
+                    -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(0)).min_position_
                 );
 
                 if(l_q1Problem.getResult().has_value())

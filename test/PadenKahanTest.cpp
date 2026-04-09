@@ -38,7 +38,7 @@ TEST(dualq_kinematics, FirstPadenKahanProblemTest)
     std::cout << "PK1 static took (micros) " << l_micros << std::endl;
 
     l_start = std::chrono::high_resolution_clock::now();
-    FirstPadenKahan l_testResultFinite(l_positionOnLine,  l_jointScrewAxis, l_startPoint, l_endPoint);
+    FirstPadenKahan l_testResultFinite(l_positionOnLine,  l_jointScrewAxis, l_startPoint, l_endPoint, -M_PI, M_PI);
     l_stop = std::chrono::high_resolution_clock::now();
     l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
     std::cout << "PK1 with object took (micros) " << l_micros << std::endl;
@@ -50,7 +50,7 @@ TEST(dualq_kinematics, FirstPadenKahanProblemTest)
     std::cout << "PK1 static took (micros) " << l_micros << std::endl;
 
     l_start = std::chrono::high_resolution_clock::now();
-    FirstPadenKahan l_testResultFinite2(l_positionOnLine,  l_jointScrewAxis, l_startPoint, l_endPoint);
+    FirstPadenKahan l_testResultFinite2(l_positionOnLine,  l_jointScrewAxis, l_startPoint, l_endPoint, -M_PI, M_PI);
     l_stop = std::chrono::high_resolution_clock::now();
     l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
     std::cout << "PK1 with object took (micros) " << l_micros << std::endl;
@@ -61,10 +61,10 @@ TEST(dualq_kinematics, FirstPadenKahanProblemTest)
     std::cout << "Result computed " << l_testResultFinite.getResult().value() << " rad" << std::endl;
 
     Eigen::Quaterniond l_startPointOnLine(0.0, 0.0, 0.0, l_d1+l_d3+l_d5-l_df);
-    FirstPadenKahan l_testResultInfinite1(l_positionOnLine, l_jointScrewAxis, l_startPointOnLine, l_endPoint);
+    FirstPadenKahan l_testResultInfinite1(l_positionOnLine, l_jointScrewAxis, l_startPointOnLine, l_endPoint, -M_PI, M_PI);
     EXPECT_FALSE(l_testResultInfinite1.getResult().has_value()) << "Input with start on axis with Paden Kahan 1st Problem shouldn't return a finite number";
 
-    FirstPadenKahan l_testResultInfinite2(l_positionOnLine, l_jointScrewAxis, l_endPoint, l_endPoint);
+    FirstPadenKahan l_testResultInfinite2(l_positionOnLine, l_jointScrewAxis, l_endPoint, l_endPoint, -M_PI, M_PI);
     EXPECT_FALSE(l_testResultInfinite2.getResult().has_value()) << "Input with start=end with Paden Kahan 1st Problem shouldn't return a finite number";
 }
 
