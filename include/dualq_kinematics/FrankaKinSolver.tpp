@@ -31,7 +31,22 @@ FrankaKinSolver<Scalar>::FrankaKinSolver(const ScrewCoordinates* p_screwCoordina
     // }
 
     m_tip2BaseInitPtr = std::make_shared<DualQuaternion>(DualQuaternion(m_screwCoordinatesPtr->getTip2BaseInit()));
+    m_emergencyQ1_rad = M_PI / 2.0;
 
+}
+
+template<typename Scalar>
+bool FrankaKinSolver<Scalar>::setEmergencyQ1(const Scalar& p_q1Value_rad)
+{
+    if(
+        p_q1Value_rad < m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(0)).max_position_ && 
+        p_q1Value_rad > m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(0)).min_position_ 
+    )
+    {
+        m_emergencyQ1_rad = p_q1Value_rad;
+        return true;
+    }
+    return false;
 }
 
 template<typename Scalar>
@@ -144,6 +159,11 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
         );
 
         SecondPadenKahan l_q2Q3SecondPKProblem;
+
+        //l_singularityStatus if false means that the subproblems causes l_pointOnFirstScrewOnly to be both on screw 1 & 3, in this case the usual cancelation of screw 1 doesn't work
+        //Singularity is detected if during the next subproblem the circles don't intersect (or they do because of tiny floating point values, then it is caught in the PK1 because the projection of the point is too close to zero)
+        bool l_singularityStatus;
+        
         for(size_t j = 0; j < l_q5Q6SecondPKProblem.getAngle1Result().size(); j++)
         {
             l_solutionSet.at(5) = -l_q5Q6SecondPKProblem.getAngle1Result().at(j); // * (-1) as kinematic chain was inverted
@@ -155,9 +175,9 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
 
             const DualQuaternion l_rightHandSide = l_g4 * l_g5 * l_g6 * l_g;
 
-            const Quaternion l_endPoint = l_rightHandSide.getTransformedVector(l_pointOnFirstScrewOnly);
+            Quaternion l_endPoint = l_rightHandSide.getTransformedVector(l_pointOnFirstScrewOnly);
             
-            l_q2Q3SecondPKProblem.compute(
+            l_singularityStatus = l_q2Q3SecondPKProblem.compute(
                 l_pointOnLinesQ2Q3,
                 m_screwCoordinatesDualQ.at(2).getRealPart(),
                 m_screwCoordinatesDualQ.at(1).getRealPart(),
@@ -168,6 +188,39 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
                 -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(1)).max_position_,
                 -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(1)).min_position_
             );
+
+            if(!l_singularityStatus)
+            {
+                //Fix q1 at its emergency value and q3 will compensate for it in the following PK2 problem
+                l_solutionSet.at(0) = m_emergencyQ1_rad;
+
+                //const Quaternion l_pointNotOnScrews123(0.0, m_screwCoordinatesPtr->getPositions().at(3)(0), m_screwCoordinatesPtr->getPositions().at(3)(1), m_screwCoordinatesPtr->getPositions().at(3)(2));
+                //const Quaternion l_pointNotOnScrews123(0.0, 1.0, 1.0, 0.0);
+                const DualQuaternion l_minusG1 = (m_screwCoordinatesDualQ.at(0)* (-l_solutionSet.at(0) * 0.5)).dqExp();
+                l_endPoint = l_rightHandSide.getTransformedVector(l_pointNotOnFirstScrew);
+
+                l_q2Q3SecondPKProblem.compute(
+                    l_pointOnLinesQ2Q3,
+                    m_screwCoordinatesDualQ.at(2).getRealPart(),
+                    m_screwCoordinatesDualQ.at(1).getRealPart(),
+                    l_minusG1.getTransformedVector(l_pointNotOnFirstScrew),
+                    l_endPoint,
+                    -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(2)).max_position_,
+                    -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(2)).min_position_,
+                    -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(1)).max_position_,
+                    -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(1)).min_position_
+                );
+
+                for(size_t k = 0; k < l_q2Q3SecondPKProblem.getAngle1Result().size(); k++)
+                {
+                
+                    l_solutionSet.at(2) = -l_q2Q3SecondPKProblem.getAngle1Result().at(k); // * (-1) as kinematic chain was inverted
+                    l_solutionSet.at(1) = -l_q2Q3SecondPKProblem.getAngle2Result().at(k); // * (-1) as kinematic chain was inverted
+                    p_solutions.push_back(l_solutionSet);
+                }
+                
+                continue;
+            }
 
             FirstPadenKahan l_q1Problem;
             for(size_t k = 0; k < l_q2Q3SecondPKProblem.getAngle1Result().size(); k++)

@@ -4,7 +4,7 @@ namespace dualq_kinematics
 template<typename Scalar>
 FirstPadenKahanProblem<Scalar>::FirstPadenKahanProblem()
 {
-
+    m_singularityFlag = false;
 }
 
 template<typename Scalar>
@@ -17,6 +17,7 @@ FirstPadenKahanProblem<Scalar>::FirstPadenKahanProblem(
     const double& p_maxValue_rad
 )
 {
+    m_singularityFlag = false;
     compute(p_pointOnLine, p_axis, p_startPoint, p_endPoint, p_minValue_rad, p_maxValue_rad);
 }
 
@@ -103,12 +104,12 @@ inline void FirstPadenKahanProblem<Scalar>::computeFromProjectedPoints(
     const double& p_maxValue_rad
 ) noexcept
 {
+    m_singularityFlag = false;
     //Checking the conditions for finite solution
     m_resultAngle_rad.reset();
     if(
         likely(compareFloatNum(p_yProjected.norm(),p_xProjected.norm(), c_tolerance) && 
-        !compareFloatNum(0.0, p_xProjected.norm(), c_tolerance) && 
-        !(p_yProjected.isApprox(p_xProjected, c_tolerance)))  
+        !compareFloatNum(0.0, p_xProjected.norm(), c_tolerance))  
     )
     {
         m_resultAngle_rad = std::atan2(
@@ -120,12 +121,23 @@ inline void FirstPadenKahanProblem<Scalar>::computeFromProjectedPoints(
             m_resultAngle_rad.reset();
         }
     }  
+    else 
+    {
+        //Singularity occured
+        m_singularityFlag = true;   
+    }
 }
 
 template<typename Scalar>
 const typename std::optional< Scalar >& FirstPadenKahanProblem<Scalar>::getResult() const
 {
     return m_resultAngle_rad;
+}
+
+template<typename Scalar>
+const bool& FirstPadenKahanProblem<Scalar>::getSingularityStatus() const
+{
+    return m_singularityFlag;
 }
 
 template<typename Scalar>
@@ -173,7 +185,7 @@ SecondPadenKahanProblem<Scalar>::SecondPadenKahanProblem(
 }
 
 template<typename Scalar>
-void SecondPadenKahanProblem<Scalar>::compute(
+bool SecondPadenKahanProblem<Scalar>::compute(
     const Quaternion& p_pointOnLines, 
     const Quaternion& p_axis1, 
     const Quaternion& p_axis2, 
@@ -198,6 +210,12 @@ void SecondPadenKahanProblem<Scalar>::compute(
     l_intersections.reserve(2);
     computeIntersection(p_axis1, p_axis2, l_x, l_y, l_intersections);
 
+    //If the two circles do not intersect computations fail and it is a sign for shoulder singularity
+    if(l_intersections.size() == 0)
+    {
+        return false;
+    }
+
     for (size_t i=0; i < l_intersections.size(); i++)
     {
         const Quaternion l_c(0.0, l_intersections.at(i).x() + p_pointOnLines.x(), l_intersections.at(i).y() + p_pointOnLines.y(), l_intersections.at(i).z() + p_pointOnLines.z());
@@ -205,20 +223,25 @@ void SecondPadenKahanProblem<Scalar>::compute(
         m_secondRotations.push_back( dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, p_axis2, p_startPoint, l_c, p_minValue2_rad, p_maxValue2_rad));//sigma 2
         m_firstRotations.push_back( dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, p_axis1, l_c, p_endPoint, p_minValue1_rad, p_maxValue1_rad));//sigma 1
 
+        //Check if one of the problems encountered a singularity
+        if(m_secondRotations.at(i).getSingularityStatus() || m_firstRotations.at(i).getSingularityStatus())
+        {
+            return false;
+        }
+
         //if either of subproblems 1 could not be solved, the whole solution is invalid
         //likewise if out of bounds
         if(
             m_firstRotations.at(i).getResult().has_value() 
             && m_secondRotations.at(i).getResult().has_value()
-            // && !(m_firstRotations.at(i).getResult().value() > p_maxValue1_rad || m_firstRotations.at(i).getResult().value() < p_minValue1_rad)
-            // && !(m_secondRotations.at(i).getResult().value() > p_maxValue2_rad || m_secondRotations.at(i).getResult().value() < p_minValue2_rad)
         )
         {
             m_resultsAngle1_rad.push_back(m_firstRotations.at(i).getResult().value());
             m_resultsAngle2_rad.push_back(m_secondRotations.at(i).getResult().value());
         }
-    }    
-
+    }   
+    
+    return true;
 }
 
 template<typename Scalar>
@@ -252,11 +275,12 @@ inline void  SecondPadenKahanProblem<Scalar>::computeIntersection(const Quaterni
     const Scalar l_gammaSquared = 
         (p_x.squaredNorm() - std::pow(l_alpha, 2) - std::pow(l_beta, 2) -2*l_alpha*l_beta*l_twoLinesScalar) / (l_linesProduct.squaredNorm());
 
-    Scalar l_gamma = std::sqrt(l_gammaSquared);
-    if(unlikely(l_gamma < 0))
+    if(l_gammaSquared < 0)
     {
         return;
     }
+
+    Scalar l_gamma = std::sqrt(l_gammaSquared);
 
     const Quaternion l_z(
         0.0,
@@ -267,7 +291,7 @@ inline void  SecondPadenKahanProblem<Scalar>::computeIntersection(const Quaterni
     );
     p_intersections.push_back(l_z);
 
-    if (l_gamma != 0)
+    if (!FirstPadenKahanProblem::compareFloatNum(0.0, l_gamma, c_tolerance))
     {
         l_gamma = - l_gamma;
         const Quaternion l_z2(

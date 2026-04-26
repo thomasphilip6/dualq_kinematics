@@ -62,11 +62,14 @@ namespace dualq_kinematics
 
             const std::optional<Scalar>& getResult() const;
 
+            const bool& getSingularityStatus() const;
+
             static bool compareFloatNum(Scalar p_a, Scalar p_b, Scalar p_tolerance) noexcept;
         
         private:
 
             std::optional<Scalar> m_resultAngle_rad;
+            bool m_singularityFlag;
     };
 
     template<typename Scalar>
@@ -82,6 +85,7 @@ namespace dualq_kinematics
             using Vector3 = Eigen::Matrix<Scalar, 3, 1>; 
             using FirstPadenKahanProblem = dualq_kinematics::FirstPadenKahanProblem<Scalar>;
             using DualQuaternion = dualq_kinematics::DualQuaternion<Scalar>;
+            static constexpr Scalar c_tolerance = 1e-4;
 
             SecondPadenKahanProblem();
 
@@ -97,7 +101,7 @@ namespace dualq_kinematics
                 const double& p_maxValue2_rad
             );
 
-            void compute(
+            bool compute(
                 const Quaternion& p_pointOnLines, 
                 const Quaternion& p_axis1, 
                 const Quaternion& p_axis2, 
