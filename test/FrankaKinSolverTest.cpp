@@ -156,17 +156,23 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
 
     EXPECT_TRUE(l_wrist.isApprox(l_robotState->getGlobalLinkTransform("panda_link6").translation(), c_tolerance)) << "Compute Wrist with q7 !=0 fails";
 
-    l_jointValuesReady_rad ={2.13528, 0.45, 0.16, -0.42, 0.18, 2.14, 0.0};
+    l_jointValuesReady_rad ={2.13528, 0.0, 0.16, -0.42, 0.18, 2.14, 0.0};
     l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
     l_robotState->getGlobalLinkTransform("panda_link8"); 
 
     // ------------ compute6DOFIK Test ---------------- //
     
     
+    //l_frankaKin.setEmergencyQ1(l_jointValuesReady_rad.at(0));
     std::vector<std::vector<double>> l_allIKSolutions;
     l_allIKSolutions.reserve(8);
     l_start = std::chrono::high_resolution_clock::now();
     l_frankaKin.compute6DOFIK(l_eeCurrentState, l_jointValuesReady_rad.at(6), l_allIKSolutions);
+    for(auto &&l_solution : l_allIKSolutions)
+    {
+        printJointVector(l_solution);
+    }
+    
     l_stop = std::chrono::high_resolution_clock::now();
     l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
     RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver IK took (single call) " << l_micros << " us.");
@@ -175,23 +181,42 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
 
     checkIKResults(l_allIKSolutions, l_eeWanted, l_jointModelGroup, l_robotState, l_frankaKin, l_eeCurrentState);
     
-    l_jointValuesReady_rad = {2.13528, 0.45, 0.16, -0.42, 0.18, 2.14, 0.785};
+    l_jointValuesReady_rad = {0.7, 0.0, 2.1, -1.7, 2.1, 2.5, 1.0};
     l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
     l_robotState->getGlobalLinkTransform("panda_link8");
 
-    l_eeWanted.translation() << -0.348869, 0.46065, 0.947152;
-    l_eeWanted.linear() <<
-    0.418382,  0.51826, -0.745898,
-    0.743729, 0.275922,   0.60888,
-    0.521368,   -0.80949, -0.27000;
+    // l_eeWanted.translation() << -0.348869, 0.46065, 0.947152;
+    // l_eeWanted.linear() <<
+    // 0.418382,  0.51826, -0.745898,
+    // 0.743729, 0.275922,   0.60888,
+    // 0.521368,   -0.80949, -0.27000;
+    l_eeWanted = l_eeCurrentState;
     
+    l_frankaKin.setEmergencyQ1(l_jointValuesReady_rad.at(0));
     l_start = std::chrono::high_resolution_clock::now();
     l_frankaKin.compute6DOFIK(l_eeCurrentState, l_jointValuesReady_rad.at(6), l_allIKSolutions);
+    for(auto &&l_solution : l_allIKSolutions)
+    {
+        printJointVector(l_solution);
+    }
+
     l_stop = std::chrono::high_resolution_clock::now();
     l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
 
     RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver IK took (single call)" << l_micros << " us.");
     checkIKResults(l_allIKSolutions, l_eeWanted, l_jointModelGroup, l_robotState, l_frankaKin, l_eeCurrentState);
+
+    Eigen::Isometry3d l_outOfWorkspaceEE = Eigen::Isometry3d::Identity();
+    l_outOfWorkspaceEE.translation() << -0.348869, 3.46065, 0.947152;
+    l_outOfWorkspaceEE.linear() <<
+    -0.0703608,  0.662334,  -0.745898,
+    0.331076,   0.72087,    0.60888,
+    0.940977,  -0.204108,  -0.270004;
+
+    l_frankaKin.compute6DOFIK(l_outOfWorkspaceEE, 0.0, l_allIKSolutions);
+    l_frankaKin.compute6DOFIK(l_outOfWorkspaceEE, 0.7, l_allIKSolutions);
+    l_frankaKin.compute6DOFIK(l_outOfWorkspaceEE, 0.2, l_allIKSolutions);
+
 
     l_jointValuesReady_rad = {0.7, 0.43, 2.1, -1.7, 2.1, 2.5, 1.0};
     l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
