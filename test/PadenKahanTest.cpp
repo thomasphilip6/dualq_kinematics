@@ -64,8 +64,8 @@ TEST(dualq_kinematics, FirstPadenKahanProblemTest)
     FirstPadenKahan l_testResultInfinite1(l_positionOnLine, l_jointScrewAxis, l_startPointOnLine, l_endPoint, -M_PI, M_PI);
     EXPECT_FALSE(l_testResultInfinite1.getResult().has_value()) << "Input with start on axis with Paden Kahan 1st Problem shouldn't return a finite number";
 
-    FirstPadenKahan l_testResultInfinite2(l_positionOnLine, l_jointScrewAxis, l_endPoint, l_endPoint, -M_PI, M_PI);
-    EXPECT_FALSE(l_testResultInfinite2.getResult().has_value()) << "Input with start=end with Paden Kahan 1st Problem shouldn't return a finite number";
+    FirstPadenKahan l_testResult0Rotation(l_positionOnLine, l_jointScrewAxis, l_endPoint, l_endPoint, -M_PI, M_PI);
+    EXPECT_TRUE(FirstPadenKahan::compareFloatNum(0.0, l_testResult0Rotation.getResult().value(), c_tolerance)) << "Input with start=end with Paden Kahan 1st Problem should return 0 rad";
 }
 
 TEST(dualq_kinematics, SecondPadenKahanProblemTest)
