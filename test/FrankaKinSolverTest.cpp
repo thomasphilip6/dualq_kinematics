@@ -23,7 +23,8 @@
 //#include "dualq_kinematics/geofik.h"
 
 const std::string c_pandaTipLink = "panda_link8";
-//constexpr int c_repetitions = 1;
+constexpr u_int8_t c_repetitionsLow = 100;
+constexpr u_int16_t c_repetitions = 2000;
 constexpr double c_tolerance = 1e-5;
 constexpr double c_toleranceLow = 1e-3;
 
@@ -38,6 +39,18 @@ void printEigenIsometry(const Eigen::Isometry3d& p_transformationMatrix)
 {
     RCLCPP_INFO_STREAM(LOGGER, "Translation: \n" << p_transformationMatrix.translation() << "\n");
     RCLCPP_INFO_STREAM(LOGGER, "Rotation: \n" << p_transformationMatrix.rotation() << "\n");
+}
+
+bool containsNan(const std::vector<double> p_vector)
+{
+    for (auto &&l_joint : p_vector)
+    {
+        if(isnan(l_joint))
+        {
+            return true;
+        }
+    }  
+    return false;
 }
 
 void printJointVector(const std::vector<double>& vector)
@@ -162,6 +175,7 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
 
     // ------------ compute6DOFIK Test ---------------- //
     
+    // ----------- 1 - Shoulder Singularity Test ---------------- //
     
     //l_frankaKin.setEmergencyQ1(l_jointValuesReady_rad.at(0));
     std::vector<std::vector<double>> l_allIKSolutions;
@@ -185,11 +199,6 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
     l_robotState->getGlobalLinkTransform("panda_link8");
 
-    // l_eeWanted.translation() << -0.348869, 0.46065, 0.947152;
-    // l_eeWanted.linear() <<
-    // 0.418382,  0.51826, -0.745898,
-    // 0.743729, 0.275922,   0.60888,
-    // 0.521368,   -0.80949, -0.27000;
     l_eeWanted = l_eeCurrentState;
     
     l_frankaKin.setEmergencyQ1(l_jointValuesReady_rad.at(0));
@@ -206,6 +215,8 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver IK took (single call)" << l_micros << " us.");
     checkIKResults(l_allIKSolutions, l_eeWanted, l_jointModelGroup, l_robotState, l_frankaKin, l_eeCurrentState);
 
+    // ----------- 2 - Out of workspace ---------------- //
+
     Eigen::Isometry3d l_outOfWorkspaceEE = Eigen::Isometry3d::Identity();
     l_outOfWorkspaceEE.translation() << -0.348869, 3.46065, 0.947152;
     l_outOfWorkspaceEE.linear() <<
@@ -214,8 +225,13 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     0.940977,  -0.204108,  -0.270004;
 
     l_frankaKin.compute6DOFIK(l_outOfWorkspaceEE, 0.0, l_allIKSolutions);
+    EXPECT_EQ(0, l_allIKSolutions.size()) << "Out of bounds EE Pose must not return any solution";
     l_frankaKin.compute6DOFIK(l_outOfWorkspaceEE, 0.7, l_allIKSolutions);
+    EXPECT_EQ(0, l_allIKSolutions.size()) << "Out of bounds EE Pose must not return any solution";
     l_frankaKin.compute6DOFIK(l_outOfWorkspaceEE, 0.2, l_allIKSolutions);
+    EXPECT_EQ(0, l_allIKSolutions.size()) << "Out of bounds EE Pose must not return any solution";
+
+    // ----------- 3 - Small regular tests ---------------- //
 
 
     l_jointValuesReady_rad = {0.7, 0.43, 2.1, -1.7, 2.1, 2.5, 1.0};
@@ -226,6 +242,11 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     l_frankaKin.compute6DOFIK(l_eeCurrentState, l_jointValuesReady_rad.at(6), l_allIKSolutions);
     l_stop = std::chrono::high_resolution_clock::now();
     l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
+    for(auto &&l_solution : l_allIKSolutions)
+    {
+        printJointVector(l_solution);
+    }
+
     RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver IK took (single call) " << l_micros << " us.");
 
     l_eeWanted = l_eeCurrentState;
@@ -233,7 +254,8 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
     l_robotState->getGlobalLinkTransform("panda_link8");
 
-    l_jointValuesReady_rad = {-0.7, 1.45, 0.7, -1.7, 1.7, 3.1, 0.42};
+    //l_jointValuesReady_rad = {-0.7, 1.45, 0.7, -1.7, 1.7, 3.1, 0.42};
+    l_jointValuesReady_rad = {0.170043, 1.13164, -1.2286, -1.19075, 1.73827, 3.04807, -2.77928};
     l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
     l_robotState->getGlobalLinkTransform("panda_link8");
 
@@ -241,56 +263,82 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     l_frankaKin.compute6DOFIK(l_eeCurrentState, l_jointValuesReady_rad.at(6), l_allIKSolutions);
     l_stop = std::chrono::high_resolution_clock::now();
     l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
+    for(auto &&l_solution : l_allIKSolutions)
+    {
+        printJointVector(l_solution);
+    }
+
     RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver IK took (single call) " << l_micros << " us.");
     
     l_eeWanted = l_eeCurrentState;
     checkIKResults(l_allIKSolutions, l_eeWanted, l_jointModelGroup, l_robotState, l_frankaKin, l_eeCurrentState);
-    
-    // benchmark with GEOFIK //
-    // std::array<double, 9> ROE = { -0.189536, 0.0420467, -0.980973,
-    //     0.404078, -0.907217, -0.116958,
-    //    -0.894873, -0.418557, 0.15496 };
-    // std::array<double, 3> r = { 0.23189, -0.0815989, 0.607269 };
-    // double q7 = 0.771925;
-    // std::array<std::array<double, 7>, 8> qsols;
-    // unsigned int nsols;
-    // const double q1_sing = 3.14 / 2.0;
-    
-    // l_start = std::chrono::high_resolution_clock::now();
-    // nsols = franka_ik_q7(r, ROE, q7, qsols, q1_sing);
-    // l_stop = std::chrono::high_resolution_clock::now();
-    // l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
-    // RCLCPP_INFO_STREAM(LOGGER, "GeoFIK took (single call) " << l_micros << " us." << " nb of solutions " << nsols);
 
-    // l_start = std::chrono::high_resolution_clock::now();
-    // nsols = franka_ik_q7(r, ROE, -q7, qsols, q1_sing);
-    // l_stop = std::chrono::high_resolution_clock::now();
-    // l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
-    // RCLCPP_INFO_STREAM(LOGGER, "GeoFIK took (single call) " << l_micros << " us." << " nb of solutions " << nsols);
+    // ----------- 4 - Existence and Number of solutions tests (GEOFIK used for comparison) ---------------- //
 
-    // r = {0.61674948,0.32278029,0.56790512};
-    // ROE = {0.6688331000000003,0.3170534383478098,0.6724130000000006,-0.6398146000000005,-0.2150772409286401,0.7378204999999999,0.3785492999999998,-0.9236984268883508,0.05900459999999996};
-    // q7 = -0.37218362471412003 ;
+    //std::array<std::array<double, 7>, 8> l_geoFIKSolutions;
+    //std::array<double, 9> l_ROE;
+    //std::array<double, 3> l_r;
+    for(uint8_t i=0; i <= c_repetitionsLow; i++)
+    {
+        //Create a Target
+        //setToRandomPositions returns a joint configuration within bounds, so if FrankaKin doesn't find a solution, there is a problem
+        l_robotState->setToRandomPositions(l_jointModelGroup);
+        l_robotState->getGlobalLinkTransform("panda_link8");
+        l_robotState->copyJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
 
-    // l_start = std::chrono::high_resolution_clock::now();
-    // nsols = franka_ik_q7(r, ROE, q7, qsols, q1_sing);
-    // l_stop = std::chrono::high_resolution_clock::now();
-    // l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
-    // RCLCPP_INFO_STREAM(LOGGER, "GeoFIK took (single call) " << l_micros << " us." << " nb of solutions " << nsols);
+        //Compute with FrankaKinSolver
+        l_frankaKin.setEmergencyQ1(l_jointValuesReady_rad.at(0));
+        l_frankaKin.compute6DOFIK(l_eeCurrentState, l_jointValuesReady_rad.at(6), l_allIKSolutions);
+        
+        l_eeWanted = l_eeCurrentState;
+        //RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver IK results " );
+        checkIKResults(l_allIKSolutions, l_eeWanted, l_jointModelGroup, l_robotState, l_frankaKin, l_eeCurrentState);
+        // for(auto &&l_solution : l_allIKSolutions)
+        // {
+        //     printJointVector(l_solution);
+        // }
+        //RCLCPP_INFO_STREAM(LOGGER, " ----------- " );
 
-    l_jointValuesReady_rad = {-1.74, 0.36, 1.79, -1.81, 0.06, -0.006, 0.77};
-    l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
-    l_robotState->getGlobalLinkTransform("panda_link8");
-    l_eeWanted = l_eeCurrentState;
+        //RCLCPP_INFO_STREAM(LOGGER, "GeoFIK IK results " );
+        
+        // ------------------------------- Compare with GeoFIK --------------------------------//
 
-    // test Franka solver on same input
+        // const std::array<double, 7> l_q = {l_jointValuesReady_rad.at(0), l_jointValuesReady_rad.at(1), l_jointValuesReady_rad.at(2), l_jointValuesReady_rad.at(3), l_jointValuesReady_rad.at(4), l_jointValuesReady_rad.at(5), l_jointValuesReady_rad.at(6)};
+        // Eigen::Matrix4d l_eigenFIKPose = franka_fk(l_q, 'E');
 
-    l_start = std::chrono::high_resolution_clock::now();
-    l_frankaKin.compute6DOFIK(l_eeCurrentState, l_jointValuesReady_rad.at(6), l_allIKSolutions);
-    l_stop = std::chrono::high_resolution_clock::now();
-    l_micros = std::chrono::duration<double, std::micro>(l_stop - l_start).count();
-    RCLCPP_INFO_STREAM(LOGGER, "FrankaKinSolver IK took (single call) " << l_micros << " us.");
-    checkIKResults(l_allIKSolutions, l_eeWanted, l_jointModelGroup, l_robotState, l_frankaKin, l_eeCurrentState);
+        // //Build ROE in row major order for GEOFIK
+        // l_ROE = {
+        //     l_eigenFIKPose(0,0), l_eigenFIKPose(0,1), l_eigenFIKPose(0,2),
+        //     l_eigenFIKPose(1,0), l_eigenFIKPose(1,1), l_eigenFIKPose(1,2),
+        //     l_eigenFIKPose(2,0), l_eigenFIKPose(2,1), l_eigenFIKPose(2,2)
+        // };       
+
+        // l_r = { l_eigenFIKPose(0,3), l_eigenFIKPose(1,3), l_eigenFIKPose(2, 3)};
+        // unsigned int l_nsolsGeoFIK = franka_ik_q7(l_r, l_ROE, l_q.at(6), l_geoFIKSolutions, l_q.at(0));
+        // unsigned int l_numberSolutions = 0;
+
+        // for (unsigned int j = 0; j < l_nsolsGeoFIK; j++)
+        // {
+        //     for (size_t i = 0; i < l_jointValuesReady_rad.size(); i++)
+        //     {
+        //         l_jointValuesReady_rad.at(i) = l_geoFIKSolutions.at(j).at(i);
+        //     }
+        //     //printJointVector(l_jointValuesReady_rad);
+        //     l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
+        //     bool l_inBounds = l_robotState->satisfiesBounds();
+        //     if(l_inBounds && !containsNan(l_jointValuesReady_rad))
+        //     {
+        //         l_numberSolutions++;
+        //     }
+                    
+        // }
+        // //RCLCPP_INFO_STREAM(LOGGER, " ----------- " );
+        // //RCLCPP_INFO_STREAM(LOGGER, " ----------- Next -----------  " );
+
+        // EXPECT_EQ(l_numberSolutions, l_allIKSolutions.size()) << "GeoFIK and FrankaKinSolver do not return the same number of solutions";
+
+    }
+
 }
 
 int main(int argc, char ** argv)
