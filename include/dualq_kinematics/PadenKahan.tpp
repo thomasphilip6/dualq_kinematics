@@ -118,7 +118,12 @@ inline void FirstPadenKahanProblem<Scalar>::computeFromProjectedPoints(
         );
         if(m_resultAngle_rad > p_maxValue_rad || m_resultAngle_rad < p_minValue_rad)
         {
-            m_resultAngle_rad.reset();
+            //TODO : maybe an enforceBounds static method is better. Also what is best for performance, atan approach like GEOFIK or branching like this
+            m_resultAngle_rad.value() = -(2*M_PI - m_resultAngle_rad.value());
+            if(m_resultAngle_rad > p_maxValue_rad || m_resultAngle_rad < p_minValue_rad)
+            {
+                m_resultAngle_rad.reset();
+            }
         }
     }  
     else 

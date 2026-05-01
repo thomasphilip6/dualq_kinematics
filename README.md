@@ -197,6 +197,8 @@ Build the code in debug mode and follow ros2 humble documentation on the topic:
 colcon build --packages-up-to <package_name> --cmake-args -DCMAKE_BUILD_TYPE=Debug
 ```
 
+Add `-DCMAKE_CXX_FLAGS="-DEIGEN_NO_DEBUG"` if needed
+
 To debug ScrewCoordinates, uncomment the commented line in `ScrewCoordinates.test.py`:
 
 ```python
