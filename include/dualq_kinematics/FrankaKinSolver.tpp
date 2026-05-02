@@ -32,7 +32,7 @@ FrankaKinSolver<Scalar>::FrankaKinSolver(const ScrewCoordinates* p_screwCoordina
 
     m_tip2BaseInitPtr = std::make_shared<DualQuaternion>(DualQuaternion(m_screwCoordinatesPtr->getTip2BaseInit()));
     m_emergencyQ1_rad = M_PI / 2.0;
-
+    m_emergencyQ5_rad = 0.0; 
 }
 
 template<typename Scalar>
@@ -44,6 +44,20 @@ bool FrankaKinSolver<Scalar>::setEmergencyQ1(const Scalar& p_q1Value_rad)
     )
     {
         m_emergencyQ1_rad = p_q1Value_rad;
+        return true;
+    }
+    return false;
+}
+
+template<typename Scalar>
+bool FrankaKinSolver<Scalar>::setEmergencyQ5(const Scalar& p_q5Value_rad)
+{
+    if(
+        p_q5Value_rad < m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(4)).max_position_ && 
+        p_q5Value_rad > m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(4)).min_position_ 
+    )
+    {
+        m_emergencyQ5_rad = p_q5Value_rad;
         return true;
     }
     return false;
@@ -137,6 +151,8 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
     );
 
     SecondPadenKahan l_q5Q6SecondPKProblem;
+    //Shoulder Sing : l_singularityStatus if false means that the subproblems causes l_pointOnFirstScrewOnly to be both on screw 1 & 3, in this case the usual cancelation of screw 1 doesn't work
+    bool l_elbowSingularityFree = true;
     for (size_t i = 0; i < l_q4ThirdPKProbem.getResults().size(); i++)
     {
         std::vector<Scalar> l_solutionSet;
@@ -146,7 +162,8 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
         const DualQuaternion l_g4 = ((m_screwCoordinatesDualQ.at(3)* (l_solutionSet.at(3) * 0.5)).dqExp());
 
         // ------------------- Solve for q5, q6 ---------------- //
-        l_q5Q6SecondPKProblem.compute(
+
+        l_elbowSingularityFree = l_q5Q6SecondPKProblem.compute(
             l_pointOnLinesQ5Q6,
             m_screwCoordinatesDualQ.at(5).getRealPart(),
             m_screwCoordinatesDualQ.at(4).getRealPart(),
@@ -158,16 +175,52 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
             -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(4)).min_position_
         );
 
-        SecondPadenKahan l_q2Q3SecondPKProblem;
+        size_t l_q5Q6SecondPKSolNb = l_q5Q6SecondPKProblem.getAngle1Result().size();
+        FirstPadenKahan l_q6Problem;
 
-        //l_singularityStatus if false means that the subproblems causes l_pointOnFirstScrewOnly to be both on screw 1 & 3, in this case the usual cancelation of screw 1 doesn't work
-        //Singularity is detected if during the next subproblem the circles don't intersect (or they do because of tiny floating point values, then it is caught in the PK1 because the projection of the point is too close to zero)
-        bool l_singularityStatus;
-        
-        for(size_t j = 0; j < l_q5Q6SecondPKProblem.getAngle1Result().size(); j++)
+        //TODO :  study if sing could be caught if q4 = 0 rather then this PK2 to fail to take this branch less frequently and help the branch predictor
+        //What are the other cases where the Intersection of the circles doesn't suceed ?
+        if(!l_elbowSingularityFree)
         {
-            l_solutionSet.at(5) = -l_q5Q6SecondPKProblem.getAngle1Result().at(j); // * (-1) as kinematic chain was inverted
-            l_solutionSet.at(4) = -l_q5Q6SecondPKProblem.getAngle2Result().at(j); // * (-1) as kinematic chain was inverted
+            //q1 or q3 will compensate for this
+            l_solutionSet.at(4) = m_emergencyQ5_rad;
+            const DualQuaternion l_g5Inverted = ((m_screwCoordinatesDualQ.at(3)* (l_solutionSet.at(3) * 0.5)).dqExp());
+
+            l_q6Problem.compute(
+                l_pointOnLinesQ5Q6,
+                m_screwCoordinatesDualQ.at(5).getRealPart(),
+                (l_g5Inverted * (l_g4).inverse(c_tolerance).value()).getTransformedVector(l_shoulderQuat),
+                l_shoulderTransformed,
+                -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(5)).max_position_,
+                -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(5)).min_position_
+            );
+
+            if(l_q6Problem.getResult().has_value())
+            {
+                l_q5Q6SecondPKSolNb = 1;
+            }
+            else
+            {
+                l_q5Q6SecondPKSolNb = 0;
+            }
+
+        }
+
+        SecondPadenKahan l_q2Q3SecondPKProblem;
+        //Singularity is detected if during the next subproblem the circles don't intersect (or they do because of tiny floating point values, then it is caught in the PK1 because the projection of the point is too close to zero)
+        bool l_shoulderSingularityFree = true;
+        for(size_t j = 0; j < l_q5Q6SecondPKSolNb; j++)
+        {
+            if(l_elbowSingularityFree)
+            {
+                l_solutionSet.at(5) = -l_q5Q6SecondPKProblem.getAngle1Result().at(j); // * (-1) as kinematic chain was inverted
+                l_solutionSet.at(4) = -l_q5Q6SecondPKProblem.getAngle2Result().at(j); // * (-1) as kinematic chain was inverted
+            }
+            else
+            {
+                l_solutionSet.at(5) = -l_q6Problem.getResult().value(); // * (-1) as kinematic chain was inverted
+            }
+
             const DualQuaternion l_g5 = ((m_screwCoordinatesDualQ.at(4)* (l_solutionSet.at(4) * 0.5)).dqExp());
             const DualQuaternion l_g6 = ((m_screwCoordinatesDualQ.at(5)* (l_solutionSet.at(5) * 0.5)).dqExp());
 
@@ -177,7 +230,7 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
 
             Quaternion l_endPoint = l_rightHandSide.getTransformedVector(l_pointOnFirstScrewOnly);
             
-            l_singularityStatus = l_q2Q3SecondPKProblem.compute(
+            l_shoulderSingularityFree = l_q2Q3SecondPKProblem.compute(
                 l_pointOnLinesQ2Q3,
                 m_screwCoordinatesDualQ.at(2).getRealPart(),
                 m_screwCoordinatesDualQ.at(1).getRealPart(),
@@ -189,21 +242,21 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
                 -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(1)).min_position_
             );
 
-            if(!l_singularityStatus)
+            if(!l_shoulderSingularityFree)
             {
                 //Fix q1 at its emergency value and q3 will compensate for it in the following PK2 problem
                 l_solutionSet.at(0) = m_emergencyQ1_rad;
 
                 //const Quaternion l_pointNotOnScrews123(0.0, m_screwCoordinatesPtr->getPositions().at(3)(0), m_screwCoordinatesPtr->getPositions().at(3)(1), m_screwCoordinatesPtr->getPositions().at(3)(2));
                 //const Quaternion l_pointNotOnScrews123(0.0, 1.0, 1.0, 0.0);
-                const DualQuaternion l_minusG1 = (m_screwCoordinatesDualQ.at(0)* (-l_solutionSet.at(0) * 0.5)).dqExp();
+                const DualQuaternion l_g1Inverted = (m_screwCoordinatesDualQ.at(0)* (-l_solutionSet.at(0) * 0.5)).dqExp();
                 l_endPoint = l_rightHandSide.getTransformedVector(l_pointNotOnFirstScrew);
 
                 l_q2Q3SecondPKProblem.compute(
                     l_pointOnLinesQ2Q3,
                     m_screwCoordinatesDualQ.at(2).getRealPart(),
                     m_screwCoordinatesDualQ.at(1).getRealPart(),
-                    l_minusG1.getTransformedVector(l_pointNotOnFirstScrew),
+                    l_g1Inverted.getTransformedVector(l_pointNotOnFirstScrew),
                     l_endPoint,
                     -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(2)).max_position_,
                     -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(2)).min_position_,

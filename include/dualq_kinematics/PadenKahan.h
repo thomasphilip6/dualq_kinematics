@@ -178,6 +178,7 @@ namespace dualq_kinematics
             using Vector3 = Eigen::Matrix<Scalar, 3, 1>; 
             using FirstPadenKahanProblem = dualq_kinematics::FirstPadenKahanProblem<Scalar>;
             using DualQuaternion = dualq_kinematics::DualQuaternion<Scalar>;
+            static constexpr Scalar c_tolerance = 1e-4;
 
             ThirdPadenKahanProblem();
 

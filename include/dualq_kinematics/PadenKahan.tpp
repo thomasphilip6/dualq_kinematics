@@ -451,7 +451,7 @@ void ThirdPadenKahanProblem<Scalar>::compute(
 
     const Scalar l_theta1 = std::acos(l_cosineLaw);
 
-    if(l_theta1 != 0)
+    if(!FirstPadenKahanProblem::compareFloatNum(0.0, l_theta1, c_tolerance))
     {
         m_results.push_back( l_theta0 + l_theta1);
         m_results.push_back( l_theta0 - l_theta1);

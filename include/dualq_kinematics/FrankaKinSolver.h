@@ -47,6 +47,8 @@ namespace dualq_kinematics
 
             bool setEmergencyQ1(const Scalar& p_q1Value_rad);
 
+            bool setEmergencyQ5(const Scalar& p_q5Value_rad);
+
             void computeTipFK(const std::vector<double>& p_jointValues_rad, Eigen::Isometry3d& p_tip2BaseComputed) const noexcept;
 
             void computeWristPosition(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar& p_q7, Vector3& p_wrist) const noexcept;
@@ -59,6 +61,7 @@ namespace dualq_kinematics
             std::shared_ptr<DualQuaternion> m_tip2BaseInitPtr;
             std::vector<DualQuaternion> m_screwCoordinatesDualQ;
             Scalar m_emergencyQ1_rad;
+            Scalar m_emergencyQ5_rad;
     };
 }
 
