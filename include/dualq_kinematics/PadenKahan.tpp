@@ -296,7 +296,7 @@ inline void  SecondPadenKahanProblem<Scalar>::computeIntersection(const Quaterni
     );
     p_intersections.push_back(l_z);
 
-    if (!FirstPadenKahanProblem::compareFloatNum(0.0, l_gamma, c_tolerance))
+    if (!FirstPadenKahanProblem::compareFloatNum(0.0, l_gamma, FirstPadenKahanProblem::c_tolerance))
     {
         l_gamma = - l_gamma;
         const Quaternion l_z2(
@@ -451,7 +451,7 @@ void ThirdPadenKahanProblem<Scalar>::compute(
 
     const Scalar l_theta1 = std::acos(l_cosineLaw);
 
-    if(!FirstPadenKahanProblem::compareFloatNum(0.0, l_theta1, c_tolerance))
+    if(!FirstPadenKahanProblem::compareFloatNum(0.0, l_theta1, FirstPadenKahanProblem::c_tolerance))
     {
         m_results.push_back( l_theta0 + l_theta1);
         m_results.push_back( l_theta0 - l_theta1);

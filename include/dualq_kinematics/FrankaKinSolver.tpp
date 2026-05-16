@@ -151,7 +151,8 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
     );
 
     SecondPadenKahan l_q5Q6SecondPKProblem;
-    //Shoulder Sing : l_singularityStatus if false means that the subproblems causes l_pointOnFirstScrewOnly to be both on screw 1 & 3, in this case the usual cancelation of screw 1 doesn't work
+    //Shoulder Sing : l_shoulderSingularityFree if false means that the subproblems causes l_pointOnFirstScrewOnly to be both on screw 1 & 3, in this case the usual cancelation of screw 1 doesn't work
+    //Elbow Sing : l_elbowSingularityFree if false means that the subproblems causes screw 5 to be aligned with spherical shoulder, then the cancelation of screws to get q5 and q6 doesn't work
     bool l_elbowSingularityFree = true;
     for (size_t i = 0; i < l_q4ThirdPKProbem.getResults().size(); i++)
     {
@@ -178,8 +179,6 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
         size_t l_q5Q6SecondPKSolNb = l_q5Q6SecondPKProblem.getAngle1Result().size();
         FirstPadenKahan l_q6Problem;
 
-        //TODO :  study if sing could be caught if q4 = 0 rather then this PK2 to fail to take this branch less frequently and help the branch predictor
-        //What are the other cases where the Intersection of the circles doesn't suceed ?
         if(!l_elbowSingularityFree)
         {
             //q1 or q3 will compensate for this
@@ -247,8 +246,6 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
                 //Fix q1 at its emergency value and q3 will compensate for it in the following PK2 problem
                 l_solutionSet.at(0) = m_emergencyQ1_rad;
 
-                //const Quaternion l_pointNotOnScrews123(0.0, m_screwCoordinatesPtr->getPositions().at(3)(0), m_screwCoordinatesPtr->getPositions().at(3)(1), m_screwCoordinatesPtr->getPositions().at(3)(2));
-                //const Quaternion l_pointNotOnScrews123(0.0, 1.0, 1.0, 0.0);
                 const DualQuaternion l_g1Inverted = (m_screwCoordinatesDualQ.at(0)* (-l_solutionSet.at(0) * 0.5)).dqExp();
                 l_endPoint = l_rightHandSide.getTransformedVector(l_pointNotOnFirstScrew);
 

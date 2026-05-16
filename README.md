@@ -4,7 +4,7 @@ This repository is a ROS2 C++ package aiming to become a MoveIt2 kinematics plug
 
 However, modern approaches use the **product of exponential** and dual quaternions can be used in this context as they can represent homogeneous transformation and screw displacements. [Wikipedia link on Screw Axis](https://en.wikipedia.org/wiki/Screw_axis)
 
-This second approach requires fewer arithmetic operations and is therefore faster. For example, this is particularly usefull when forward kinematics is used in an optimization problem needing a huge number of forward kinematics computations to converge. Also dual quaternions are more compact than a transformation matrix. Computations of the **forward kinematics of the Franka Emika robot (7DOF) are under the microsecond** and **analytical inverse kinematics with $`q_{7}`$ fixed is around 6-7micros for 8 solutions**  (Ryzen 5 R5-3550H). On this CPU, in this package : GeoFIK[^7] is around 2.5micros  and this dualquaternion solver at 3.5micros for 4 solutions.
+This second approach requires fewer arithmetic operations and is therefore faster. For example, this is particularly usefull when forward kinematics is used in an optimization problem needing a huge number of forward kinematics computations to converge. Also dual quaternions are more compact than a transformation matrix. Computations of the **forward kinematics of the Franka Emika robot (7DOF) are under the microsecond** and **analytical inverse kinematics with $`q_{7}`$ fixed is around 3.9 micros (average over 2000 random poses)**  (Ryzen 5 R5-3550H). On this CPU, in this package : GeoFIK[^7] is around 3.1micros  and this dualquaternion solver at 3.9micros (average over 2000 random poses).
 
 The package is based on ROS2 Humble. In this repository, the dual quaternions is built using Eigen library, to ensure compatbility with MoveIt and others. It means that the dual quaternion class has 2 `Eigen::Quaternion` as members and that the constructors take Eigen types as inputs. The `DualQuaternion` and `ScrewCoordinates` classes are templates to follow Eigen's logic. 
 
@@ -88,6 +88,42 @@ can be written where $`r`$ is a point on the first screw axis only and is a Seco
 
 ---
 
+## Singularity Analysis
+
+A singular point is a point at which the above equations do not work anymore as mathematical assumptions aren't true. In this solver, two singularities are discovered and dealt with. 
+
+### Elbow Singularity
+
+If the target pose "forces" $`q_{4}`$ to be at 0 rad, the **screw axis 5 becomes aligned with the spherical shoulder**. So the cancelation of screw 1, 2 and 3 to end up with a 2nd Paden Kahan subproblem doesn't work anymore. The solver detects that this subproblem fails. In this case an emergency value is given to $`q_{5}`$ and $`q_{3}`$ will compensate for this. Depending on which value is given to $`q_{5}`$, no solutions could be returned as the value of $`q_{3}`$ could be out of bounds. 
+
+<p align="center">
+<img src="images/Elbow_singularity.png"  height="400">
+</p>
+
+<p align="center">
+Elbow Singularity
+</p>
+
+### Shoulder Singularity
+
+If the target pose "forces" $`q_{2}`$ to be at 0 rad, **the screw axis 3 and 1 are aligned, thus a point on screw axis 1 only doesn't exist anymore**. In this case $`q_{1}`$ is fixed at an emergency value and $`q_{3}`$ will compensate for it in an 2nd Paden Kahan Subproblem.
+
+<p align="center">
+<img src="images/Shoulder_singularity.png"  height="400">
+</p>
+
+<p align="center">
+Shoulder Singularity
+</p>
+
+---
+
+## Performance Benchmark
+
+The performance benchmark was performed to measure FrankaKinSolver computation time in the same maner than GeoFIK so that results are comparable. The idea was to test performance on 2000 random targets like in GeoFIK publication. Such a for loop ensures that crucial information are cached in the CPU and that the frequency scaling has stabilized, so what is measured is the performance of code and maths : branch mispredictions, operations...
+
+--- 
+
 ## Status of the project
 
 This repository has:
@@ -96,9 +132,9 @@ This repository has:
 - ✅ Compute forward kinematics (through the use of dual quaternion exponential and multiplication)
 - ✅ Adding Paden-Kahan subproblems handling (for inverse kinematics)
 - ✅ Adding Inverse Kinematics solution for 6DOF (q7 is fixed)
+- ✅ Adding Singularity avoidance
 
 The following is currently under development:
-- Adding Singularity avoidance
 - Adding redundancy resolution to handle 7DOF
 - Make the plugin out of the package
 
