@@ -165,7 +165,8 @@ int main(int argc, char** argv)
     //const std::vector<std::string>& l_jointNames = l_jointModelGroup->getVariableNames();
 
     //First Try, apply joint values, compute and compare FK
-    std::vector<double> l_jointValuesReady_rad ={0, -0.785, 0, -2.356, 0, 1.571, 0.785};
+    //std::vector<double> l_jointValuesReady_rad ={-0.930762, -1.15313, -2.14245, -0.408989, -1.5708, 0.747705, -2.72683};
+    std::vector<double> l_jointValuesReady_rad = { 0.189909, 1.02324, -1.20815, -0.404138, 1.5708, 2.86532, 1.65679};
     l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
     std::vector<double> l_jointValues_rad;
     l_robotState->copyJointGroupPositions(l_jointModelGroup, l_jointValues_rad);
@@ -226,6 +227,8 @@ int main(int argc, char** argv)
 
     std::vector<std::vector<double>> l_jointTargets_rad = 
     { 
+        {-2.3404, -1.02822, 2.17959, 0.00957927, 0.145148, 1.80714, 2.69931},
+        {-0.724018, -0.0003, -1.21779, -0.708274, -2.80283, 0.96974, 2.35744},
         {0.7, 0.43, 2.1, -1.7, 2.1, 2.5, 1.0},
         {-0.7, 1.45, 0.7, -1.7, 1.7, 3.1, 0.42},
         {2.13528, 0.49, 0.16, -0.42, 0.18, 2.14, 0.785},
@@ -261,7 +264,7 @@ int main(int argc, char** argv)
                 l_robotState->getGlobalLinkTransform("panda_link8");
                 RCLCPP_INFO_STREAM(LOGGER, "IK solution within bounds match wanted one: " << l_eeWanted.isApprox(l_eeStateMoveIt, c_tolerance));
                 move_group.setJointValueTarget(l_solution);
-                bool l_planSuccess = (move_group.plan(l_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+                l_planSuccess = (move_group.plan(l_plan) == moveit::core::MoveItErrorCode::SUCCESS);
                 if(l_planSuccess)
                 {
                     move_group.execute(l_plan);

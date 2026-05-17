@@ -41,7 +41,7 @@ void printEigenIsometry(const Eigen::Isometry3d& p_transformationMatrix)
     RCLCPP_INFO_STREAM(LOGGER, "Rotation: \n" << p_transformationMatrix.rotation() << "\n");
 }
 
-bool containsNan(const std::vector<double> p_vector)
+bool containsNan(const std::vector<double>& p_vector)
 {
     for (auto &&l_joint : p_vector)
     {
@@ -74,11 +74,11 @@ void checkIKResults(
     moveit::core::RobotStatePtr p_robotState,
     const FrankaKinSolver& p_frankaKin,
     const Eigen::Isometry3d& p_link8State,
-    const std::string p_solverName = "FrankaKinSolver"
+    const std::string& p_solverName = "FrankaKinSolver"
 )
 {
     //RCLCPP_INFO_STREAM(LOGGER, p_solverNmae + " IK returned " << p_results.size() << " solutions ");
-    if(p_results.size() <= 0)
+    if(p_results.size() == 0)
     {
         EXPECT_TRUE(false);
     }
@@ -404,7 +404,7 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
         l_stop = std::chrono::high_resolution_clock::now();
         l_micros = l_micros + std::chrono::duration<double, std::micro>(l_stop - l_start).count();
 
-        if(l_allIKSolutions.size() <= 0)
+        if(l_allIKSolutions.size() == 0)
         {
             EXPECT_TRUE(false) << "FrankaKin fails to find a solution in performance test";
             RCLCPP_INFO_STREAM(LOGGER, " FrankaKinSolver fails at this joint vector target :  ");

@@ -104,7 +104,6 @@ void FrankaKinSolver<Scalar>::computeWristPosition(const Eigen::Isometry3d& p_ti
 
 }
 
-//todo use the fact that e(-twist) = (e(twist))^-1
 template<typename Scalar>
 void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar& p_q7, std::vector<std::vector<Scalar>>& p_solutions) const noexcept
 {
@@ -151,11 +150,12 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
     );
 
     SecondPadenKahan l_q5Q6SecondPKProblem;
-    //Shoulder Sing : l_shoulderSingularityFree if false means that the subproblems causes l_pointOnFirstScrewOnly to be both on screw 1 & 3, in this case the usual cancelation of screw 1 doesn't work
-    //Elbow Sing : l_elbowSingularityFree if false means that the subproblems causes screw 5 to be aligned with spherical shoulder, then the cancelation of screws to get q5 and q6 doesn't work
-    bool l_elbowSingularityFree = true;
+
     for (size_t i = 0; i < l_q4ThirdPKProbem.getResults().size(); i++)
     {
+        //Shoulder Sing : l_shoulderSingularityFree if false means that the subproblems causes l_pointOnFirstScrewOnly to be both on screw 1 & 3, in this case the usual cancelation of screw 1 doesn't work
+        //Elbow Sing : l_elbowSingularityFree if false means that the subproblems causes screw 5 to be aligned with spherical shoulder, then the cancelation of screws to get q5 and q6 doesn't work
+        bool l_elbowSingularityFree;
         std::vector<Scalar> l_solutionSet;
         l_solutionSet.resize(7);
         l_solutionSet.at(3) = l_q4ThirdPKProbem.getResults().at(i) * (-1); // * (-1) as kinematic chain was inverted
@@ -206,10 +206,12 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
         }
 
         SecondPadenKahan l_q2Q3SecondPKProblem;
-        //Singularity is detected if during the next subproblem the circles don't intersect (or they do because of tiny floating point values, then it is caught in the PK1 because the projection of the point is too close to zero)
-        bool l_shoulderSingularityFree = true;
+        
         for(size_t j = 0; j < l_q5Q6SecondPKSolNb; j++)
         {
+            //Singularity is detected if during the next subproblem the circles don't intersect (or they do because of tiny floating point values, then it is caught in the PK1 because the projection of the point is too close to zero)
+            bool l_shoulderSingularityFree;
+            
             if(l_elbowSingularityFree)
             {
                 l_solutionSet.at(5) = -l_q5Q6SecondPKProblem.getAngle1Result().at(j); // * (-1) as kinematic chain was inverted
@@ -225,7 +227,7 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
 
             // ------------------- Solve for q2, q3 ---------------- //
 
-            const DualQuaternion l_rightHandSide = l_g4 * l_g5 * l_g6 * l_g;
+            DualQuaternion l_rightHandSide = l_g4 * l_g5 * l_g6 * l_g;
 
             Quaternion l_endPoint = l_rightHandSide.getTransformedVector(l_pointOnFirstScrewOnly);
             
@@ -283,7 +285,7 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
 
                 // ------------------- Solve for q1 ---------------- //
 
-                const DualQuaternion l_rightHandSide = l_g2 * l_g3 * l_g4 * l_g5 * l_g6 * l_g;
+                l_rightHandSide = l_g2 * l_g3 * l_g4 * l_g5 * l_g6 * l_g;
             
                 const Quaternion l_endPointQ1 = l_rightHandSide.getTransformedVector(l_pointNotOnFirstScrew);
                 l_q1Problem.compute(

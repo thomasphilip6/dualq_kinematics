@@ -94,7 +94,7 @@ namespace dualq_kinematics
              * @brief Construction with Transformation Matrix
              * @param p_transform the transform carried by the dualq
              */
-            DualQuaternion(
+            explicit DualQuaternion(
                 const Transform& p_transform
             );
 

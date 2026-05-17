@@ -43,7 +43,7 @@ namespace dualq_kinematics
 
             static constexpr Scalar c_tolerance = 1e-6;
 
-            FrankaKinSolver(const ScrewCoordinates* p_screwCoordinatesPtr);
+            explicit FrankaKinSolver(const ScrewCoordinates* p_screwCoordinatesPtr);
 
             bool setEmergencyQ1(const Scalar& p_q1Value_rad);
 
