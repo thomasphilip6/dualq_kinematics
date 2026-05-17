@@ -165,8 +165,8 @@ SecondPadenKahanProblem<Scalar>::SecondPadenKahanProblem()
 {
     m_resultsAngle1_rad.reserve(2);
     m_resultsAngle2_rad.reserve(2);
-    m_firstRotations.reserve(2);
-    m_secondRotations.reserve(2);
+    m_axis1Rotations.reserve(2);
+    m_axis2Rotations.reserve(2);
 }
 
 template<typename Scalar>
@@ -184,8 +184,8 @@ SecondPadenKahanProblem<Scalar>::SecondPadenKahanProblem(
 {
     m_resultsAngle1_rad.reserve(2);
     m_resultsAngle2_rad.reserve(2);
-    m_firstRotations.reserve(2);
-    m_secondRotations.reserve(2);
+    m_axis1Rotations.reserve(2);
+    m_axis2Rotations.reserve(2);
     compute(p_pointOnLines, p_axis1, p_axis2, p_startPoint, p_endPoint, p_minValue1_rad, p_maxValue1_rad, p_minValue2_rad, p_maxValue2_rad);
 }
 
@@ -204,8 +204,8 @@ bool SecondPadenKahanProblem<Scalar>::compute(
 {
     m_resultsAngle1_rad.clear();
     m_resultsAngle2_rad.clear();
-    m_firstRotations.clear();
-    m_secondRotations.clear();
+    m_axis1Rotations.clear();
+    m_axis2Rotations.clear();
     
 
     Quaternion l_x(0.0, p_startPoint.x()-p_pointOnLines.x(), p_startPoint.y()-p_pointOnLines.y(), p_startPoint.z()-p_pointOnLines.z());
@@ -225,11 +225,11 @@ bool SecondPadenKahanProblem<Scalar>::compute(
     {
         const Quaternion l_c(0.0, l_intersections.at(i).x() + p_pointOnLines.x(), l_intersections.at(i).y() + p_pointOnLines.y(), l_intersections.at(i).z() + p_pointOnLines.z());
 
-        m_secondRotations.push_back( dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, p_axis2, p_startPoint, l_c, p_minValue2_rad, p_maxValue2_rad));//sigma 2
-        m_firstRotations.push_back( dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, p_axis1, l_c, p_endPoint, p_minValue1_rad, p_maxValue1_rad));//sigma 1
+        m_axis2Rotations.push_back( dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, p_axis2, p_startPoint, l_c, p_minValue2_rad, p_maxValue2_rad));//sigma 2
+        m_axis1Rotations.push_back( dualq_kinematics::FirstPadenKahanProblem(p_pointOnLines, p_axis1, l_c, p_endPoint, p_minValue1_rad, p_maxValue1_rad));//sigma 1
 
         //Check if one of the problems encountered a singularity
-        if(m_secondRotations.at(i).getSingularityStatus() || m_firstRotations.at(i).getSingularityStatus())
+        if(m_axis2Rotations.at(i).getSingularityStatus() || m_axis1Rotations.at(i).getSingularityStatus())
         {
             return false;
         }
@@ -237,12 +237,12 @@ bool SecondPadenKahanProblem<Scalar>::compute(
         //if either of subproblems 1 could not be solved, the whole solution is invalid
         //likewise if out of bounds
         if(
-            m_firstRotations.at(i).getResult().has_value() 
-            && m_secondRotations.at(i).getResult().has_value()
+            m_axis1Rotations.at(i).getResult().has_value() 
+            && m_axis2Rotations.at(i).getResult().has_value()
         )
         {
-            m_resultsAngle1_rad.push_back(m_firstRotations.at(i).getResult().value());
-            m_resultsAngle2_rad.push_back(m_secondRotations.at(i).getResult().value());
+            m_resultsAngle1_rad.push_back(m_axis1Rotations.at(i).getResult().value());
+            m_resultsAngle2_rad.push_back(m_axis2Rotations.at(i).getResult().value());
         }
     }   
     
@@ -351,13 +351,13 @@ void SecondPadenKahanProblemExt<Scalar>::compute(const Quaternion& p_pointOnLine
             Quaternion l_c(0.0, l_z2.at(i).x() + p_pointOnLine2.x(), l_z2.at(i).y() + p_pointOnLine2.y(), l_z2.at(i).z() + p_pointOnLine2.z());
 
             //todo change magic -M_PI +M_PI here
-            m_secondRotations.push_back( dualq_kinematics::FirstPadenKahanProblem(p_pointOnLine2, p_axis2, p_startPoint, l_c, -M_PI, M_PI));//sigma 2
-            m_firstRotations.push_back( dualq_kinematics::FirstPadenKahanProblem(p_pointOnLine1, p_axis1, l_c, p_endPoint, -M_PI, M_PI));//sigma 1
+            m_axis2Rotations.push_back( dualq_kinematics::FirstPadenKahanProblem(p_pointOnLine2, p_axis2, p_startPoint, l_c, -M_PI, M_PI));//sigma 2
+            m_axis1Rotations.push_back( dualq_kinematics::FirstPadenKahanProblem(p_pointOnLine1, p_axis1, l_c, p_endPoint, -M_PI, M_PI));//sigma 1
 
-            if(m_firstRotations.at(i).getResult().has_value() && m_secondRotations.at(i).getResult().has_value())
+            if(m_axis1Rotations.at(i).getResult().has_value() && m_axis2Rotations.at(i).getResult().has_value())
             {
-                m_resultsAngle1_rad.push_back(m_firstRotations.at(i).getResult().value());
-                m_resultsAngle2_rad.push_back(m_secondRotations.at(i).getResult().value());
+                m_resultsAngle1_rad.push_back(m_axis1Rotations.at(i).getResult().value());
+                m_resultsAngle2_rad.push_back(m_axis2Rotations.at(i).getResult().value());
             }
         }
         
