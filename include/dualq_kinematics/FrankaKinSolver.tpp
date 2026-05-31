@@ -98,7 +98,6 @@ void FrankaKinSolver<Scalar>::computeElbowPosition(const Eigen::Isometry3d& p_ti
     l_s6 = DualQuaternion::quaternionExp(-p_q7*l_s7)*l_eeY;
     l_s6.normalize();
 
-    //todo : perf - computes 3 times the quaternion product
     //Vector product as product of two pure quaternion returns vector product for the vector part of the quaternion
     Quaternion l_vectorProduct = l_s6 * l_s7;
     l_wrist(0) = l_r7(0) - l_a7*(l_vectorProduct.x());
@@ -125,26 +124,18 @@ void FrankaKinSolver<Scalar>::computeElbowPosition(const Eigen::Isometry3d& p_ti
 template<typename Scalar>
 void FrankaKinSolver<Scalar>::computeWristPosition(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar& p_q7, Vector3& p_wrist) const noexcept
 {
-    Scalar l_a7;
     // r7 = eeWanted.translation - df * eeWanted.z()
-    Vector3 l_r7;
 
-    l_a7 = m_screwCoordinatesPtr->getPositions().at(6)(0);
-    l_r7 = p_tip2BaseWanted.translation() - (m_screwCoordinatesPtr->getPositions().at(6)(2) - m_screwCoordinatesPtr->getTip2BaseInit().translation().z())*p_tip2BaseWanted.rotation().col(2);
+    const Scalar l_a7 = m_screwCoordinatesPtr->getPositions().at(6)(0);
+    const Vector3 l_r7 = p_tip2BaseWanted.translation() - (m_screwCoordinatesPtr->getPositions().at(6)(2) - m_screwCoordinatesPtr->getTip2BaseInit().translation().z())*p_tip2BaseWanted.rotation().col(2);
 
-    Quaternion l_eeY(0.0, p_tip2BaseWanted.rotation().col(1)(0), p_tip2BaseWanted.rotation().col(1)(1), p_tip2BaseWanted.rotation().col(1)(2));
-    Quaternion l_s7(0.0, p_tip2BaseWanted.rotation().col(2)(0), p_tip2BaseWanted.rotation().col(2)(1), p_tip2BaseWanted.rotation().col(2)(2));
-    Quaternion l_s6;
-    if (p_q7 != 0.0)
-    {
-        l_s6 = DualQuaternion::quaternionExp(-p_q7*l_s7)*l_eeY;
-        l_s6.normalize();
-    }
-    else
-    {
-        l_s6 = l_eeY;
-    }
-    Quaternion l_product = l_s6 * l_s7;
+    const Quaternion l_eeY(0.0, p_tip2BaseWanted.rotation().col(1)(0), p_tip2BaseWanted.rotation().col(1)(1), p_tip2BaseWanted.rotation().col(1)(2));
+    const Quaternion l_s7(0.0, p_tip2BaseWanted.rotation().col(2)(0), p_tip2BaseWanted.rotation().col(2)(1), p_tip2BaseWanted.rotation().col(2)(2));
+ 
+    Quaternion l_s6 = DualQuaternion::quaternionExp(-p_q7*l_s7)*l_eeY;
+    l_s6.normalize();
+    
+    const Quaternion l_product = l_s6 * l_s7;
     p_wrist(0) = l_r7(0) - l_a7*(l_product.x());
     p_wrist(1) = l_r7(1) - l_a7*(l_product.y());
     p_wrist(2) = l_r7(2) - l_a7*(l_product.z());
