@@ -75,6 +75,53 @@ void FrankaKinSolver<Scalar>::computeTipFK(const std::vector<double>& p_jointVal
     p_tip2BaseComputed = l_tip2BaseDQComputed.getTransform();    
 }
 
+
+template<typename Scalar>
+void FrankaKinSolver<Scalar>::computeElbowPosition(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar& p_q5, const Scalar& p_q6, const Scalar& p_q7, Quaternion& p_elbow) const noexcept
+{
+
+    // r7 = eeWanted.translation - df * eeWanted.z()
+    Vector3 l_r7;
+    Vector3 l_wrist;
+
+    const Scalar l_a7 = m_screwCoordinatesPtr->getPositions().at(6)(0);
+    const Scalar l_a5 = m_screwCoordinatesPtr->getPositions().at(3)(0);
+
+    //l_d5 is the distance in z (robot at rest) between the elbow and the wrist
+    const Scalar l_d5 = m_screwCoordinatesPtr->getPositions().at(5)(2) -  m_screwCoordinatesPtr->getPositions().at(3)(2);
+    l_r7 = p_tip2BaseWanted.translation() - (m_screwCoordinatesPtr->getPositions().at(6)(2) - m_screwCoordinatesPtr->getTip2BaseInit().translation().z())*p_tip2BaseWanted.rotation().col(2);
+
+    const Quaternion l_eeY(0.0, p_tip2BaseWanted.rotation().col(1)(0), p_tip2BaseWanted.rotation().col(1)(1), p_tip2BaseWanted.rotation().col(1)(2));
+    const Quaternion l_s7(0.0, p_tip2BaseWanted.rotation().col(2)(0), p_tip2BaseWanted.rotation().col(2)(1), p_tip2BaseWanted.rotation().col(2)(2));
+    Quaternion l_s6;
+    
+    l_s6 = DualQuaternion::quaternionExp(-p_q7*l_s7)*l_eeY;
+    l_s6.normalize();
+
+    //todo : perf - computes 3 times the quaternion product
+    //Vector product as product of two pure quaternion returns vector product for the vector part of the quaternion
+    Quaternion l_vectorProduct = l_s6 * l_s7;
+    l_wrist(0) = l_r7(0) - l_a7*(l_vectorProduct.x());
+    l_wrist(1) = l_r7(1) - l_a7*(l_vectorProduct.y());
+    l_wrist(2) = l_r7(2) - l_a7*(l_vectorProduct.z());
+
+    Quaternion l_s5 = DualQuaternion::quaternionExp(-p_q6*l_s6)*l_s7;
+    l_s5 = -1.0 * l_s5; // as s5 and s7 are (0,0,-1) and (0,0,1) at rest
+    l_s5.normalize();
+
+    Quaternion l_s4 = DualQuaternion::quaternionExp(-p_q5*l_s5)*l_s6;
+    l_s4.normalize();
+
+    l_vectorProduct = l_s4 * l_s5;
+    Quaternion l_r4;
+    l_r4.w() = 0.0;
+    l_r4.x() = l_wrist(0) - l_d5 * l_s5.x() - l_a5 * l_vectorProduct.x(); 
+    l_r4.y() = l_wrist(1) - l_d5 * l_s5.y() - l_a5 * l_vectorProduct.y(); 
+    l_r4.z() = l_wrist(2) - l_d5 * l_s5.z() - l_a5 * l_vectorProduct.z(); 
+
+    p_elbow = l_r4;
+}
+
 template<typename Scalar>
 void FrankaKinSolver<Scalar>::computeWristPosition(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar& p_q7, Vector3& p_wrist) const noexcept
 {

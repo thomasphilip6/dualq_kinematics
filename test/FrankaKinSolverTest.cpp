@@ -20,7 +20,7 @@
 #include <memory>
 
 //GeoFIK
-//#include "dualq_kinematics/geofik.h"
+#include "dualq_kinematics/geofik.h"
 
 const std::string c_pandaTipLink = "panda_link8";
 constexpr u_int8_t c_repetitionsLow = 100;
@@ -243,7 +243,7 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     l_frankaKin.compute6DOFIK(l_outOfWorkspaceEE, 0.2, l_allIKSolutions);
     EXPECT_EQ(0, l_allIKSolutions.size()) << "Out of bounds EE Pose must not return any solution";
 
-    // ----------- 3 - Small regular tests ---------------- //
+    // ----------- 3 - Small regular tests and ---------------- //
 
 
     l_jointValuesReady_rad = {0.7, 0.43, 2.1, -1.7, 2.1, 2.5, 1.0};
@@ -291,12 +291,25 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     l_eeWanted = l_eeCurrentState;
     checkIKResults(l_allIKSolutions, l_eeWanted, l_jointModelGroup, l_robotState, l_frankaKin, l_eeCurrentState);
 
-    // ----------- 4 - Existence and Number of solutions tests (GEOFIK used for comparison) ---------------- //
+    // --------------------------------- 4 - computeElbowPosition tests  -------------------------------------- //
+
+    l_jointValuesReady_rad = {-2.3404, -1.02822, 2.17959, 0.00957927, 0.145148, 1.80714, 2.69931};
+    l_frankaKin.setEmergencyQ5(l_jointValuesReady_rad.at(4));
+    l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
+    l_robotState->getGlobalLinkTransform("panda_link8");
+
+    const Eigen::Isometry3d& l_jointNTransform = l_robotState->getGlobalLinkTransform("panda_link4");
+    Eigen::Quaterniond l_elbowPosition;
+    l_frankaKin.computeElbowPosition(l_eeCurrentState, l_jointValuesReady_rad.at(4), l_jointValuesReady_rad.at(5), l_jointValuesReady_rad.at(6), l_elbowPosition);    
+    Eigen::Quaterniond l_elbowMoveIt(0.0, l_jointNTransform(0,3), l_jointNTransform(1,3), l_jointNTransform(2,3));
+    EXPECT_TRUE(l_elbowPosition.isApprox(l_elbowMoveIt, c_tolerance)) << "Elbow Position Finding doesn't work";
+
+    // ----------- 5 - Existence and Number of solutions tests (GEOFIK used for comparison) ---------------- //
 
     // std::array<std::array<double, 7>, 8> l_geoFIKSolutions;
     // std::array<double, 9> l_ROE;
     // std::array<double, 3> l_r;
-    for(uint8_t i=0; i <= c_repetitionsLow; i++)
+    for(size_t i=0; i <= c_repetitionsLow; i++)
     {
         //Create a Target
         //setToRandomPositions returns a joint configuration within bounds, so if FrankaKin doesn't find a solution, there is a problem
@@ -383,7 +396,7 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
 
     }
 
-    // ----------- 5 - Performance tests (GEOFIK used for comparison) ---------------- //
+    // ----------- 6 - Performance tests (GEOFIK used for comparison) ---------------- //
 
     //Mean time over 2000 random valid poses
     l_micros = 0.0;
