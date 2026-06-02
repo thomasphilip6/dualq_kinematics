@@ -77,7 +77,7 @@ void FrankaKinSolver<Scalar>::computeTipFK(const std::vector<double>& p_jointVal
 
 
 template<typename Scalar>
-void FrankaKinSolver<Scalar>::computeElbowPosition(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar& p_q5, const Scalar& p_q6, const Scalar& p_q7, Quaternion& p_elbow) const noexcept
+void FrankaKinSolver<Scalar>::computeSwivelAngle(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar& p_q5, const Scalar& p_q6, const Scalar& p_q7, Scalar& p_swivel) const noexcept
 {
 
     // r7 = eeWanted.translation - df * eeWanted.z()
@@ -112,13 +112,28 @@ void FrankaKinSolver<Scalar>::computeElbowPosition(const Eigen::Isometry3d& p_ti
     l_s4.normalize();
 
     l_vectorProduct = l_s4 * l_s5;
-    Quaternion l_r4;
-    l_r4.w() = 0.0;
-    l_r4.x() = l_wrist(0) - l_d5 * l_s5.x() - l_a5 * l_vectorProduct.x(); 
-    l_r4.y() = l_wrist(1) - l_d5 * l_s5.y() - l_a5 * l_vectorProduct.y(); 
-    l_r4.z() = l_wrist(2) - l_d5 * l_s5.z() - l_a5 * l_vectorProduct.z(); 
+    Vector3 l_r4;
+    l_r4(0) = l_wrist(0) - l_d5 * l_s5.x() - l_a5 * l_vectorProduct.x(); 
+    l_r4(1) = l_wrist(1) - l_d5 * l_s5.y() - l_a5 * l_vectorProduct.y(); 
+    l_r4(2) = l_wrist(2) - l_d5 * l_s5.z() - l_a5 * l_vectorProduct.z(); 
 
-    p_elbow = l_r4;
+    //Computes the two planes and the swivel angle between them
+    Vector3 l_plane1Normal = l_wrist.cross( Vector3(0,0,1));
+    const Scalar l_sign = (l_wrist.cross(l_r4)).dot( Vector3(l_s4.x(), l_s4.y(), l_s4.z()));
+    Vector3 l_plane2Normal;
+    if(l_sign > 0)
+    {
+        l_plane2Normal = l_wrist.cross(l_r4);
+    }
+    else
+    {
+        l_plane2Normal = l_wrist.cross(l_r4) * (-1.0);
+    }
+    l_plane1Normal.normalize();
+    l_plane2Normal.normalize();
+    // l_plane1 * l_plane2 = ||l_plane1|| * ||l_plane2|| * cos(swivel) 
+    p_swivel = acos(l_plane1Normal.dot(l_plane2Normal));
+
 }
 
 template<typename Scalar>

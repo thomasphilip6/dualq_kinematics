@@ -69,9 +69,9 @@ namespace dualq_kinematics
             void computeTipFK(const std::vector<double>& p_jointValues_rad, Eigen::Isometry3d& p_tip2BaseComputed) const noexcept;
 
             /**
-             * @brief Computes Elbow Position, TODO : will find swivel angle
+             * @brief Computes Swivel Angle
              */
-            void computeElbowPosition(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar& p_q5, const Scalar& p_q6, const Scalar& p_q7, Quaternion& p_screw) const noexcept;
+            void computeSwivelAngle(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar& p_q5, const Scalar& p_q6, const Scalar& p_q7, Scalar& p_swivel) const noexcept;
 
             /**
              * @brief Computes the position of the wrist (intersection of joint 5&6) from a target pose and q7

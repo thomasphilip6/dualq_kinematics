@@ -30,6 +30,7 @@ constexpr double c_toleranceLow = 1e-3;
 
 using ScrewCoordinates = dualq_kinematics::ScrewCoordinates<double>;
 using FrankaKinSolver = dualq_kinematics::FrankaKinSolver<double>;
+using FirstPadenKahan = dualq_kinematics::FirstPadenKahanProblem<double>;
 using Vector3 = Eigen::Matrix<double, 3, 1>; 
 
 const std::string ROBOT_DESCRIPTION_PARAM = "robot_description";
@@ -118,6 +119,30 @@ void checkIKResults(
     }
     RCLCPP_INFO_STREAM(LOGGER, p_solverName + " IK returned " << l_solutionsInBounds << " solutions within bounds "); 
     RCLCPP_INFO_STREAM(LOGGER, " ---- ");
+}
+
+void computeMoveItSwivel(moveit::core::RobotStatePtr p_robotState, double& p_moveItSwivel)
+{
+    const Eigen::Isometry3d& l_joint4ToBase = p_robotState->getGlobalLinkTransform("panda_link4");
+    const Eigen::Isometry3d& l_joint6ToBase = p_robotState->getGlobalLinkTransform("panda_link6");
+    Eigen::Vector3d l_s4(l_joint4ToBase(0,2), l_joint4ToBase(1,2), l_joint4ToBase(2,2));
+    Eigen::Vector3d l_r4(l_joint4ToBase(0,3), l_joint4ToBase(1,3), l_joint4ToBase(2,3));
+    Eigen::Vector3d l_r6(l_joint6ToBase(0,3), l_joint6ToBase(1,3), l_joint6ToBase(2,3));
+
+    Eigen::Vector3d l_n1 = l_r6.cross( Eigen::Vector3d(0,0,1));
+    Eigen::Vector3d l_n2;
+    double l_sign = (l_r6.cross(l_r4)).dot(l_s4);
+    if (l_sign > 0)
+    {
+        l_n2 = l_r6.cross(l_r4);
+    }
+    else
+    {
+        l_n2 = l_r6.cross(l_r4) * (-1.0);
+    }
+    l_n1.normalize();
+    l_n2.normalize();
+    p_moveItSwivel = acos(l_n1.dot(l_n2));
 }
 
 TEST(dualq_kinematics, FrankaKinSolverTest)
@@ -291,24 +316,25 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     l_eeWanted = l_eeCurrentState;
     checkIKResults(l_allIKSolutions, l_eeWanted, l_jointModelGroup, l_robotState, l_frankaKin, l_eeCurrentState);
 
-    // --------------------------------- 4 - computeElbowPosition tests  -------------------------------------- //
+    // --------------------------------- 4 - computeSwivelAngle tests  -------------------------------------- //
 
     l_jointValuesReady_rad = {-2.3404, -1.02822, 2.17959, 0.00957927, 0.145148, 1.80714, 2.69931};
     l_frankaKin.setEmergencyQ5(l_jointValuesReady_rad.at(4));
     l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
     l_robotState->getGlobalLinkTransform("panda_link8");
 
-    const Eigen::Isometry3d& l_jointNTransform = l_robotState->getGlobalLinkTransform("panda_link4");
-    Eigen::Quaterniond l_elbowPosition;
-    l_frankaKin.computeElbowPosition(l_eeCurrentState, l_jointValuesReady_rad.at(4), l_jointValuesReady_rad.at(5), l_jointValuesReady_rad.at(6), l_elbowPosition);    
-    Eigen::Quaterniond l_elbowMoveIt(0.0, l_jointNTransform(0,3), l_jointNTransform(1,3), l_jointNTransform(2,3));
-    EXPECT_TRUE(l_elbowPosition.isApprox(l_elbowMoveIt, c_tolerance)) << "Elbow Position Finding doesn't work";
+    double l_swivel;
+    l_frankaKin.computeSwivelAngle(l_eeCurrentState, l_jointValuesReady_rad.at(4), l_jointValuesReady_rad.at(5), l_jointValuesReady_rad.at(6), l_swivel);   
+    double l_moveItSwivel;
+    computeMoveItSwivel(l_robotState,l_moveItSwivel);
+    
+    EXPECT_TRUE(FirstPadenKahan::compareFloatNum(l_swivel, l_moveItSwivel, c_tolerance)) << "Swivel Angle computation doesn't work";
 
     // ----------- 5 - Existence and Number of solutions tests (GEOFIK used for comparison) ---------------- //
 
-    // std::array<std::array<double, 7>, 8> l_geoFIKSolutions;
-    // std::array<double, 9> l_ROE;
-    // std::array<double, 3> l_r;
+    std::array<std::array<double, 7>, 8> l_geoFIKSolutions;
+    std::array<double, 9> l_ROE;
+    std::array<double, 3> l_r;
     for(size_t i=0; i <= c_repetitionsLow; i++)
     {
         //Create a Target
@@ -427,39 +453,39 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     }
 
     RCLCPP_INFO_STREAM(LOGGER, " FrankaKinSolver mean time over 2000 random poses :  " << (l_micros/c_repetitions) << " us." );
-    // l_micros = 0.0;
+    l_micros = 0.0;
 
-    // for(size_t i=0; i <= c_repetitions; i++)
-    // {
-    //     //Create a Target
-    //     //setToRandomPositions returns a joint configuration within bounds, so if GeoFIK doesn't find a solution, there is a problem
-    //     l_robotState->setToRandomPositions(l_jointModelGroup);
-    //     l_robotState->getGlobalLinkTransform("panda_link8");
-    //     l_robotState->copyJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
+    for(size_t i=0; i <= c_repetitions; i++)
+    {
+        //Create a Target
+        //setToRandomPositions returns a joint configuration within bounds, so if GeoFIK doesn't find a solution, there is a problem
+        l_robotState->setToRandomPositions(l_jointModelGroup);
+        l_robotState->getGlobalLinkTransform("panda_link8");
+        l_robotState->copyJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
 
-    //     const std::array<double, 7> l_q = {l_jointValuesReady_rad.at(0), l_jointValuesReady_rad.at(1), l_jointValuesReady_rad.at(2), l_jointValuesReady_rad.at(3), l_jointValuesReady_rad.at(4), l_jointValuesReady_rad.at(5), l_jointValuesReady_rad.at(6)};
-    //     Eigen::Matrix4d l_eigenFIKPose = franka_fk(l_q, 'E');
+        const std::array<double, 7> l_q = {l_jointValuesReady_rad.at(0), l_jointValuesReady_rad.at(1), l_jointValuesReady_rad.at(2), l_jointValuesReady_rad.at(3), l_jointValuesReady_rad.at(4), l_jointValuesReady_rad.at(5), l_jointValuesReady_rad.at(6)};
+        Eigen::Matrix4d l_eigenFIKPose = franka_fk(l_q, 'E');
 
-    //     //Build ROE in row major order for GEOFIK
-    //     l_ROE = {
-    //         l_eigenFIKPose(0,0), l_eigenFIKPose(0,1), l_eigenFIKPose(0,2),
-    //         l_eigenFIKPose(1,0), l_eigenFIKPose(1,1), l_eigenFIKPose(1,2),
-    //         l_eigenFIKPose(2,0), l_eigenFIKPose(2,1), l_eigenFIKPose(2,2)
-    //     };       
+        //Build ROE in row major order for GEOFIK
+        l_ROE = {
+            l_eigenFIKPose(0,0), l_eigenFIKPose(0,1), l_eigenFIKPose(0,2),
+            l_eigenFIKPose(1,0), l_eigenFIKPose(1,1), l_eigenFIKPose(1,2),
+            l_eigenFIKPose(2,0), l_eigenFIKPose(2,1), l_eigenFIKPose(2,2)
+        };       
 
-    //     l_r = { l_eigenFIKPose(0,3), l_eigenFIKPose(1,3), l_eigenFIKPose(2, 3)};
-    //     l_start = std::chrono::high_resolution_clock::now();
-    //     unsigned int l_nsolsGeoFIK = franka_ik_q7(l_r, l_ROE, l_q.at(6), l_geoFIKSolutions, l_q.at(0));
-    //     l_stop = std::chrono::high_resolution_clock::now();
-    //     l_micros = l_micros + std::chrono::duration<double, std::micro>(l_stop - l_start).count();
+        l_r = { l_eigenFIKPose(0,3), l_eigenFIKPose(1,3), l_eigenFIKPose(2, 3)};
+        l_start = std::chrono::high_resolution_clock::now();
+        unsigned int l_nsolsGeoFIK = franka_ik_q7(l_r, l_ROE, l_q.at(6), l_geoFIKSolutions, l_q.at(0));
+        l_stop = std::chrono::high_resolution_clock::now();
+        l_micros = l_micros + std::chrono::duration<double, std::micro>(l_stop - l_start).count();
 
-    //     if(l_nsolsGeoFIK <= 0)
-    //     {
-    //         EXPECT_TRUE(false) << "GeoFIK fails to find a solution in performance test";
-    //     }     
-    // }
+        if(l_nsolsGeoFIK <= 0)
+        {
+            EXPECT_TRUE(false) << "GeoFIK fails to find a solution in performance test";
+        }     
+    }
 
-    // RCLCPP_INFO_STREAM(LOGGER, " GeoFIK mean time over 2000 random poses :  " << (l_micros/c_repetitions) << " us." );
+    RCLCPP_INFO_STREAM(LOGGER, " GeoFIK mean time over 2000 random poses :  " << (l_micros/c_repetitions) << " us." );
 
 }
 
