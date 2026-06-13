@@ -64,6 +64,12 @@ bool FrankaKinSolver<Scalar>::setEmergencyQ5(const Scalar& p_q5Value_rad)
 }
 
 template<typename Scalar>
+void FrankaKinSolver<Scalar>::setDiscretization(const Scalar& p_alpha)
+{
+    m_discretization = p_alpha;
+}
+
+template<typename Scalar>
 void FrankaKinSolver<Scalar>::computeTipFK(const std::vector<double>& p_jointValues_rad, Eigen::Isometry3d& p_tip2BaseComputed) const noexcept
 {
     DualQuaternion l_tip2BaseDQComputed = (m_screwCoordinatesDualQ.at(0) * (p_jointValues_rad.at(0) * 0.5)).dqExp();
@@ -370,6 +376,259 @@ void FrankaKinSolver<Scalar>::compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseW
     }
     
     return; 
+
+}
+
+template<typename Scalar>
+void FrankaKinSolver<Scalar>::computeSphericalShoulder(const DualQuaternion& p_g, const DualQuaternion& p_g4, std::vector<std::vector<Scalar>>& p_solutions) const noexcept
+{
+
+    //todo improve this
+    std::vector<Scalar> l_solutionSet = p_solutions.at(0);
+    p_solutions.clear();
+
+    // ------------------- Solve for q2, q3 ---------------- //
+
+    const DualQuaternion l_g5 = ((m_screwCoordinatesDualQ.at(4)* (l_solutionSet.at(4) * 0.5)).dqExp());
+    const DualQuaternion l_g6 = ((m_screwCoordinatesDualQ.at(5)* (l_solutionSet.at(5) * 0.5)).dqExp());
+
+    const Quaternion l_pointOnFirstScrewOnly = 
+            Quaternion(0.0, m_screwCoordinatesPtr->getPositions().at(0)(0), m_screwCoordinatesPtr->getPositions().at(0)(1), m_screwCoordinatesPtr->getPositions().at(0)(2)) - 0.3*m_screwCoordinatesDualQ.at(0).getRealPart();
+
+    //For q1 later
+    const Quaternion l_pointNotOnFirstScrew = 
+        Quaternion(0.0, m_screwCoordinatesPtr->getPositions().at(0)(0), m_screwCoordinatesPtr->getPositions().at(0)(1), m_screwCoordinatesPtr->getPositions().at(0)(2)) - 0.3*m_screwCoordinatesDualQ.at(1).getRealPart();
+    
+    Quaternion l_pointOnLinesQ2Q3(0.0, m_screwCoordinatesPtr->getPositions().at(1)(0), m_screwCoordinatesPtr->getPositions().at(1)(1), m_screwCoordinatesPtr->getPositions().at(1)(2));
+    
+    const Quaternion l_pointOnLineQ1(0.0, m_screwCoordinatesPtr->getPositions().at(0)(0), m_screwCoordinatesPtr->getPositions().at(0)(1), m_screwCoordinatesPtr->getPositions().at(0)(2));    
+
+    DualQuaternion l_rightHandSide = p_g4 * l_g5 * l_g6 * p_g;
+
+    Quaternion l_endPoint = l_rightHandSide.getTransformedVector(l_pointOnFirstScrewOnly);
+
+    SecondPadenKahan l_q2Q3SecondPKProblem;
+
+    bool l_shoulderSingularityFree = l_q2Q3SecondPKProblem.compute(
+        l_pointOnLinesQ2Q3,
+        m_screwCoordinatesDualQ.at(2).getRealPart(),
+        m_screwCoordinatesDualQ.at(1).getRealPart(),
+        l_pointOnFirstScrewOnly,
+        l_endPoint,
+        -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(2)).max_position_,
+        -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(2)).min_position_,
+        -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(1)).max_position_,
+        -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(1)).min_position_
+    );
+
+    if(!l_shoulderSingularityFree)
+    {
+        //Fix q1 at its emergency value and q3 will compensate for it in the following PK2 problem
+        l_solutionSet.at(0) = m_emergencyQ1_rad;
+
+        const DualQuaternion l_g1Inverted = (m_screwCoordinatesDualQ.at(0)* (-l_solutionSet.at(0) * 0.5)).dqExp();
+        l_endPoint = l_rightHandSide.getTransformedVector(l_pointNotOnFirstScrew);
+
+        l_q2Q3SecondPKProblem.compute(
+            l_pointOnLinesQ2Q3,
+            m_screwCoordinatesDualQ.at(2).getRealPart(),
+            m_screwCoordinatesDualQ.at(1).getRealPart(),
+            l_g1Inverted.getTransformedVector(l_pointNotOnFirstScrew),
+            l_endPoint,
+            -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(2)).max_position_,
+            -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(2)).min_position_,
+            -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(1)).max_position_,
+            -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(1)).min_position_
+        );
+
+        for(size_t k = 0; k < l_q2Q3SecondPKProblem.getAngle1Result().size(); k++)
+        {
+
+            l_solutionSet.at(2) = -l_q2Q3SecondPKProblem.getAngle1Result().at(k); // * (-1) as kinematic chain was inverted
+            l_solutionSet.at(1) = -l_q2Q3SecondPKProblem.getAngle2Result().at(k); // * (-1) as kinematic chain was inverted
+            p_solutions.push_back(l_solutionSet);
+        }
+
+        return;
+    }
+
+    FirstPadenKahan l_q1Problem;
+    for(size_t k = 0; k < l_q2Q3SecondPKProblem.getAngle1Result().size(); k++)
+    {
+
+        l_solutionSet.at(2) = -l_q2Q3SecondPKProblem.getAngle1Result().at(k); // * (-1) as kinematic chain was inverted
+        l_solutionSet.at(1) = -l_q2Q3SecondPKProblem.getAngle2Result().at(k); // * (-1) as kinematic chain was inverted
+        const DualQuaternion l_g2 = ((m_screwCoordinatesDualQ.at(1)* (l_solutionSet.at(1) * 0.5)).dqExp());
+        const DualQuaternion l_g3 = ((m_screwCoordinatesDualQ.at(2)* (l_solutionSet.at(2) * 0.5)).dqExp());
+
+        // ------------------- Solve for q1 ---------------- //
+
+        l_rightHandSide = l_g2 * l_g3 * p_g4 * l_g5 * l_g6 * p_g;
+
+        const Quaternion l_endPointQ1 = l_rightHandSide.getTransformedVector(l_pointNotOnFirstScrew);
+        l_q1Problem.compute(
+            l_pointOnLineQ1,
+            m_screwCoordinatesDualQ.at(0).getRealPart(),
+            l_pointNotOnFirstScrew,
+            l_endPointQ1,
+            -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(0)).max_position_,
+            -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(0)).min_position_
+        );
+
+        if(l_q1Problem.getResult().has_value())
+        {
+            l_solutionSet.at(0) = -l_q1Problem.getResult().value();
+            p_solutions.push_back(l_solutionSet);
+        }
+
+    }
+}
+
+template<typename Scalar>
+void FrankaKinSolver<Scalar>::compute7DOFIK(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar& p_swivelAngle_rad, std::vector<std::vector<Scalar>>& p_solutions) const noexcept
+{
+    //First discretize q7 as q7_new = q7_old + m_discretization * q7_range
+    const Scalar l_q7Range = std::abs(
+        m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(3)).max_position_
+        - m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(3)).min_position_
+    );
+
+    Scalar l_q7 = m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(3)).min_position_;
+
+    std::optional<Scalar> l_computedSwivel;
+
+    const size_t l_maxIterations = std::round(l_q7Range / m_discretization);
+
+    p_solutions.clear();
+    //Compute beginning of IK to find q5 and q6 then see if swivel is respected
+    for(size_t l_redundancyIteration=0; l_redundancyIteration < l_maxIterations; l_redundancyIteration++)
+    {
+
+        // First compute right-end side l_g = l_eeWanted * l_ee0^-1 * l_g7^-1
+        //todo add error management (dualq inverse, paden kahan problems not returning)
+        DualQuaternion l_g = DualQuaternion(p_tip2BaseWanted) * m_tip2BaseInitPtr->inverse(c_tolerance).value() * ((m_screwCoordinatesDualQ.at(6)* (-l_q7 * 0.5)).dqExp());
+
+        // Inverse Kinematic chain to get rid of spherical joint
+        l_g.invert(c_tolerance);
+
+        const Quaternion l_pointOnLinesQ5Q6(0.0, m_screwCoordinatesPtr->getPositions().at(5)(0), m_screwCoordinatesPtr->getPositions().at(5)(1), m_screwCoordinatesPtr->getPositions().at(5)(2));
+
+        // ------------------- Solve for q4 ---------------- //
+        const Quaternion l_shoulderQuat(0.0, m_screwCoordinatesPtr->getPositions().at(0)(0), m_screwCoordinatesPtr->getPositions().at(0)(1), m_screwCoordinatesPtr->getPositions().at(0)(2));
+        Quaternion l_shoulderTransformed = l_g.getTransformedVector(l_shoulderQuat);
+        
+        Vector3 l_wrist;
+        computeWristPosition(p_tip2BaseWanted, l_q7, l_wrist);
+        const Quaternion l_wristQuat(0.0, l_wrist(0), l_wrist(1), l_wrist(2));
+        Quaternion l_wristInTipFrame = l_g.getTransformedVector(l_wristQuat);
+
+        const Scalar l_delta = (l_shoulderTransformed - l_wristInTipFrame).norm();
+        Quaternion l_pointOnlineQ4(0.0, m_screwCoordinatesPtr->getPositions().at(3)(0), m_screwCoordinatesPtr->getPositions().at(3)(1), m_screwCoordinatesPtr->getPositions().at(3)(2));
+        const ThirdPadenKahan l_q4ThirdPKProbem(
+            l_pointOnlineQ4,
+            m_screwCoordinatesDualQ.at(3).getRealPart(), 
+            l_shoulderQuat, 
+            l_wristInTipFrame, 
+            l_delta,
+            -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(3)).max_position_,
+            -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(3)).min_position_
+        );
+
+        SecondPadenKahan l_q5Q6SecondPKProblem;
+
+        for (size_t i = 0; i < l_q4ThirdPKProbem.getResults().size(); i++)
+        {
+            //Shoulder Sing : l_shoulderSingularityFree if false means that the subproblems causes l_pointOnFirstScrewOnly to be both on screw 1 & 3, in this case the usual cancelation of screw 1 doesn't work
+            //Elbow Sing : l_elbowSingularityFree if false means that the subproblems causes screw 5 to be aligned with spherical shoulder, then the cancelation of screws to get q5 and q6 doesn't work
+            bool l_elbowSingularityFree;
+            std::vector<Scalar> l_solutionSet;
+            l_solutionSet.resize(7);
+            l_solutionSet.at(3) = l_q4ThirdPKProbem.getResults().at(i) * (-1); // * (-1) as kinematic chain was inverted
+            
+            const DualQuaternion l_g4 = ((m_screwCoordinatesDualQ.at(3)* (l_solutionSet.at(3) * 0.5)).dqExp());
+
+            // ------------------- Solve for q5, q6 ---------------- //
+
+            l_elbowSingularityFree = l_q5Q6SecondPKProblem.compute(
+                l_pointOnLinesQ5Q6,
+                m_screwCoordinatesDualQ.at(5).getRealPart(),
+                m_screwCoordinatesDualQ.at(4).getRealPart(),
+                l_g4.inverse(c_tolerance).value().getTransformedVector(l_shoulderQuat),
+                l_shoulderTransformed,
+                -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(5)).max_position_,
+                -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(5)).min_position_,
+                -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(4)).max_position_,
+                -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(4)).min_position_
+            );
+
+            size_t l_q5Q6SecondPKSolNb = l_q5Q6SecondPKProblem.getAngle1Result().size();
+            FirstPadenKahan l_q6Problem;
+
+            if(!l_elbowSingularityFree)
+            {
+                //q1 or q3 will compensate for this
+                l_solutionSet.at(4) = m_emergencyQ5_rad;
+                const DualQuaternion l_g5Inverted = ((m_screwCoordinatesDualQ.at(3)* (l_solutionSet.at(3) * 0.5)).dqExp());
+
+                l_q6Problem.compute(
+                    l_pointOnLinesQ5Q6,
+                    m_screwCoordinatesDualQ.at(5).getRealPart(),
+                    (l_g5Inverted * (l_g4).inverse(c_tolerance).value()).getTransformedVector(l_shoulderQuat),
+                    l_shoulderTransformed,
+                    -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(5)).max_position_,
+                    -m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(5)).min_position_
+                );
+
+                if(l_q6Problem.getResult().has_value())
+                {
+                    l_q5Q6SecondPKSolNb = 1;
+                }
+                else
+                {
+                    l_q5Q6SecondPKSolNb = 0;
+                }
+
+            }
+
+            // ------------------- Check Swivel Angle ---------------- //
+
+            for(size_t j=0; j < l_q5Q6SecondPKSolNb; j++)
+            {
+                if(l_elbowSingularityFree)
+                {
+                    l_solutionSet.at(5) = -l_q5Q6SecondPKProblem.getAngle1Result().at(j); // * (-1) as kinematic chain was inverted
+                    l_solutionSet.at(4) = -l_q5Q6SecondPKProblem.getAngle2Result().at(j); // * (-1) as kinematic chain was inverted
+                }
+                else
+                {
+                    l_solutionSet.at(5) = -l_q6Problem.getResult().value(); // * (-1) as kinematic chain was inverted
+                }
+
+                computeSwivelAngle(p_tip2BaseWanted, l_solutionSet.at(4), l_solutionSet.at(5), l_q7, l_computedSwivel);
+
+                
+                if(l_computedSwivel.has_value())
+                {
+                    if(FirstPadenKahan::compareFloatNum(l_computedSwivel.value(), p_swivelAngle_rad, m_redundancyTolerance))
+                    {
+                        //Swivel is within bounds, compute q1, q2, q3 and return
+                        l_solutionSet.at(6) = l_q7;
+                        std::vector<std::vector<Scalar>> l_solvableBranches;
+                        l_solvableBranches.push_back(l_solutionSet);
+                        computeSphericalShoulder(l_g, l_g4, l_solvableBranches);
+                        for (auto &&l_ikBranch : l_solvableBranches)
+                        {
+                            p_solutions.push_back(l_ikBranch);
+                        }
+                        
+                    }
+                }
+            }
+        }
+
+        //Swivel Solution wasn't satisfying, increment q7
+        l_q7 = l_q7 + m_discretization * l_q7Range;
+    }
 
 }
 

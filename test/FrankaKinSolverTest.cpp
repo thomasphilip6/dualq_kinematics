@@ -27,6 +27,7 @@ constexpr u_int8_t c_repetitionsLow = 100;
 constexpr u_int16_t c_repetitions = 2000;
 constexpr double c_tolerance = 1e-5;
 constexpr double c_toleranceLow = 1e-3;
+constexpr double c_redundancyTolerance = 1e-2;
 
 using ScrewCoordinates = dualq_kinematics::ScrewCoordinates<double>;
 using FrankaKinSolver = dualq_kinematics::FrankaKinSolver<double>;
@@ -318,9 +319,10 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     l_eeWanted = l_eeCurrentState;
     checkIKResults(l_allIKSolutions, l_eeWanted, l_jointModelGroup, l_robotState, l_frankaKin, l_eeCurrentState);
 
-    // --------------------------------- 4 - computeSwivelAngle tests  -------------------------------------- //
+    // --------------------------------- 4 - computeSwivelAngle and compute7DOFIK tests  -------------------------------------- //
 
-    l_jointValuesReady_rad = {-2.3404, -1.02822, 2.17959, 0.00957927, 0.145148, 1.80714, 2.69931};
+    //l_jointValuesReady_rad = {-2.3404, -1.02822, 2.17959, 0.00957927, 0.145148, 1.80714, 2.69931};
+    l_jointValuesReady_rad = {0.7, 0.43, 2.1, -1.7, 2.1, 2.5, 1.0};
     l_frankaKin.setEmergencyQ5(l_jointValuesReady_rad.at(4));
     l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
     l_robotState->getGlobalLinkTransform("panda_link8");
@@ -332,6 +334,19 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     
     EXPECT_TRUE(FirstPadenKahan::compareFloatNum(l_swivel.value(), l_moveItSwivel, c_tolerance)) << "Swivel Angle computation doesn't work (MoveIt comparison)";
 
+    l_frankaKin.compute7DOFIK(l_eeCurrentState, l_swivel.value(), l_allIKSolutions);
+
+    //Check IK
+    l_eeWanted = l_eeCurrentState;
+    checkIKResults(l_allIKSolutions, l_eeWanted, l_jointModelGroup, l_robotState, l_frankaKin, l_eeCurrentState);
+    
+    for (auto &&l_solution : l_allIKSolutions)
+    {
+        l_frankaKin.computeSwivelAngle(l_eeCurrentState, l_solution.at(4), l_solution.at(5), l_solution.at(6), l_swivel);     
+        EXPECT_TRUE(FirstPadenKahan::compareFloatNum(l_swivel.value(), l_moveItSwivel, c_redundancyTolerance)) << "Redundancy Solution did not return satisfying SEW angle";
+
+    }
+    
     // ----------- 5 - Existence and Number of solutions tests (GEOFIK used for comparison) ---------------- //
 
     // std::array<std::array<double, 7>, 8> l_geoFIKSolutions;

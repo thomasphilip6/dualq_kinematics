@@ -49,8 +49,7 @@ namespace dualq_kinematics
 
             /**
              * @brief Sets an emergency for q1 to be used in singular position
-             * @param p_q1Value_rad 
-             * @return returns true if value is within bounds
+             * @param p_q1Value_rad 0 to 1
              */
             bool setEmergencyQ1(const Scalar& p_q1Value_rad);
 
@@ -60,6 +59,13 @@ namespace dualq_kinematics
              * @return returns true if value is within bounds
              */
             bool setEmergencyQ5(const Scalar& p_q5Value_rad);
+
+            /**
+             * @brief Sets discretization : value by which q7 is incremented during redundancy resolution as q7_new = q7_old + alpha * q7_range
+             * @param p_alpha 
+             * @return returns true if value is within bounds
+             */
+            void setDiscretization(const Scalar& p_alpha);
 
             /**
              * @brief Computes Forward Kinematics for the tip of the robot
@@ -93,8 +99,25 @@ namespace dualq_kinematics
              * @param p_solutions vector of joint values within bounds solving the IK
              */
             void compute6DOFIK(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar& p_q7, std::vector<std::vector<Scalar>>& p_solutions) const noexcept;
+
+            /**
+             * @brief Solves the Inverse Kinematics as 7DOF for a given swivel angle
+             * @param p_tip2BaseWanted target pose
+             * @param p_swivelAngle_rad swivel angle value in rad
+             * @param p_solutions vector of joint values within bounds solving the IK
+             */
+            void compute7DOFIK(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar& p_swivelAngle_rad, std::vector<std::vector<Scalar>>& p_solutions) const noexcept;
         
         private:
+
+            /**
+             * @brief Solves the Inverse Kinematics of Spherical Shoulder, used with redundancy to enhance readability of compute7DOFIK
+             * @param p_tip2BaseWanted target pose
+             * @param p_g as described in README equations
+             * @param p_g4 as described in README equations
+             * @param p_solutions vector of joint values for the current branch, this method will fill it with the two sub-branches
+             */
+            void computeSphericalShoulder(const DualQuaternion& p_g, const DualQuaternion& p_g4, std::vector<std::vector<Scalar>>& p_solutions) const noexcept;
 
             // Shared pointer of ScrewCoordinates object
             std::shared_ptr<ScrewCoordinates> m_screwCoordinatesPtr;
@@ -110,6 +133,10 @@ namespace dualq_kinematics
 
             // q5 to be used in singular position
             Scalar m_emergencyQ5_rad;
+
+            Scalar m_discretization = 0.002;
+
+            const Scalar m_redundancyTolerance = 0.01;// around 1 deg
     };
 }
 
