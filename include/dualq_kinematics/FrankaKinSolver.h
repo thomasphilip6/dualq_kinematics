@@ -70,8 +70,13 @@ namespace dualq_kinematics
 
             /**
              * @brief Computes Swivel Angle
+             * @param p_tip2BaseWanted goal pose wanted
+             * @param p_q5 current joint value for q5 in rad 
+             * @param p_q6 current joint value for q6 in rad
+             * @param p_q7 current joint value for q7 in rad
+             * @param p_swivel SEW angle in rad as an optional, empty at SEW singularity
              */
-            void computeSwivelAngle(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar& p_q5, const Scalar& p_q6, const Scalar& p_q7, Scalar& p_swivel) const noexcept;
+            void computeSwivelAngle(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar& p_q5, const Scalar& p_q6, const Scalar& p_q7, std::optional<Scalar>& p_swivel) const noexcept;
 
             /**
              * @brief Computes the position of the wrist (intersection of joint 5&6) from a target pose and q7

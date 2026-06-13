@@ -77,19 +77,27 @@ void FrankaKinSolver<Scalar>::computeTipFK(const std::vector<double>& p_jointVal
 
 
 template<typename Scalar>
-void FrankaKinSolver<Scalar>::computeSwivelAngle(const Eigen::Isometry3d& p_tip2BaseWanted, const Scalar& p_q5, const Scalar& p_q6, const Scalar& p_q7, Scalar& p_swivel) const noexcept
+void FrankaKinSolver<Scalar>::computeSwivelAngle(
+    const Eigen::Isometry3d& p_tip2BaseWanted, 
+    const Scalar& p_q5, 
+    const Scalar& p_q6, 
+    const Scalar& p_q7, 
+    std::optional<Scalar>& p_swivel
+) const noexcept
 {
 
     // r7 = eeWanted.translation - df * eeWanted.z()
-    Vector3 l_r7;
-    Vector3 l_wrist;
+    Vector3 l_r7Vector;
+    Quaternion l_wrist;
 
     const Scalar l_a7 = m_screwCoordinatesPtr->getPositions().at(6)(0);
     const Scalar l_a5 = m_screwCoordinatesPtr->getPositions().at(3)(0);
+    const Scalar l_d1 = m_screwCoordinatesPtr->getPositions().at(1)(2);
 
     //l_d5 is the distance in z (robot at rest) between the elbow and the wrist
     const Scalar l_d5 = m_screwCoordinatesPtr->getPositions().at(5)(2) -  m_screwCoordinatesPtr->getPositions().at(3)(2);
-    l_r7 = p_tip2BaseWanted.translation() - (m_screwCoordinatesPtr->getPositions().at(6)(2) - m_screwCoordinatesPtr->getTip2BaseInit().translation().z())*p_tip2BaseWanted.rotation().col(2);
+    l_r7Vector = p_tip2BaseWanted.translation() - (m_screwCoordinatesPtr->getPositions().at(6)(2) - m_screwCoordinatesPtr->getTip2BaseInit().translation().z())*p_tip2BaseWanted.rotation().col(2);
+    Quaternion l_r7(0.0, l_r7Vector(0), l_r7Vector(1), l_r7Vector(2));
 
     const Quaternion l_eeY(0.0, p_tip2BaseWanted.rotation().col(1)(0), p_tip2BaseWanted.rotation().col(1)(1), p_tip2BaseWanted.rotation().col(1)(2));
     const Quaternion l_s7(0.0, p_tip2BaseWanted.rotation().col(2)(0), p_tip2BaseWanted.rotation().col(2)(1), p_tip2BaseWanted.rotation().col(2)(2));
@@ -99,10 +107,7 @@ void FrankaKinSolver<Scalar>::computeSwivelAngle(const Eigen::Isometry3d& p_tip2
     l_s6.normalize();
 
     //Vector product as product of two pure quaternion returns vector product for the vector part of the quaternion
-    Quaternion l_vectorProduct = l_s6 * l_s7;
-    l_wrist(0) = l_r7(0) - l_a7*(l_vectorProduct.x());
-    l_wrist(1) = l_r7(1) - l_a7*(l_vectorProduct.y());
-    l_wrist(2) = l_r7(2) - l_a7*(l_vectorProduct.z());
+    l_wrist = l_r7 - l_a7 * (l_s6*l_s7);
 
     Quaternion l_s5 = DualQuaternion::quaternionExp(-p_q6*l_s6)*l_s7;
     l_s5 = -1.0 * l_s5; // as s5 and s7 are (0,0,-1) and (0,0,1) at rest
@@ -111,29 +116,26 @@ void FrankaKinSolver<Scalar>::computeSwivelAngle(const Eigen::Isometry3d& p_tip2
     Quaternion l_s4 = DualQuaternion::quaternionExp(-p_q5*l_s5)*l_s6;
     l_s4.normalize();
 
-    l_vectorProduct = l_s4 * l_s5;
-    Vector3 l_r4;
-    l_r4(0) = l_wrist(0) - l_d5 * l_s5.x() - l_a5 * l_vectorProduct.x(); 
-    l_r4(1) = l_wrist(1) - l_d5 * l_s5.y() - l_a5 * l_vectorProduct.y(); 
-    l_r4(2) = l_wrist(2) - l_d5 * l_s5.z() - l_a5 * l_vectorProduct.z(); 
+    Quaternion l_r4 = l_wrist - l_d5 * l_s5 - l_a5 * (l_s4 * l_s5);
 
-    //Computes the two planes and the swivel angle between them
-    Vector3 l_plane1Normal = l_wrist.cross( Vector3(0,0,1));
-    const Scalar l_sign = (l_wrist.cross(l_r4)).dot( Vector3(l_s4.x(), l_s4.y(), l_s4.z()));
-    Vector3 l_plane2Normal;
-    if(l_sign > 0)
+    //Express wrist and r4 in the shoulder coordinate frame so that the angle is the SEW (shoulder - elbow - wrist) and not the the (base - elbow - wrist)
+    l_wrist.z() = l_wrist.z() - l_d1;
+    l_r4.z() = l_r4.z() - l_d1;
+
+    //Computes the two planes, to create a PK1 with their normals around the wrist as the screw axis
+    Quaternion l_plane1Normal(0.0, l_wrist.y(), -l_wrist.x(), 0);
+    Quaternion l_plane2Normal = l_wrist * l_r4; //as quaternions aren't pure, we use this method
+    Scalar l_sign = (DualQuaternion::quatMulScalarPart(l_plane2Normal, l_s4));
+    if(l_sign < 0)
     {
-        l_plane2Normal = l_wrist.cross(l_r4);
-    }
-    else
-    {
-        l_plane2Normal = l_wrist.cross(l_r4) * (-1.0);
+        l_plane2Normal = (-1.0) * l_plane2Normal;
     }
     l_plane1Normal.normalize();
     l_plane2Normal.normalize();
-    // l_plane1 * l_plane2 = ||l_plane1|| * ||l_plane2|| * cos(swivel) 
-    p_swivel = acos(l_plane1Normal.dot(l_plane2Normal));
-
+    l_wrist.normalize();//convert l_r7 to a screw axis
+    FirstPadenKahan l_swivelProblem;
+    l_swivelProblem.computeFromProjectedPoints(l_wrist, l_plane1Normal, l_plane2Normal, -M_PI, +M_PI);
+    p_swivel = l_swivelProblem.getResult();
 }
 
 template<typename Scalar>
