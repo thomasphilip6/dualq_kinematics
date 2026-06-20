@@ -82,7 +82,7 @@ void checkIKResults(
     //RCLCPP_INFO_STREAM(LOGGER, p_solverNmae + " IK returned " << p_results.size() << " solutions ");
     if(p_results.size() == 0)
     {
-        EXPECT_TRUE(false);
+        EXPECT_TRUE(false) << "No IK Solutions Found";
     }
 
     size_t l_solutionsInBounds = 0;
@@ -322,7 +322,8 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
     // --------------------------------- 4 - computeSwivelAngle and compute7DOFIK tests  -------------------------------------- //
 
     //l_jointValuesReady_rad = {-2.3404, -1.02822, 2.17959, 0.00957927, 0.145148, 1.80714, 2.69931};
-    l_jointValuesReady_rad = {0.7, 0.43, 2.1, -1.7, 2.1, 2.5, 1.0};
+    l_jointValuesReady_rad = {0.2871199185151605, -0.27869288159664718, 0.045527593349898421, -0.090069551697187222,2.468001717841299, 2.6122548606875351, -2.7737654754635876};
+    l_frankaKin.setEmergencyQ1(l_jointValuesReady_rad.at(0));
     l_frankaKin.setEmergencyQ5(l_jointValuesReady_rad.at(4));
     l_robotState->setJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
     l_robotState->getGlobalLinkTransform("panda_link8");
@@ -346,6 +347,43 @@ TEST(dualq_kinematics, FrankaKinSolverTest)
         EXPECT_TRUE(FirstPadenKahan::compareFloatNum(l_swivel.value(), l_moveItSwivel, c_redundancyTolerance)) << "Redundancy Solution did not return satisfying SEW angle";
 
     }
+
+    for(size_t i=0; i <= c_repetitionsLow; i++)
+    {
+        //Create a Target
+        //setToRandomPositions returns a joint configuration within bounds, so if FrankaKin doesn't find a solution, there is a problem
+        l_robotState->setToRandomPositions(l_jointModelGroup);
+        l_robotState->getGlobalLinkTransform("panda_link8");
+        l_robotState->copyJointGroupPositions(l_jointModelGroup, l_jointValuesReady_rad);
+
+        //Compute with FrankaKinSolver
+        l_frankaKin.setEmergencyQ1(l_jointValuesReady_rad.at(0));
+        l_frankaKin.setEmergencyQ5(l_jointValuesReady_rad.at(4));
+
+        l_frankaKin.computeSwivelAngle(l_eeCurrentState, l_jointValuesReady_rad.at(4), l_jointValuesReady_rad.at(5), l_jointValuesReady_rad.at(6), l_swivel);   
+        computeMoveItSwivel(l_robotState,l_moveItSwivel);
+        
+        EXPECT_TRUE(FirstPadenKahan::compareFloatNum(l_swivel.value(), l_moveItSwivel, c_tolerance)) << "Swivel Angle computation doesn't work (MoveIt comparison)";
+
+        //if SEW = 0.0 resolution doesn't return a solution, swivel angle singularity
+        if(FirstPadenKahan::compareFloatNum(0.0, l_moveItSwivel, c_tolerance))
+        {
+            continue;
+        }
+
+        l_frankaKin.compute7DOFIK(l_eeCurrentState, l_swivel.value(), l_allIKSolutions);
+
+        //Check IK
+        l_eeWanted = l_eeCurrentState;
+        checkIKResults(l_allIKSolutions, l_eeWanted, l_jointModelGroup, l_robotState, l_frankaKin, l_eeCurrentState);
+        
+        for (auto &&l_solution : l_allIKSolutions)
+        {
+            l_frankaKin.computeSwivelAngle(l_eeCurrentState, l_solution.at(4), l_solution.at(5), l_solution.at(6), l_swivel);     
+            EXPECT_TRUE(FirstPadenKahan::compareFloatNum(l_swivel.value(), l_moveItSwivel, c_redundancyTolerance)) << "Redundancy Solution did not return satisfying SEW angle";
+
+        }
+    }  
     
     // ----------- 5 - Existence and Number of solutions tests (GEOFIK used for comparison) ---------------- //
 

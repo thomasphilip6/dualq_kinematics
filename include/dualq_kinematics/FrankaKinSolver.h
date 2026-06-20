@@ -134,7 +134,7 @@ namespace dualq_kinematics
             // q5 to be used in singular position
             Scalar m_emergencyQ5_rad;
 
-            Scalar m_discretization = 0.002;
+            Scalar m_discretization = 0.001;
 
             const Scalar m_redundancyTolerance = 0.01;// around 1 deg
     };

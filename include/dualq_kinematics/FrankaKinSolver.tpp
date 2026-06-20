@@ -489,20 +489,26 @@ void FrankaKinSolver<Scalar>::compute7DOFIK(const Eigen::Isometry3d& p_tip2BaseW
 {
     //First discretize q7 as q7_new = q7_old + m_discretization * q7_range
     const Scalar l_q7Range = std::abs(
-        m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(3)).max_position_
-        - m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(3)).min_position_
+        m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(6)).max_position_
+        - m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(6)).min_position_
     );
 
-    Scalar l_q7 = m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(3)).min_position_;
+    Scalar l_q7 = m_screwCoordinatesPtr->m_robotModelPtr->getVariableBounds(m_screwCoordinatesPtr->getJointsNames().at(6)).min_position_;
 
     std::optional<Scalar> l_computedSwivel;
 
-    const size_t l_maxIterations = std::round(l_q7Range / m_discretization);
+    const size_t l_maxIterations = std::round(1 / m_discretization);
 
     p_solutions.clear();
     //Compute beginning of IK to find q5 and q6 then see if swivel is respected
     for(size_t l_redundancyIteration=0; l_redundancyIteration < l_maxIterations; l_redundancyIteration++)
     {
+
+        // 8 solutions is enough
+        if(p_solutions.size() >= 8)
+        {
+            return;
+        }
 
         // First compute right-end side l_g = l_eeWanted * l_ee0^-1 * l_g7^-1
         //todo add error management (dualq inverse, paden kahan problems not returning)
